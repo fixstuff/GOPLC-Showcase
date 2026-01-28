@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
+  <defs>
+    <linearGradient id="barGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ADD8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#007d9c;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="memGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff6b6b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c0392b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="500" fill="url(#bgGrad)" rx="10"/>
+
+  <!-- Title -->
+  <text x="450" y="40" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="26" font-weight="bold">
+    10,000 PLC Cluster Benchmark
+  </text>
+  <text x="450" y="65" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="14">
+    GOPLC v1.0.70 | i9-13900KS (32 threads) | 62 GB RAM | January 2026
+  </text>
+
+  <!-- Y-axis label -->
+  <text x="25" y="250" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="12" transform="rotate(-90, 25, 250)">
+    Memory (GB)
+  </text>
+
+  <!-- Grid lines -->
+  <g stroke="#333" stroke-width="1">
+    <line x1="70" y1="90" x2="70" y2="380"/>
+    <line x1="70" y1="380" x2="850" y2="380"/>
+    <!-- Horizontal grid lines -->
+    <line x1="70" y1="310" x2="850" y2="310" stroke-dasharray="4"/>
+    <line x1="70" y1="240" x2="850" y2="240" stroke-dasharray="4"/>
+    <line x1="70" y1="170" x2="850" y2="170" stroke-dasharray="4"/>
+    <line x1="70" y1="100" x2="850" y2="100" stroke-dasharray="4"/>
+  </g>
+
+  <!-- Y-axis labels -->
+  <text x="60" y="384" text-anchor="end" fill="#666" font-family="Arial, sans-serif" font-size="10">0</text>
+  <text x="60" y="314" text-anchor="end" fill="#666" font-family="Arial, sans-serif" font-size="10">10</text>
+  <text x="60" y="244" text-anchor="end" fill="#666" font-family="Arial, sans-serif" font-size="10">20</text>
+  <text x="60" y="174" text-anchor="end" fill="#666" font-family="Arial, sans-serif" font-size="10">30</text>
+  <text x="60" y="104" text-anchor="end" fill="#666" font-family="Arial, sans-serif" font-size="10">40</text>
+
+  <!-- Bars - scaled: 380 = 0GB, 100 = 40GB, so each GB = 7 pixels -->
+  <!-- 100 minions: 0.5 GB -->
+  <rect x="90" y="376" width="50" height="4" fill="url(#barGrad)" rx="2" filter="url(#glow)"/>
+  <text x="115" y="400" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="9">100</text>
+
+  <!-- 500 minions: 2.8 GB -->
+  <rect x="160" y="360" width="50" height="20" fill="url(#barGrad)" rx="2" filter="url(#glow)"/>
+  <text x="185" y="400" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="9">500</text>
+
+  <!-- 1000 minions: 3.4 GB -->
+  <rect x="230" y="356" width="50" height="24" fill="url(#barGrad)" rx="2" filter="url(#glow)"/>
+  <text x="255" y="400" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="9">1K</text>
+
+  <!-- 2000 minions: 6.7 GB -->
+  <rect x="300" y="333" width="50" height="47" fill="url(#barGrad)" rx="2" filter="url(#glow)"/>
+  <text x="325" y="400" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="9">2K</text>
+
+  <!-- 4000 minions: 13 GB -->
+  <rect x="370" y="289" width="50" height="91" fill="url(#barGrad)" rx="2" filter="url(#glow)"/>
+  <text x="395" y="400" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="9">4K</text>
+
+  <!-- 5000 minions: 20 GB -->
+  <rect x="440" y="240" width="50" height="140" fill="url(#barGrad)" rx="2" filter="url(#glow)"/>
+  <text x="465" y="400" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="9">5K</text>
+
+  <!-- 6000 minions: 20 GB -->
+  <rect x="510" y="240" width="50" height="140" fill="url(#barGrad)" rx="2" filter="url(#glow)"/>
+  <text x="535" y="400" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="9">6K</text>
+
+  <!-- 10000 minions: 37.4 GB - highlighted -->
+  <rect x="580" y="118" width="70" height="262" fill="url(#memGrad)" rx="3" filter="url(#glow)"/>
+  <text x="615" y="108" text-anchor="middle" fill="#ff6b6b" font-family="Arial, sans-serif" font-size="16" font-weight="bold">37.4 GB</text>
+  <text x="615" y="400" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="11" font-weight="bold">10K</text>
+
+  <!-- X-axis label -->
+  <text x="400" y="420" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="12">
+    Number of PLC Minions
+  </text>
+
+  <!-- Stats box -->
+  <rect x="680" y="95" width="200" height="170" fill="#222" rx="8" stroke="#444" stroke-width="1"/>
+  <text x="780" y="120" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Benchmark Results</text>
+
+  <text x="695" y="145" fill="#888" font-family="monospace" font-size="11">Minions:</text>
+  <text x="865" y="145" fill="#fff" font-family="monospace" font-size="11" text-anchor="end" font-weight="bold">10,000</text>
+
+  <text x="695" y="165" fill="#888" font-family="monospace" font-size="11">Total RAM:</text>
+  <text x="865" y="165" fill="#ff6b6b" font-family="monospace" font-size="11" text-anchor="end">37.4 GB</text>
+
+  <text x="695" y="185" fill="#888" font-family="monospace" font-size="11">Per Minion:</text>
+  <text x="865" y="185" fill="#4ecdc4" font-family="monospace" font-size="11" text-anchor="end">~3.9 MB</text>
+
+  <text x="695" y="205" fill="#888" font-family="monospace" font-size="11">System Load:</text>
+  <text x="865" y="205" fill="#ffe66d" font-family="monospace" font-size="11" text-anchor="end">3.5 (11%)</text>
+
+  <text x="695" y="225" fill="#888" font-family="monospace" font-size="11">Threads:</text>
+  <text x="865" y="225" fill="#4ecdc4" font-family="monospace" font-size="11" text-anchor="end">345</text>
+
+  <text x="695" y="245" fill="#888" font-family="monospace" font-size="11">Memory Used:</text>
+  <text x="865" y="245" fill="#ffe66d" font-family="monospace" font-size="11" text-anchor="end">77%</text>
+
+  <!-- Key insight box -->
+  <rect x="680" y="280" width="200" height="85" fill="#1a3a1a" rx="8" stroke="#4ecdc4" stroke-width="1"/>
+  <text x="780" y="305" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="12" font-weight="bold">💡 Key Finding</text>
+  <text x="780" y="325" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="10">Memory is the limiter</text>
+  <text x="780" y="342" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="10">CPU barely touched (11%)</text>
+  <text x="780" y="359" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="11" font-weight="bold">~9K minions @ 75%</text>
+
+  <!-- Architecture note -->
+  <rect x="90" y="435" width="790" height="50" fill="#222" rx="5" stroke="#333" stroke-width="1"/>
+  <text x="485" y="455" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="12" font-weight="bold">
+    Single-Process Architecture
+  </text>
+  <text x="485" y="473" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="11">
+    All minions run as goroutines in one process • Each minion has isolated PLCContext • Boss API proxies to minions via Unix sockets
+  </text>
+</svg>

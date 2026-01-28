@@ -458,6 +458,27 @@ Enables efficient bulk I/O operations: `(PTR_QW + offset)^ := value`
   <img src="assets/architecture-driver-broadcast.svg" alt="Driver Broadcast" width="700">
 </p>
 
+### Cluster Mode - 10,000 PLC Minions (January 2026)
+
+<p align="center">
+  <img src="assets/cluster-10000-minions.svg" alt="10,000 PLC Cluster Benchmark" width="800">
+</p>
+
+**Test Configuration:**
+- Intel i9-13900KS (32 threads), 62 GB RAM
+- Single-process architecture with goroutine-based minions
+- Each minion has fully isolated PLCContext (protocols, connections, data)
+- Boss API proxies to minions via Unix sockets
+
+**Results:**
+| Minions | RAM | Per Minion | System Load |
+|---------|-----|------------|-------------|
+| 1,000 | 3.4 GB | 3.4 MB | 3.0 (9%) |
+| 5,000 | 20 GB | 4.0 MB | 3.2 (10%) |
+| **10,000** | **37.4 GB** | **3.9 MB** | **3.5 (11%)** |
+
+**Key Finding:** Memory is the limiter—CPU barely touched. Recommended max for 75% resource budget: **~9,000 minions**.
+
 ### Benchmarks
 
 | Metric | Result |
