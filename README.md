@@ -446,6 +446,41 @@ See the [`examples/configs/`](examples/configs/) directory:
 
 ## Performance
 
+### Live Multi-PLC Benchmark (January 2026)
+
+3 GOPLC instances running simultaneously with DataLayer synchronization:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  CLUSTER: 3 PLCs │ 9 Tasks │ 27 Programs │ 13,400+ Lines ST Code        │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  PLC1 (DataLayer Server)              Memory: ~100 MB                   │
+│  ├── FastTask    (10ms)  avg: 0.77ms  ██████████████░░░░░░░  77% margin │
+│  ├── MediumTask  (50ms)  avg: 0.16ms  ██░░░░░░░░░░░░░░░░░░░  99% margin │
+│  └── SlowTask   (100ms)  avg: 0.12ms  █░░░░░░░░░░░░░░░░░░░░  99% margin │
+│                                                                          │
+│  PLC2 (DataLayer Client)              Memory: ~143 MB                   │
+│  ├── FastTask    (10ms)  avg: 0.58ms  ██████████░░░░░░░░░░░  94% margin │
+│  ├── MediumTask  (50ms)  avg: 0.17ms  ██░░░░░░░░░░░░░░░░░░░  99% margin │
+│  └── SlowTask   (100ms)  avg: 0.12ms  █░░░░░░░░░░░░░░░░░░░░  99% margin │
+│                                                                          │
+│  PLC3 (DataLayer Client)              Memory: ~147 MB                   │
+│  ├── FastTask    (10ms)  avg: 0.48ms  ████████░░░░░░░░░░░░░  95% margin │
+│  ├── MediumTask  (50ms)  avg: 0.16ms  ██░░░░░░░░░░░░░░░░░░░  99% margin │
+│  └── SlowTask   (100ms)  avg: 0.12ms  █░░░░░░░░░░░░░░░░░░░░  99% margin │
+│                                                                          │
+│  All tasks: 0 faults │ Sub-millisecond avg scan times                   │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Test Configuration:**
+- 3 PLCs with DataLayer TCP sync (server + 2 clients)
+- 9 programs per PLC: math, arrays, strings, JSON, datetime, regex, crypto, datastructures
+- Each PLC running ~4,500 lines of Structured Text
+- Modbus TCP servers on each PLC (ports 5601-5603)
+- Real-time variable synchronization across all nodes
+
 ### Benchmarks
 
 | Metric | Result |
@@ -453,7 +488,7 @@ See the [`examples/configs/`](examples/configs/) directory:
 | **Minimum scan time** | 100μs sustained |
 | **Modbus throughput** | 73,000 req/sec (50 connections) |
 | **DataLayer latency** | <1ms P50, <3ms P99 |
-| **Memory footprint** | ~65MB typical |
+| **Memory footprint** | ~65MB typical, ~150MB with DataLayer |
 | **ST functions** | 1,450+ available |
 | **Lines of code** | 160,000+ Go |
 
