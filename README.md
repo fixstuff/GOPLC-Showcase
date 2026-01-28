@@ -296,6 +296,23 @@ GOPLC includes a full-featured browser-based IDE:
 - **Sync Indicator** - Shows if IDE matches runtime code
 - **AI Assistant** - Claude-powered ST code generation
 
+### IDE Screenshots
+
+<table>
+<tr>
+<td align="center"><img src="assets/screenshots/monitor-variables.png" width="400"><br><b>Monitor - Variables</b><br>Live task/variable view with Watch List</td>
+<td align="center"><img src="assets/screenshots/watch-list.png" width="300"><br><b>Watch List</b><br>Real-time variable monitoring</td>
+</tr>
+<tr>
+<td align="center"><img src="assets/screenshots/config-editor.png" width="400"><br><b>Config Editor</b><br>YAML configuration with syntax highlighting</td>
+<td align="center"><img src="assets/screenshots/xref-search.png" width="400"><br><b>Cross Reference</b><br>Search across all programs</td>
+</tr>
+<tr>
+<td align="center"><img src="assets/screenshots/datalayer-sync.png" width="400"><br><b>DataLayer Sync</b><br>Multi-PLC variable synchronization</td>
+<td align="center"><img src="assets/screenshots/esp32-hmi.png" width="200"><br><b>ESP32 HMI</b><br>Hardware status display</td>
+</tr>
+</table>
+
 ---
 
 ## Quick Start
