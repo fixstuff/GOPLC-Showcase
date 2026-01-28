@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120">
+  <defs>
+    <linearGradient id="goGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ADD8"/>
+      <stop offset="100%" style="stop-color:#007d9c"/>
+    </linearGradient>
+    <linearGradient id="plcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ec9b0"/>
+      <stop offset="100%" style="stop-color:#2d8f7f"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded rect -->
+  <rect x="5" y="10" width="390" height="100" rx="12" fill="#1e1e1e"/>
+
+  <!-- GO text -->
+  <text x="30" y="82" font-family="'Segoe UI', Arial, sans-serif" font-size="64" font-weight="700" fill="url(#goGrad)">GO</text>
+
+  <!-- PLC text -->
+  <text x="135" y="82" font-family="'Segoe UI', Arial, sans-serif" font-size="64" font-weight="700" fill="url(#plcGrad)">PLC</text>
+
+  <!-- Tagline -->
+  <text x="275" y="55" font-family="'Segoe UI', Arial, sans-serif" font-size="12" fill="#888">Industrial-Grade</text>
+  <text x="275" y="72" font-family="'Segoe UI', Arial, sans-serif" font-size="12" fill="#888">PLC Runtime</text>
+  <text x="275" y="89" font-family="'Segoe UI', Arial, sans-serif" font-size="12" fill="#888">in Go</text>
+
+  <!-- Decorative circuit lines -->
+  <g stroke="#3c3c3c" stroke-width="2" fill="none">
+    <path d="M 260 30 L 270 30 L 270 95 L 260 95"/>
+    <circle cx="260" cy="30" r="3" fill="#4ec9b0"/>
+    <circle cx="260" cy="95" r="3" fill="#4ec9b0"/>
+  </g>
+</svg>

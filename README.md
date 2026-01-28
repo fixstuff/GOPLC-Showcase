@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/goplc-logo.png" alt="GOPLC Logo" width="400">
+  <img src="assets/goplc-logo.svg" alt="GOPLC Logo" width="400">
 </p>
 
 <h1 align="center">GOPLC</h1>
