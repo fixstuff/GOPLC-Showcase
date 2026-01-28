@@ -458,10 +458,10 @@ Enables efficient bulk I/O operations: `(PTR_QW + offset)^ := value`
   <img src="assets/architecture-driver-broadcast.svg" alt="Driver Broadcast" width="700">
 </p>
 
-### Cluster Mode - 10,000 PLC Minions (January 2026)
+### Cluster Mode - Idle vs Running Programs (January 2026)
 
 <p align="center">
-  <img src="assets/cluster-10000-minions.svg" alt="10,000 PLC Cluster Benchmark" width="800">
+  <img src="assets/cluster-benchmark-comparison.svg" alt="PLC Cluster Benchmark Comparison" width="850">
 </p>
 
 **Test Configuration:**
@@ -470,14 +470,23 @@ Enables efficient bulk I/O operations: `(PTR_QW + offset)^ := value`
 - Each minion has fully isolated PLCContext (protocols, connections, data)
 - Boss API proxies to minions via Unix sockets
 
-**Results:**
-| Minions | RAM | Per Minion | System Load |
-|---------|-----|------------|-------------|
-| 1,000 | 3.4 GB | 3.4 MB | 3.0 (9%) |
-| 5,000 | 20 GB | 4.0 MB | 3.2 (10%) |
-| **10,000** | **37.4 GB** | **3.9 MB** | **3.5 (11%)** |
+**Idle Minions (scheduler only):**
+| Minions | RAM | Per Minion | CPU |
+|---------|-----|------------|-----|
+| 1,000 | 3.4 GB | 3.4 MB | 24% |
+| 5,000 | 20 GB | 4.0 MB | 67% |
+| **10,000** | **37.4 GB** | **3.9 MB** | **108%** |
 
-**Key Finding:** Memory is the limiter—CPU barely touched. Recommended max for 75% resource budget: **~9,000 minions**.
+**Running ST Programs (50× SIN/COS, string ops, 100ms scan):**
+| Minions | RAM | Per Minion | CPU | Load |
+|---------|-----|------------|-----|------|
+| 1,000 | 15.8 GB | 15.8 MB | 63% | 2.96 |
+| **3,000** | **48 GB** | **16 MB** | **188%** | **7.38** |
+
+**Key Findings:**
+- **Idle:** ~3.9 MB/minion → **~9,000 minions** at 75% resources
+- **Running:** ~16 MB/minion (4× overhead) → **~2,500 minions** at 75% resources
+- Memory is the limiter, not CPU
 
 ### Benchmarks
 

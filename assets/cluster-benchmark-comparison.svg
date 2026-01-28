@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 550">
+  <defs>
+    <linearGradient id="idleGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ADD8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#007d9c;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="runGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f39c12;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d68910;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="550" fill="url(#bgGrad)" rx="10"/>
+
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="24" font-weight="bold">
+    PLC Cluster Scaling: Idle vs Running Programs
+  </text>
+  <text x="450" y="58" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="13">
+    i9-13900KS (32 threads) | 62 GB RAM | 100ms scan | January 2026
+  </text>
+
+  <!-- Legend -->
+  <rect x="320" y="70" width="18" height="18" fill="url(#idleGrad)" rx="3"/>
+  <text x="345" y="84" fill="#00ADD8" font-family="Arial, sans-serif" font-size="12">Idle (scheduler only)</text>
+  <rect x="500" y="70" width="18" height="18" fill="url(#runGrad)" rx="3"/>
+  <text x="525" y="84" fill="#f39c12" font-family="Arial, sans-serif" font-size="12">Running ST Programs</text>
+
+  <!-- Chart area -->
+  <!-- Y-axis -->
+  <text x="25" y="260" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="11" transform="rotate(-90, 25, 260)">
+    Memory (GB)
+  </text>
+
+  <g stroke="#333" stroke-width="1">
+    <line x1="70" y1="100" x2="70" y2="400"/>
+    <line x1="70" y1="400" x2="850" y2="400"/>
+    <!-- Horizontal grid: 400=0GB, 100=60GB -->
+    <line x1="70" y1="350" x2="850" y2="350" stroke-dasharray="4"/>
+    <line x1="70" y1="300" x2="850" y2="300" stroke-dasharray="4"/>
+    <line x1="70" y1="250" x2="850" y2="250" stroke-dasharray="4"/>
+    <line x1="70" y1="200" x2="850" y2="200" stroke-dasharray="4"/>
+    <line x1="70" y1="150" x2="850" y2="150" stroke-dasharray="4"/>
+    <line x1="70" y1="100" x2="850" y2="100" stroke-dasharray="4"/>
+  </g>
+
+  <!-- Y-axis labels (5px per GB) -->
+  <text x="60" y="404" text-anchor="end" fill="#666" font-family="Arial, sans-serif" font-size="10">0</text>
+  <text x="60" y="354" text-anchor="end" fill="#666" font-family="Arial, sans-serif" font-size="10">10</text>
+  <text x="60" y="304" text-anchor="end" fill="#666" font-family="Arial, sans-serif" font-size="10">20</text>
+  <text x="60" y="254" text-anchor="end" fill="#666" font-family="Arial, sans-serif" font-size="10">30</text>
+  <text x="60" y="204" text-anchor="end" fill="#666" font-family="Arial, sans-serif" font-size="10">40</text>
+  <text x="60" y="154" text-anchor="end" fill="#666" font-family="Arial, sans-serif" font-size="10">50</text>
+  <text x="60" y="104" text-anchor="end" fill="#666" font-family="Arial, sans-serif" font-size="10">60</text>
+
+  <!-- 75% line -->
+  <line x1="70" y1="168" x2="850" y2="168" stroke="#4ecdc4" stroke-width="2" stroke-dasharray="8,4"/>
+  <text x="860" y="172" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="10">75% (46.5 GB)</text>
+
+  <!-- Grouped bars: each group has idle + running side by side -->
+  <!-- Scale: 400 = 0GB, subtract 5px per GB -->
+
+  <!-- 500 minions -->
+  <rect x="100" y="386" width="30" height="14" fill="url(#idleGrad)" rx="2" filter="url(#glow)"/>
+  <text x="115" y="380" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="9">2.8</text>
+  <text x="130" y="418" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="10">500</text>
+
+  <!-- 1000 minions -->
+  <rect x="180" y="383" width="30" height="17" fill="url(#idleGrad)" rx="2" filter="url(#glow)"/>
+  <rect x="215" y="321" width="30" height="79" fill="url(#runGrad)" rx="2" filter="url(#glow)"/>
+  <text x="195" y="377" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="9">3.4</text>
+  <text x="230" y="315" text-anchor="middle" fill="#f39c12" font-family="Arial, sans-serif" font-size="9">15.8</text>
+  <text x="210" y="418" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="10">1,000</text>
+
+  <!-- 2000 minions -->
+  <rect x="280" y="367" width="30" height="33" fill="url(#idleGrad)" rx="2" filter="url(#glow)"/>
+  <text x="295" y="361" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="9">6.7</text>
+  <text x="310" y="418" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="10">2,000</text>
+
+  <!-- 3000 minions -->
+  <rect x="375" y="350" width="30" height="50" fill="url(#idleGrad)" rx="2" filter="url(#glow)"/>
+  <rect x="410" y="160" width="35" height="240" fill="url(#runGrad)" rx="2" filter="url(#glow)"/>
+  <text x="390" y="344" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="9">10</text>
+  <text x="427" y="154" text-anchor="middle" fill="#f39c12" font-family="Arial, sans-serif" font-size="10" font-weight="bold">48</text>
+  <text x="405" y="418" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="10">3,000</text>
+
+  <!-- 5000 minions -->
+  <rect x="480" y="300" width="30" height="100" fill="url(#idleGrad)" rx="2" filter="url(#glow)"/>
+  <text x="495" y="294" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="9">20</text>
+  <text x="510" y="418" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="10">5,000</text>
+
+  <!-- 6000 minions -->
+  <rect x="570" y="300" width="30" height="100" fill="url(#idleGrad)" rx="2" filter="url(#glow)"/>
+  <text x="585" y="294" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="9">20</text>
+  <text x="600" y="418" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="10">6,000</text>
+
+  <!-- 10000 minions (idle only) -->
+  <rect x="680" y="213" width="40" height="187" fill="url(#idleGrad)" rx="3" filter="url(#glow)"/>
+  <text x="700" y="207" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="11" font-weight="bold">37.4</text>
+  <text x="700" y="418" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="11" font-weight="bold">10,000</text>
+
+  <!-- OOM marker for 10k running -->
+  <rect x="725" y="250" width="40" height="30" fill="#333" rx="3" stroke="#ff6b6b" stroke-width="2" stroke-dasharray="4"/>
+  <text x="745" y="270" text-anchor="middle" fill="#ff6b6b" font-family="Arial, sans-serif" font-size="9">OOM</text>
+
+  <!-- X-axis label -->
+  <text x="450" y="440" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="12">
+    Number of PLC Minions
+  </text>
+
+  <!-- Stats boxes -->
+  <!-- Idle stats -->
+  <rect x="70" y="460" width="250" height="75" fill="#222" rx="8" stroke="#00ADD8" stroke-width="1"/>
+  <text x="195" y="482" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Idle Minions</text>
+  <text x="100" y="502" fill="#888" font-family="monospace" font-size="11">Per minion:</text>
+  <text x="290" y="502" text-anchor="end" fill="#4ecdc4" font-family="monospace" font-size="11" font-weight="bold">~3.9 MB</text>
+  <text x="100" y="520" fill="#888" font-family="monospace" font-size="11">Max @ 75%:</text>
+  <text x="290" y="520" text-anchor="end" fill="#fff" font-family="monospace" font-size="11" font-weight="bold">~9,000 minions</text>
+
+  <!-- Running stats -->
+  <rect x="340" y="460" width="250" height="75" fill="#222" rx="8" stroke="#f39c12" stroke-width="1"/>
+  <text x="465" y="482" text-anchor="middle" fill="#f39c12" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Running Programs</text>
+  <text x="370" y="502" fill="#888" font-family="monospace" font-size="11">Per minion:</text>
+  <text x="560" y="502" text-anchor="end" fill="#ffe66d" font-family="monospace" font-size="11" font-weight="bold">~16 MB (4x)</text>
+  <text x="370" y="520" fill="#888" font-family="monospace" font-size="11">Max @ 75%:</text>
+  <text x="560" y="520" text-anchor="end" fill="#fff" font-family="monospace" font-size="11" font-weight="bold">~2,500 minions</text>
+
+  <!-- Test program info -->
+  <rect x="610" y="460" width="220" height="75" fill="#1a1a2a" rx="8" stroke="#666" stroke-width="1"/>
+  <text x="720" y="482" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Test Program</text>
+  <text x="720" y="500" text-anchor="middle" fill="#666" font-family="monospace" font-size="9">50× SIN/COS per scan</text>
+  <text x="720" y="515" text-anchor="middle" fill="#666" font-family="monospace" font-size="9">String ops, timestamps</text>
+  <text x="720" y="530" text-anchor="middle" fill="#666" font-family="monospace" font-size="9">6 vars, 100ms scan</text>
+</svg>
