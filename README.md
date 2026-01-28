@@ -481,22 +481,22 @@ See the [`examples/configs/`](examples/configs/) directory:
 - Modbus TCP servers on each PLC (ports 5601-5603)
 - Real-time variable synchronization across all nodes
 
-### Modbus Stress Test (500 Concurrent Connections)
+### Modbus Stress Test (January 2026)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│  MODBUS STRESS TEST: 500 Clients → 1 Server                             │
+│  MODBUS TCP BENCHMARK                                                    │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
-│  Server: GOPLC Modbus TCP (port 502)                                    │
-│  Clients: 500 concurrent connections                                     │
-│  Operations: Read/Write holding registers                                │
+│  Server: GOPLC Modbus TCP with 100 dynamic registers                    │
+│  Clients: 100 concurrent connections                                     │
+│  Operations: 100-register reads + single-register writes                 │
+│  Requests: 400,000 total (2,000 per client)                             │
 │                                                                          │
-│  Throughput:  73,000+ requests/second                                   │
-│  Latency:     <1ms average response time                                │
-│  CPU Usage:   ~15% (8-core system)                                      │
-│  Memory:      Stable, no leaks over 24hr test                           │
+│  Throughput:  89,769 requests/second                                    │
+│  Latency:     0.01ms average response time                              │
 │  Errors:      0 failed transactions                                     │
+│  Data:        Dynamic sin/cos wave values (changes every 10ms)          │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -506,7 +506,7 @@ See the [`examples/configs/`](examples/configs/) directory:
 | Metric | Result |
 |--------|--------|
 | **Minimum scan time** | 100μs sustained |
-| **Modbus throughput** | 73,000+ req/sec (500 connections) |
+| **Modbus throughput** | 89,769 req/sec (100 connections) |
 | **DataLayer latency** | <1ms P50, <3ms P99 |
 | **Memory footprint** | ~65MB typical, ~150MB with DataLayer |
 | **ST functions** | 1,450+ available |
