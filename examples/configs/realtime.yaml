@@ -1,0 +1,80 @@
+# =============================================================================
+# Real-Time Container Configuration
+# =============================================================================
+# Maximum performance configuration for time-critical applications:
+# - 100 microsecond scan time
+# - Memory locking to prevent page faults
+# - CPU core isolation
+# - Minimal garbage collection
+#
+# Docker run command for real-time:
+#   docker run -d --name goplc-rt \
+#     --privileged \
+#     --cpuset-cpus="2,3" \
+#     --ulimit memlock=-1:-1 \
+#     -p 8082:8082 -p 502:502 \
+#     -v $(pwd)/configs:/app/configs \
+#     goplc:latest --config /app/configs/realtime.yaml
+
+runtime:
+  log_level: warn        # Minimize logging overhead
+
+# Full real-time configuration
+realtime:
+  enabled: true
+  mode: container        # Use 'host' for bare metal Linux
+
+  # Thread management
+  lock_os_thread: true   # Pin goroutines to OS threads
+  gomaxprocs: 2          # Limit Go scheduler threads
+
+  # CPU affinity - pin to isolated cores
+  cpu_affinity: [2, 3]   # Use cores 2 and 3 (isolate with isolcpus=2,3)
+
+  # Memory management
+  memory_lock: true      # mlockall() - prevent swapping
+
+  # Garbage collection
+  gc_percent: 1000       # Only GC at 10x heap growth
+  gc_off: false          # Don't completely disable GC
+
+  # Real-time priority (requires CAP_SYS_NICE or root)
+  rt_priority: 50        # SCHED_FIFO priority (1-99)
+
+# Ultra-fast task
+tasks:
+  - name: FastLoop
+    type: periodic
+    scan_time_us: 100    # 100 microsecond scan!
+    priority: 1
+    watchdog_us: 1000    # 1ms watchdog
+    programs:
+      - fast/motion_control.st
+
+  - name: IOScan
+    type: periodic
+    scan_time_us: 500    # 500us for I/O
+    priority: 2
+    programs:
+      - io/fieldbus_scan.st
+
+  - name: SlowTask
+    type: periodic
+    scan_time_ms: 100    # 100ms for HMI/logging
+    priority: 100
+    programs:
+      - hmi/update.st
+      - logging/data_log.st
+
+# Protocols - keep minimal for real-time
+protocols:
+  modbus:
+    enabled: true
+    port: 5502           # Non-standard port for isolation
+
+# API - lower priority than control tasks
+api:
+  port: 8082
+
+project:
+  auto_start: true

@@ -1,0 +1,107 @@
+# =============================================================================
+# Modbus TCP Server Configuration
+# =============================================================================
+# This configuration sets up GOPLC as a Modbus TCP server with:
+# - 100ms scan cycle for main control logic
+# - Holding registers mapped to process variables
+# - Real-time optimizations for Docker deployment
+
+runtime:
+  log_level: info
+
+# Real-time settings for consistent timing
+realtime:
+  enabled: true
+  mode: container          # 'container' for Docker, 'host' for bare metal
+  lock_os_thread: true     # Pin task goroutines to OS threads
+  cpu_affinity: [1]        # Use CPU core 1
+  gc_percent: 200          # Reduce GC frequency
+
+# Task configuration
+tasks:
+  - name: ControlTask
+    type: periodic
+    scan_time_ms: 100      # 100ms scan cycle
+    priority: 1            # Highest priority
+    watchdog_ms: 500       # 500ms watchdog timeout
+    programs:
+      - control/main.st
+
+  - name: MonitorTask
+    type: periodic
+    scan_time_ms: 1000     # 1 second scan for monitoring
+    priority: 10
+    programs:
+      - monitor/alarms.st
+      - monitor/logging.st
+
+# Modbus TCP Server
+protocols:
+  modbus:
+    enabled: true
+    port: 502              # Standard Modbus port
+    max_connections: 10    # Limit concurrent connections
+    idle_timeout: 60       # Drop idle connections after 60s
+
+# I/O Memory Mapping
+# Maps Modbus registers to internal I/O addresses
+io_mapping:
+  coils:
+    - address: "%QX0.0"
+      name: Pump1_Run
+      desc: "Pump 1 Run Command"
+    - address: "%QX0.1"
+      name: Pump2_Run
+      desc: "Pump 2 Run Command"
+    - address: "%QX0.2"
+      name: Valve1_Open
+      desc: "Valve 1 Open Command"
+
+  discrete_inputs:
+    - address: "%IX0.0"
+      name: Pump1_Running
+      desc: "Pump 1 Running Feedback"
+    - address: "%IX0.1"
+      name: Pump2_Running
+      desc: "Pump 2 Running Feedback"
+    - address: "%IX0.2"
+      name: HighLevel
+      desc: "High Level Switch"
+
+  input_registers:
+    - address: "%IW0"
+      name: Level_Raw
+      type: INT
+      desc: "Tank Level (0-10000 = 0-100%)"
+    - address: "%IW1"
+      name: Temp_Raw
+      type: INT
+      desc: "Temperature (0-10000 = 0-100C)"
+    - address: "%IW2"
+      name: Pressure_Raw
+      type: INT
+      desc: "Pressure (0-10000 = 0-1000kPa)"
+
+  holding_registers:
+    - address: "%QW0"
+      name: Level_Setpoint
+      type: INT
+      desc: "Level Setpoint (0-10000)"
+    - address: "%QW1"
+      name: Temp_Setpoint
+      type: INT
+      desc: "Temperature Setpoint"
+    - address: "%QW2"
+      name: Pump1_Speed
+      type: INT
+      desc: "Pump 1 Speed (0-10000)"
+
+# REST API and Web IDE
+api:
+  port: 8082
+  cors_enabled: true
+
+# Auto-start runtime on launch
+project:
+  auto_start: true
+  auto_load: projects/modbus_server.goplc

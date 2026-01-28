@@ -1,0 +1,191 @@
+# =============================================================================
+# Full Stack Configuration
+# =============================================================================
+# Complete GOPLC deployment with all protocols enabled:
+# - Modbus TCP server and client
+# - OPC UA server
+# - EtherNet/IP adapter
+# - MQTT publishing
+# - DataLayer for multi-PLC sync
+# - REST API with WebSocket streaming
+#
+# This configuration demonstrates GOPLC's protocol bridging capabilities.
+
+runtime:
+  log_level: info
+
+realtime:
+  enabled: true
+  mode: container
+  lock_os_thread: true
+  cpu_affinity: [1, 2]
+  gc_percent: 300
+
+# Multiple tasks for different responsibilities
+tasks:
+  - name: ProtocolTask
+    type: periodic
+    scan_time_ms: 10
+    priority: 1
+    watchdog_ms: 100
+    programs:
+      - protocols/modbus_client.st
+      - protocols/data_bridge.st
+
+  - name: ControlTask
+    type: periodic
+    scan_time_ms: 50
+    priority: 5
+    watchdog_ms: 250
+    programs:
+      - control/main.st
+      - control/pid_loops.st
+
+  - name: AlarmTask
+    type: periodic
+    scan_time_ms: 100
+    priority: 10
+    programs:
+      - alarms/alarm_handler.st
+
+  - name: HMITask
+    type: periodic
+    scan_time_ms: 500
+    priority: 20
+    programs:
+      - hmi/screen_update.st
+      - hmi/trend_data.st
+
+# === PROTOCOLS ===
+
+protocols:
+  # Modbus TCP Server - expose data to SCADA
+  modbus:
+    enabled: true
+    port: 502
+    max_connections: 20
+    idle_timeout: 120
+
+  # OPC UA Server - modern integration
+  opcua:
+    enabled: true
+    port: 4840
+    endpoint: "opc.tcp://0.0.0.0:4840/goplc"
+    security_mode: None  # Use SignAndEncrypt for production
+    # security_policy: Basic256Sha256
+
+  # EtherNet/IP Adapter - Allen-Bradley integration
+  enip:
+    enabled: true
+    adapter:
+      enabled: true
+      port: 44818
+      vendor_id: 0x1234
+      device_type: 0x0C    # Communications adapter
+      product_code: 1
+      revision: [1, 0]
+
+# Modbus Client - read from remote devices
+modbus_clients:
+  - name: sensor_module_1
+    host: 192.168.1.10
+    port: 502
+    unit_id: 1
+    poll_interval_ms: 100
+    timeout_ms: 1000
+    mappings:
+      - remote_addr: 0      # Holding register 0
+        local_addr: "%IW100"
+        count: 10
+        type: holding
+
+  - name: sensor_module_2
+    host: 192.168.1.11
+    port: 502
+    unit_id: 1
+    poll_interval_ms: 100
+    mappings:
+      - remote_addr: 0
+        local_addr: "%IW200"
+        count: 10
+        type: holding
+
+# DataLayer - PLC-to-PLC sync
+datalayer:
+  enabled: true
+  type: tcp
+  address: ":4222"
+  is_server: true
+  node_id: "main-plc"
+  publish_vars: true
+  publish_prefixes:
+    - "GLOBAL_"
+    - "SHARED_"
+  subscribe_paths:
+    - "backup-plc.vars.BACKUP_*"
+
+# MQTT Publishing - cloud/IoT integration
+mqtt:
+  enabled: true
+  broker: "tcp://mqtt.example.com:1883"
+  client_id: "goplc-main"
+  username: ""           # Set via environment variable
+  password: ""
+  qos: 1
+  retain: false
+
+  # Publish selected variables
+  publish:
+    - topic: "plant/area1/temperature"
+      variable: "GLOBAL_Temperature"
+      interval_ms: 1000
+
+    - topic: "plant/area1/pressure"
+      variable: "GLOBAL_Pressure"
+      interval_ms: 1000
+
+    - topic: "plant/area1/status"
+      variable: "GLOBAL_Status"
+      interval_ms: 5000
+
+  # Subscribe to commands
+  subscribe:
+    - topic: "plant/area1/setpoint"
+      variable: "CMD_Setpoint"
+
+    - topic: "plant/area1/mode"
+      variable: "CMD_Mode"
+
+# I/O Mapping
+io_mapping:
+  holding_registers:
+    - address: "%QW0"
+      name: Output_Temperature
+      type: INT
+    - address: "%QW1"
+      name: Output_Pressure
+      type: INT
+    - address: "%QW2"
+      name: Output_Level
+      type: INT
+
+  input_registers:
+    - address: "%IW0"
+      name: Input_Setpoint
+      type: INT
+    - address: "%IW1"
+      name: Input_Mode
+      type: INT
+
+# REST API
+api:
+  port: 8082
+  cors_enabled: true
+  cors_origins:
+    - "http://localhost:3000"
+    - "https://scada.example.com"
+
+# Project settings
+project:
+  auto_start: true
+  auto_save_interval: 300  # Auto-save every 5 minutes

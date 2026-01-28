@@ -1,0 +1,78 @@
+# =============================================================================
+# Multi-PLC DataLayer Configuration
+# =============================================================================
+# This configuration enables real-time variable sharing between PLCs:
+# - TCP-based DataLayer for reliable delivery
+# - Prefix-based variable filtering (only share what's needed)
+# - Automatic latency measurement
+# - Configurable sync intervals
+#
+# Deploy this on PLC1. PLC2 would have a similar config with:
+#   - node_id: "plc2"
+#   - is_server: false (client mode)
+#   - publish_prefixes: ["PLC2_"]
+#   - subscribe_paths: ["plc1.vars.PLC1_*"]
+
+runtime:
+  log_level: info
+
+tasks:
+  - name: FastTask
+    type: periodic
+    scan_time_ms: 10       # 10ms scan for responsive sync
+    priority: 1
+    watchdog_ms: 100
+    programs:
+      - sync/data_sync.st
+
+  - name: SlowTask
+    type: periodic
+    scan_time_ms: 100
+    priority: 5
+    programs:
+      - logic/main_control.st
+
+# DataLayer - Real-time variable sharing between PLCs
+datalayer:
+  enabled: true
+  type: tcp              # 'tcp' for network, 'shm' for same-host shared memory
+
+  # Server mode - this PLC accepts connections
+  address: ":4222"       # Listen on all interfaces, port 4222
+  is_server: true
+
+  # Node identification
+  node_id: "plc1"        # Unique identifier for this PLC
+
+  # Publishing - share variables with other PLCs
+  publish_vars: true
+  publish_prefixes:      # Only publish variables starting with these prefixes
+    - "PLC1_"            # e.g., PLC1_Temperature, PLC1_Status
+    - "SHARED_"          # Shared setpoints
+
+  # Subscribing - receive variables from other PLCs
+  subscribe_paths:
+    - "plc2.vars.PLC2_*"         # All PLC2_ variables from plc2
+    - "plc3.vars.SHARED_*"       # Shared variables from plc3
+
+  # Performance tuning
+  sync_interval_ms: 5    # Sync every 5ms
+  batch_size: 100        # Max variables per batch
+
+# Protocols
+protocols:
+  modbus:
+    enabled: true
+    port: 502
+
+  opcua:
+    enabled: true
+    port: 4840
+    endpoint: "opc.tcp://0.0.0.0:4840/goplc"
+
+# API
+api:
+  port: 8082
+
+project:
+  auto_start: true
