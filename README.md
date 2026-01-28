@@ -214,15 +214,15 @@ GOPLC includes **53,000+ lines** of industrial protocol code for seamless integr
 | **Nextion HMI** | Serial/UART | Touch Display | Local operator interface |
 | **USB Camera** | rpicam-still | Vision | Barcode, QC inspection |
 | **ESP32 Remote I/O** | Modbus TCP | WiFi I/O Module | Wireless sensors/actuators |
+| **Raspberry Pi GPIO** | Direct | Digital I/O | Edge computing, local control |
+| **PCF8574** | I2C | 8-bit I/O Expander | Expand GPIO count |
+| **Grove ADC** | I2C | Analog Input | Seeed Studio sensors |
 
 **Implemented - Testing Soon:**
 
 | Device | Interface | I/O Type | Use Case |
 |--------|-----------|----------|----------|
-| **Raspberry Pi GPIO** | Direct | Digital I/O | Edge computing, local control |
 | **Orange Pi GPIO** | Direct | Digital I/O | Cost-effective edge nodes |
-| **PCF8574** | I2C | 8-bit I/O Expander | Expand GPIO count |
-| **Grove ADC** | I2C | Analog Input | Seeed Studio sensors |
 | **ADXL345** | I2C | Accelerometer | Vibration monitoring |
 | **DHT11/22** | 1-Wire | Temp/Humidity | Environmental sensing |
 | **TFT Display** | SPI | Graphics Display | Custom HMI screens |
