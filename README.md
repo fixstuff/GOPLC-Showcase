@@ -501,12 +501,83 @@ See the [`examples/configs/`](examples/configs/) directory:
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
+### Modbus Scalability Test - 500 Servers (January 2026)
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  MODBUS TCP SCALABILITY: 500 SERVERS + 500 CLIENTS                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  SERVER PLC (500 Modbus TCP servers on ports 7000-7499)                 │
+│  ├── Servers:      500 concurrent Modbus TCP listeners                  │
+│  ├── Registers:    100 per server (shared %QW0-99)                      │
+│  ├── Avg Scan:     0.58ms (generating sin/cos waveforms)                │
+│  ├── Scans:        36,000+ completed                                    │
+│  └── Errors:       0                                                    │
+│                                                                          │
+│  CLIENT PLC (500 Modbus TCP clients with PTR_QW pointer writes)         │
+│  ├── Clients:      500 concurrent connections                           │
+│  ├── Writes/scan:  50,000 registers via PTR_QW pointer arithmetic       │
+│  ├── Avg Scan:     167ms (50K SIN calculations + pointer writes)        │
+│  ├── Scans:        2,000+ completed                                     │
+│  └── Errors:       0                                                    │
+│                                                                          │
+│  PTR_QW POINTER PERFORMANCE (isolated benchmark):                       │
+│  ├── Direct %QW (unrolled):    1.24 µs/write                            │
+│  ├── PTR_QW (loop):            1.52 µs/write                            │
+│  ├── Array indexing (loop):    1.61 µs/write                            │
+│  └── Overhead:                 ~22% vs direct (includes loop)           │
+│                                                                          │
+│  Effective Rate: ~300,000 register writes/second                        │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**PTR_QW Feature:** New system constants for pointer arithmetic with I/O memory:
+- `PTR_QW` - Base pointer for output words (%QW)
+- `PTR_IW` - Base pointer for input words (%IW)
+- `PTR_MW` - Base pointer for marker words (%MW)
+
+Enables efficient bulk I/O operations: `(PTR_QW + offset)^ := value`
+
+### Modbus Scalability Test - 5000 Servers (January 2026)
+
+<p align="center">
+  <img src="assets/benchmark-5000-servers.svg" alt="5000 Server Benchmark" width="700">
+</p>
+
+**Configuration:**
+- 5000 concurrent Modbus TCP servers on ports 7000-11999
+- ST program: Counter + GSV_TASKSCANTIME() writing to %QW0-1
+- All servers receive same PLC outputs via driver broadcast
+
+**Results:**
+| Metric | Value |
+|--------|-------|
+| Scan Execution Time | 20-50µs (avg 30µs) |
+| Memory Usage | 780 MB (~156 KB/server) |
+| CPU Usage | 50% |
+| Stability | 12+ minutes, 0 errors |
+
+<p align="center">
+  <img src="assets/scan-time-distribution.svg" alt="Scan Time Distribution" width="550">
+</p>
+
+**Driver Broadcast Architecture:**
+
+<p align="center">
+  <img src="assets/architecture-driver-broadcast.svg" alt="Driver Broadcast" width="700">
+</p>
+
 ### Benchmarks
 
 | Metric | Result |
 |--------|--------|
-| **Minimum scan time** | 100μs sustained |
+| **Scan execution time** | 20-50μs (5000 servers) |
+| **Minimum scan interval** | 100μs sustained |
 | **Modbus throughput** | 89,769 req/sec (100 connections) |
+| **Modbus scalability** | 5000 servers (780 MB), 500 clients (0 errors) |
+| **PTR_QW writes** | ~300,000 registers/sec |
 | **DataLayer latency** | <1ms P50, <3ms P99 |
 | **Memory footprint** | ~65MB typical, ~150MB with DataLayer |
 | **ST functions** | 1,450+ available |

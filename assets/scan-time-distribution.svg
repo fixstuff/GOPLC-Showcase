@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 280">
+  <defs>
+    <linearGradient id="distGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4ecdc4;stop-opacity:0.3" />
+      <stop offset="50%" style="stop-color:#4ecdc4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4ecdc4;stop-opacity:0.3" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="600" height="280" fill="#1a1a2e" rx="10"/>
+
+  <!-- Title -->
+  <text x="300" y="35" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="18" font-weight="bold">
+    Scan Time Distribution (5000 Servers)
+  </text>
+
+  <!-- Axes -->
+  <line x1="80" y1="200" x2="520" y2="200" stroke="#444" stroke-width="2"/>
+  <line x1="80" y1="200" x2="80" y2="60" stroke="#444" stroke-width="2"/>
+
+  <!-- X-axis labels -->
+  <text x="80" y="220" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="11">0</text>
+  <text x="168" y="220" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="11">10µs</text>
+  <text x="256" y="220" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="11" font-weight="bold">20µs</text>
+  <text x="344" y="220" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="11" font-weight="bold">30µs</text>
+  <text x="432" y="220" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="11" font-weight="bold">50µs</text>
+  <text x="520" y="220" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="11">100µs</text>
+
+  <!-- Axis title -->
+  <text x="300" y="245" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="12">Program Execution Time</text>
+
+  <!-- Distribution curve (bell curve approximation) -->
+  <path d="M 80 195
+           Q 168 195, 220 180
+           Q 256 160, 280 100
+           Q 300 70, 344 90
+           Q 380 110, 420 160
+           Q 450 185, 520 195"
+        fill="none" stroke="#4ecdc4" stroke-width="3"/>
+
+  <!-- Shaded area -->
+  <path d="M 256 200
+           Q 256 160, 280 100
+           Q 300 70, 344 90
+           Q 380 110, 420 160
+           Q 432 185, 432 200 Z"
+        fill="url(#distGrad)" opacity="0.5"/>
+
+  <!-- Peak indicator -->
+  <line x1="344" y1="90" x2="344" y2="200" stroke="#ff6b6b" stroke-width="1" stroke-dasharray="4"/>
+  <circle cx="344" cy="90" r="6" fill="#ff6b6b"/>
+  <text x="344" y="75" text-anchor="middle" fill="#ff6b6b" font-family="Arial, sans-serif" font-size="12" font-weight="bold">30µs avg</text>
+
+  <!-- Range markers -->
+  <line x1="256" y1="180" x2="256" y2="200" stroke="#4ecdc4" stroke-width="2"/>
+  <line x1="432" y1="160" x2="432" y2="200" stroke="#4ecdc4" stroke-width="2"/>
+
+  <!-- Range bracket -->
+  <path d="M 256 165 L 256 155 L 432 155 L 432 165" fill="none" stroke="#4ecdc4" stroke-width="1"/>
+  <text x="344" y="150" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="11">20-50µs range</text>
+
+  <!-- Stats box -->
+  <rect x="420" y="60" width="160" height="80" fill="#222" rx="5" stroke="#444" stroke-width="1"/>
+  <text x="500" y="82" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">Stats</text>
+  <text x="430" y="100" fill="#888" font-family="monospace" font-size="10">Min:</text>
+  <text x="570" y="100" fill="#4ecdc4" font-family="monospace" font-size="10" text-anchor="end">20µs</text>
+  <text x="430" y="115" fill="#888" font-family="monospace" font-size="10">Avg:</text>
+  <text x="570" y="115" fill="#ff6b6b" font-family="monospace" font-size="10" text-anchor="end">30µs</text>
+  <text x="430" y="130" fill="#888" font-family="monospace" font-size="10">Max:</text>
+  <text x="570" y="130" fill="#4ecdc4" font-family="monospace" font-size="10" text-anchor="end">50µs</text>
+
+  <!-- Footer -->
+  <text x="300" y="268" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="10">
+    Measured via GSV_TASKSCANTIME() → %QW1 → Modbus read | 10ms configured scan interval
+  </text>
+</svg>
