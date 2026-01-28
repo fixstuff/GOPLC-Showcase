@@ -381,66 +381,15 @@ See the [`examples/configs/`](examples/configs/) directory:
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              GOPLC Runtime                                   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │  Fast Task  │  │ Medium Task │  │  Slow Task  │  │  Event Task │        │
-│  │   100μs     │  │    1ms      │  │   100ms     │  │  On-demand  │        │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘        │
-│         │                │                │                │                │
-│         └────────────────┴────────────────┴────────────────┘                │
-│                                  │                                           │
-│                    ┌─────────────▼─────────────┐                            │
-│                    │     Task Scheduler        │                            │
-│                    │  (Priority-based, Co-op)  │                            │
-│                    └─────────────┬─────────────┘                            │
-│                                  │                                           │
-│  ┌───────────────────────────────┼───────────────────────────────┐          │
-│  │                          Core Engine                          │          │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐          │          │
-│  │  │ Parser  │  │  Eval   │  │ I/O Mem │  │ Globals │          │          │
-│  │  │  (ST)   │  │  (AST)  │  │ (IEC)   │  │ (Vars)  │          │          │
-│  │  └─────────┘  └─────────┘  └─────────┘  └─────────┘          │          │
-│  └───────────────────────────────┬───────────────────────────────┘          │
-│                                  │                                           │
-├──────────────────────────────────┼──────────────────────────────────────────┤
-│                            Protocol Layer                                    │
-│                                                                              │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐  │
-│  │ Modbus  │ │ EIP/CIP │ │ OPC UA  │ │  DNP3   │ │ BACnet  │ │  FINS   │  │
-│  │TCP/RTU  │ │Adpt/Scan│ │Srv/Cli  │ │Mst/Out  │ │IP/MSTP  │ │ Client  │  │
-│  └────┬────┘ └────┬────┘ └────┬────┘ └────┬────┘ └────┬────┘ └────┬────┘  │
-│       │          │          │          │          │          │            │
-├───────┴──────────┴──────────┴──────────┴──────────┴──────────┴────────────┤
-│                                                                              │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │  DataLayer  │  │    MQTT     │  │  REST API   │  │  WebSocket  │        │
-│  │ TCP/SHM     │  │  Pub/Sub    │  │ + Web IDE   │  │  Streaming  │        │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘        │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="assets/architecture-overview.svg" alt="GOPLC Runtime Architecture" width="800">
+</p>
 
 ### Multi-PLC Clustering
 
-```
-                    ┌─────────────────┐
-                    │   Boss Node     │
-                    │  (Coordinator)  │
-                    │   TCP :8082     │
-                    └────────┬────────┘
-                             │
-            ┌────────────────┼────────────────┐
-            │                │                │
-     ┌──────▼──────┐  ┌──────▼──────┐  ┌──────▼──────┐
-     │  Minion 1   │  │  Minion 2   │  │  Minion 3   │
-     │  (Unix Sock)│  │  (Unix Sock)│  │  (Unix Sock)│
-     │  Area A     │  │  Area B     │  │  Area C     │
-     └─────────────┘  └─────────────┘  └─────────────┘
-```
+<p align="center">
+  <img src="assets/multi-plc-clustering.svg" alt="Multi-PLC Clustering" width="550">
+</p>
 
 ---
 
@@ -450,29 +399,9 @@ See the [`examples/configs/`](examples/configs/) directory:
 
 3 GOPLC instances running simultaneously with DataLayer synchronization:
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  CLUSTER: 3 PLCs │ 9 Tasks │ 27 Programs │ 13,400+ Lines ST Code        │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  PLC1 (DataLayer Server)              Memory: ~100 MB                   │
-│  ├── FastTask    (10ms)  avg: 0.77ms  ██████████████░░░░░░░  77% margin │
-│  ├── MediumTask  (50ms)  avg: 0.16ms  ██░░░░░░░░░░░░░░░░░░░  99% margin │
-│  └── SlowTask   (100ms)  avg: 0.12ms  █░░░░░░░░░░░░░░░░░░░░  99% margin │
-│                                                                          │
-│  PLC2 (DataLayer Client)              Memory: ~143 MB                   │
-│  ├── FastTask    (10ms)  avg: 0.58ms  ██████████░░░░░░░░░░░  94% margin │
-│  ├── MediumTask  (50ms)  avg: 0.17ms  ██░░░░░░░░░░░░░░░░░░░  99% margin │
-│  └── SlowTask   (100ms)  avg: 0.12ms  █░░░░░░░░░░░░░░░░░░░░  99% margin │
-│                                                                          │
-│  PLC3 (DataLayer Client)              Memory: ~147 MB                   │
-│  ├── FastTask    (10ms)  avg: 0.48ms  ████████░░░░░░░░░░░░░  95% margin │
-│  ├── MediumTask  (50ms)  avg: 0.16ms  ██░░░░░░░░░░░░░░░░░░░  99% margin │
-│  └── SlowTask   (100ms)  avg: 0.12ms  █░░░░░░░░░░░░░░░░░░░░  99% margin │
-│                                                                          │
-│  All tasks: 0 faults │ Sub-millisecond avg scan times                   │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="assets/live-multi-plc-benchmark.svg" alt="Live Multi-PLC Benchmark" width="750">
+</p>
 
 **Test Configuration:**
 - 3 PLCs with DataLayer TCP sync (server + 2 clients)
@@ -483,55 +412,15 @@ See the [`examples/configs/`](examples/configs/) directory:
 
 ### Modbus Stress Test (January 2026)
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  MODBUS TCP BENCHMARK                                                    │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  Server: GOPLC Modbus TCP with 100 dynamic registers                    │
-│  Clients: 100 concurrent connections                                     │
-│  Operations: 100-register reads + single-register writes                 │
-│  Requests: 400,000 total (2,000 per client)                             │
-│                                                                          │
-│  Throughput:  89,769 requests/second                                    │
-│  Latency:     0.01ms average response time                              │
-│  Errors:      0 failed transactions                                     │
-│  Data:        Dynamic sin/cos wave values (changes every 10ms)          │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="assets/modbus-stress-test.svg" alt="Modbus Stress Test" width="650">
+</p>
 
 ### Modbus Scalability Test - 500 Servers (January 2026)
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  MODBUS TCP SCALABILITY: 500 SERVERS + 500 CLIENTS                       │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  SERVER PLC (500 Modbus TCP servers on ports 7000-7499)                 │
-│  ├── Servers:      500 concurrent Modbus TCP listeners                  │
-│  ├── Registers:    100 per server (shared %QW0-99)                      │
-│  ├── Avg Scan:     0.58ms (generating sin/cos waveforms)                │
-│  ├── Scans:        36,000+ completed                                    │
-│  └── Errors:       0                                                    │
-│                                                                          │
-│  CLIENT PLC (500 Modbus TCP clients with PTR_QW pointer writes)         │
-│  ├── Clients:      500 concurrent connections                           │
-│  ├── Writes/scan:  50,000 registers via PTR_QW pointer arithmetic       │
-│  ├── Avg Scan:     167ms (50K SIN calculations + pointer writes)        │
-│  ├── Scans:        2,000+ completed                                     │
-│  └── Errors:       0                                                    │
-│                                                                          │
-│  PTR_QW POINTER PERFORMANCE (isolated benchmark):                       │
-│  ├── Direct %QW (unrolled):    1.24 µs/write                            │
-│  ├── PTR_QW (loop):            1.52 µs/write                            │
-│  ├── Array indexing (loop):    1.61 µs/write                            │
-│  └── Overhead:                 ~22% vs direct (includes loop)           │
-│                                                                          │
-│  Effective Rate: ~300,000 register writes/second                        │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="assets/modbus-500-servers.svg" alt="Modbus 500 Servers Benchmark" width="700">
+</p>
 
 **PTR_QW Feature:** New system constants for pointer arithmetic with I/O memory:
 - `PTR_QW` - Base pointer for output words (%QW)
@@ -585,12 +474,9 @@ Enables efficient bulk I/O operations: `(PTR_QW + offset)^ := value`
 
 ### Latency Distribution (2ms scan, DataLayer TCP)
 
-```
-Direction       │ Avg    │ P50    │ P95    │ P99    │ Max
-────────────────┼────────┼────────┼────────┼────────┼────────
-Client→Server   │ 1.04ms │ 1.26ms │ 2.82ms │ 3.08ms │ 3.30ms
-Server→Client   │ 1.08ms │ 1.29ms │ 2.76ms │ 3.14ms │ 5.08ms
-```
+<p align="center">
+  <img src="assets/latency-distribution.svg" alt="Latency Distribution" width="600">
+</p>
 
 ---
 

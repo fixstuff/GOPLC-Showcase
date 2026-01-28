@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 320">
+  <defs>
+    <linearGradient id="bossGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ADD8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#007d9c;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="minionGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ecdc4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2ab7aa;stop-opacity:1" />
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#ff6b6b"/>
+    </marker>
+    <filter id="glow">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="600" height="320" fill="#1a1a2e" rx="10"/>
+
+  <!-- Title -->
+  <text x="300" y="35" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="20" font-weight="bold">
+    Multi-PLC Clustering Architecture
+  </text>
+
+  <!-- Boss Node -->
+  <g filter="url(#glow)">
+    <rect x="225" y="60" width="150" height="80" fill="url(#bossGrad)" rx="10"/>
+    <text x="300" y="90" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="16" font-weight="bold">Boss Node</text>
+    <text x="300" y="110" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="12">(Coordinator)</text>
+    <text x="300" y="130" text-anchor="middle" fill="#1a1a2e" font-family="monospace" font-size="11">TCP :8082</text>
+  </g>
+
+  <!-- Connection Lines -->
+  <line x1="265" y1="140" x2="120" y2="180" stroke="#ff6b6b" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="300" y1="140" x2="300" y2="180" stroke="#ff6b6b" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="335" y1="140" x2="480" y2="180" stroke="#ff6b6b" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Minion Nodes -->
+  <g filter="url(#glow)">
+    <rect x="45" y="190" width="150" height="100" fill="url(#minionGrad)" rx="10"/>
+    <text x="120" y="220" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Minion 1</text>
+    <text x="120" y="245" text-anchor="middle" fill="#1a1a2e" font-family="monospace" font-size="11">(Unix Socket)</text>
+    <text x="120" y="270" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="12">Area A</text>
+  </g>
+
+  <g filter="url(#glow)">
+    <rect x="225" y="190" width="150" height="100" fill="url(#minionGrad)" rx="10"/>
+    <text x="300" y="220" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Minion 2</text>
+    <text x="300" y="245" text-anchor="middle" fill="#1a1a2e" font-family="monospace" font-size="11">(Unix Socket)</text>
+    <text x="300" y="270" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="12">Area B</text>
+  </g>
+
+  <g filter="url(#glow)">
+    <rect x="405" y="190" width="150" height="100" fill="url(#minionGrad)" rx="10"/>
+    <text x="480" y="220" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Minion 3</text>
+    <text x="480" y="245" text-anchor="middle" fill="#1a1a2e" font-family="monospace" font-size="11">(Unix Socket)</text>
+    <text x="480" y="270" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="12">Area C</text>
+  </g>
+</svg>

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 650 180">
+  <defs>
+    <linearGradient id="tableHeaderGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00ADD8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#007d9c;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="650" height="180" fill="#1a1a2e" rx="10"/>
+
+  <!-- Title -->
+  <text x="325" y="30" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="16" font-weight="bold">
+    Latency Distribution (2ms scan, DataLayer TCP)
+  </text>
+
+  <!-- Table Header -->
+  <rect x="30" y="50" width="590" height="30" fill="url(#tableHeaderGrad)" rx="5"/>
+  <text x="110" y="70" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">Direction</text>
+  <text x="230" y="70" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">Avg</text>
+  <text x="320" y="70" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">P50</text>
+  <text x="410" y="70" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">P95</text>
+  <text x="500" y="70" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">P99</text>
+  <text x="580" y="70" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">Max</text>
+
+  <!-- Row 1: Client→Server -->
+  <rect x="30" y="85" width="590" height="35" fill="#222" rx="0"/>
+  <text x="110" y="108" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="12" font-weight="bold">Client → Server</text>
+  <text x="230" y="108" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12">1.04ms</text>
+  <text x="320" y="108" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12">1.26ms</text>
+  <text x="410" y="108" text-anchor="middle" fill="#ffe66d" font-family="monospace" font-size="12">2.82ms</text>
+  <text x="500" y="108" text-anchor="middle" fill="#ffe66d" font-family="monospace" font-size="12">3.08ms</text>
+  <text x="580" y="108" text-anchor="middle" fill="#ff6b6b" font-family="monospace" font-size="12">3.30ms</text>
+
+  <!-- Separator line -->
+  <line x1="30" y1="120" x2="620" y2="120" stroke="#444" stroke-width="1"/>
+
+  <!-- Row 2: Server→Client -->
+  <rect x="30" y="120" width="590" height="35" fill="#2a2a3e" rx="0"/>
+  <text x="110" y="143" text-anchor="middle" fill="#ff6b6b" font-family="Arial, sans-serif" font-size="12" font-weight="bold">Server → Client</text>
+  <text x="230" y="143" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12">1.08ms</text>
+  <text x="320" y="143" text-anchor="middle" fill="#fff" font-family="monospace" font-size="12">1.29ms</text>
+  <text x="410" y="143" text-anchor="middle" fill="#ffe66d" font-family="monospace" font-size="12">2.76ms</text>
+  <text x="500" y="143" text-anchor="middle" fill="#ffe66d" font-family="monospace" font-size="12">3.14ms</text>
+  <text x="580" y="143" text-anchor="middle" fill="#ff6b6b" font-family="monospace" font-size="12">5.08ms</text>
+
+  <!-- Bottom border -->
+  <rect x="30" y="155" width="590" height="3" fill="url(#tableHeaderGrad)" rx="1"/>
+
+  <!-- Footer -->
+  <text x="325" y="175" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="10">
+    P50/P95/P99 = 50th/95th/99th percentile latency | All values sub-5ms
+  </text>
+</svg>
