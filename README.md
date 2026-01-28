@@ -89,38 +89,166 @@ realtime:
 
 ## Protocols
 
-GOPLC includes industrial-grade protocol drivers for seamless integration with existing automation systems.
+GOPLC includes **53,000+ lines** of industrial protocol code for seamless integration with existing automation systems.
 
-### Industrial Protocols
+### Industrial Protocols (11 Total)
 
-| Protocol | Role | Features |
-|----------|------|----------|
-| **Modbus TCP/RTU** | Server + Client | Coils, registers, RS-485, diagnostics |
-| **EtherNet/IP** | Adapter + Scanner | CIP messaging, I/O assemblies |
-| **OPC UA** | Server + Client | Browse, read, write, subscriptions |
-| **DNP3** | Master + Outstation | Events, unsolicited, SBO, serial |
-| **BACnet/IP** | Client | COV, schedules, priority arrays, alarms |
-| **BACnet/MSTP** | Client | RS-485 serial, token passing |
-| **FINS** | Client | Omron PLC communication |
-| **S7** | Client | Siemens S7 protocol |
-| **DF1** | Client | Allen-Bradley legacy (SLC 500, MicroLogix) |
+| Protocol | Role | Transport | Lines | Target Systems |
+|----------|------|-----------|-------|----------------|
+| **Modbus TCP/RTU** | Server + Client | TCP, UDP, Serial | 7,241 | Universal - PLCs, VFDs, meters, sensors |
+| **DNP3** | Master + Outstation | TCP, UDP, Serial | 13,354 | SCADA - Electric, water, gas utilities |
+| **BACnet/IP & MSTP** | Server + Client | UDP, RS-485 | 7,883 | Building automation - HVAC, fire, access |
+| **EtherNet/IP** | Adapter + Scanner | TCP, UDP | 5,388 | Allen-Bradley - CompactLogix, ControlLogix |
+| **OPC UA** | Server + Client | TCP | 4,496 | Modern - Cloud integration, MES, SCADA |
+| **FINS** | Server + Client | TCP, UDP | 3,565 | Omron - NX, NY, CP, CJ series PLCs |
+| **S7comm** | Server + Client | TCP (TPKT/COTP) | 2,441 | Siemens - S7-300, S7-400, S7-1200, S7-1500 |
+| **PROFINET** | Server + Client | TCP, UDP | 1,997 | Siemens - Real-time industrial Ethernet |
+| **SEL** | Server + Client | Serial | 1,758 | Protective relays - Power system monitoring |
+| **SNMP v1/v2c/v3** | Client + Trap | UDP | 3,597 | Network devices - Switches, UPS, sensors |
+| **DF1** | Client | Serial | 1,417 | Allen-Bradley legacy - SLC 500, MicroLogix, PLC-5 |
 
-### Communication
+### Protocol Features
 
-| Feature | Description |
-|---------|-------------|
-| **DataLayer** | TCP or shared memory sync between PLCs |
-| **MQTT** | Publish variables, receive commands |
-| **HTTP/REST** | Full REST API + WebSocket streaming |
-| **Store-and-Forward** | SQLite buffer with compression & encryption |
+<details>
+<summary><strong>Modbus TCP/RTU</strong> - Click to expand</summary>
+
+- Full function code support (FC01-06, FC15-16)
+- Coils, discrete inputs, holding registers, input registers
+- RTU framing with CRC-16
+- RS-485 half-duplex with RTS control
+- Connection pooling and retry logic
+- Diagnostics counters (FC08)
+- Gateway mode (TCP to RTU bridge)
+
+</details>
+
+<details>
+<summary><strong>DNP3</strong> - Click to expand</summary>
+
+- Complete Master and Outstation implementation
+- Binary/Analog inputs and outputs
+- Counters with freeze support
+- Event buffering with classes (1, 2, 3)
+- Unsolicited responses
+- Select-Before-Operate (SBO) control
+- Time synchronization
+- Serial transport (RS-232/RS-485)
+- Data link layer with FCB/FCV
+
+</details>
+
+<details>
+<summary><strong>BACnet/IP & MSTP</strong> - Click to expand</summary>
+
+- BACnet/IP over UDP (port 47808)
+- BACnet/MSTP over RS-485 (token passing)
+- All standard object types (AI, AO, AV, BI, BO, BV, MI, MO, MV)
+- COV (Change of Value) subscriptions
+- ReadPropertyMultiple for efficient polling
+- Priority arrays (1-16) for commandable objects
+- Schedule and Calendar objects
+- TrendLog objects
+- Alarm and Event services
+- Segmentation for large responses
+- Device discovery (Who-Is/I-Am)
+
+</details>
+
+<details>
+<summary><strong>EtherNet/IP</strong> - Click to expand</summary>
+
+- CIP (Common Industrial Protocol) messaging
+- Adapter mode (expose tags to scanners)
+- Scanner mode (read/write remote tags)
+- Explicit messaging (TCP port 44818)
+- Implicit I/O (UDP port 2222)
+- ForwardOpen/ForwardClose connections
+- Unconnected messaging (UCMM)
+- Assembly objects for I/O data
+
+</details>
+
+<details>
+<summary><strong>OPC UA</strong> - Click to expand</summary>
+
+- Server and Client implementation
+- Secure channel management
+- Session authentication
+- Node browsing
+- Read/Write attributes
+- Subscriptions with monitored items
+- Method calls
+- Security policies (None, Basic256Sha256)
+
+</details>
+
+<details>
+<summary><strong>SNMP v1/v2c/v3</strong> - Click to expand</summary>
+
+- SNMP v1, v2c, and v3 support
+- GET, SET, GETNEXT, GETBULK operations
+- WALK for MIB traversal
+- Trap receiver
+- SNMPv3 authentication (MD5, SHA)
+- SNMPv3 privacy (DES, AES)
+- ASN.1 BER encoding
+
+</details>
+
+### Communication Layer
+
+| Module | Purpose | Transport | Features |
+|--------|---------|-----------|----------|
+| **DataLayer** | Multi-PLC sync | TCP, Shared Memory | Real-time variable sharing, <1ms latency, prefix filtering |
+| **MQTT** | IoT/Cloud | TCP, TLS | Publish variables, subscribe to commands, QoS 0/1/2 |
+| **HTTP/REST** | Integration | TCP | 60+ API endpoints, WebSocket streaming, SSE watch |
+| **Store-and-Forward** | Reliability | SQLite | Offline buffering, GZIP compression, AES-256 encryption |
+| **Serial** | Legacy | RS-232/485 | Configurable baud, parity, RTS/CTS flow control |
+
+### Hardware Abstraction Layer (HAL)
+
+**Tested & Production Ready:**
+
+| Device | Interface | I/O Type | Use Case |
+|--------|-----------|----------|----------|
+| **Nextion HMI** | Serial/UART | Touch Display | Local operator interface |
+| **USB Camera** | rpicam-still | Vision | Barcode, QC inspection |
+| **ESP32 Remote I/O** | Modbus TCP | WiFi I/O Module | Wireless sensors/actuators |
+
+**Implemented - Testing Soon:**
+
+| Device | Interface | I/O Type | Use Case |
+|--------|-----------|----------|----------|
+| **Raspberry Pi GPIO** | Direct | Digital I/O | Edge computing, local control |
+| **Orange Pi GPIO** | Direct | Digital I/O | Cost-effective edge nodes |
+| **PCF8574** | I2C | 8-bit I/O Expander | Expand GPIO count |
+| **Grove ADC** | I2C | Analog Input | Seeed Studio sensors |
+| **ADXL345** | I2C | Accelerometer | Vibration monitoring |
+| **DHT11/22** | 1-Wire | Temp/Humidity | Environmental sensing |
+| **TFT Display** | SPI | Graphics Display | Custom HMI screens |
+| **Propeller 2** | Serial | 8-core MCU | High-speed I/O, motor control |
+
+**Planned:**
+
+| Device | Interface | I/O Type | Use Case |
+|--------|-----------|----------|----------|
+| **MCP3008** | SPI | 8-ch 10-bit ADC | Analog sensor input |
+| **ADS1115** | I2C | 4-ch 16-bit ADC | Precision measurement |
+| **MAX31855** | SPI | Thermocouple | High-temp sensing |
+| **MCP23017** | I2C | 16-bit I/O Expander | More GPIO |
+| **W5500** | SPI | Ethernet | Wired network on MCU |
 
 ### Protocol Analyzer
 
-Built-in packet capture and analysis for debugging:
+Built-in packet capture and analysis with support for all protocols:
 
 ```bash
-# Start capture
-curl -X POST http://localhost:8082/api/analyzer/start
+# Start capture with filters
+curl -X POST http://localhost:8082/api/analyzer/start \
+  -d '{"protocols": ["modbus-tcp", "dnp3", "bacnet"]}'
+
+# View captured transactions
+curl http://localhost:8082/api/analyzer/transactions?limit=100
 
 # Export to Wireshark
 curl http://localhost:8082/api/analyzer/export/pcap -o capture.pcap
@@ -129,6 +257,22 @@ curl http://localhost:8082/api/analyzer/export/pcap -o capture.pcap
 curl -X POST http://localhost:8082/api/analyzer/decode \
   -d '{"protocol":"modbus-tcp","raw_hex":"00 01 00 00 00 06 01 03 00 00 00 0A"}'
 ```
+
+**Supported decoders:** Modbus TCP/RTU, DNP3, BACnet/IP, EtherNet/IP, OPC UA, S7, FINS, SEL
+
+### Protocol Coverage by Industry
+
+| Industry | Protocols |
+|----------|-----------|
+| **Manufacturing** | Modbus, EtherNet/IP, PROFINET, S7, FINS, OPC UA |
+| **Building Automation** | BACnet/IP, BACnet/MSTP, Modbus, SNMP, OPC UA |
+| **Utilities/SCADA** | DNP3, Modbus, SEL, OPC UA |
+| **Oil & Gas** | Modbus, DNP3, OPC UA, EtherNet/IP |
+| **Water/Wastewater** | DNP3, Modbus, OPC UA |
+| **Power Generation** | DNP3, Modbus, SEL, IEC 61850 (planned) |
+| **Food & Beverage** | EtherNet/IP, Modbus, OPC UA, S7 |
+| **Pharmaceutical** | OPC UA, Modbus, S7, EtherNet/IP |
+| **Data Centers** | SNMP, Modbus, BACnet |
 
 ---
 
