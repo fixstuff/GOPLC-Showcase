@@ -1,0 +1,242 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 700">
+  <defs>
+    <linearGradient id="corpGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="supGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ADD8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#007d9c;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="edgeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ecdc4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2ab7aa;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="devGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffe66d;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d4b93c;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="mqttGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="dnp3Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ea580c;stop-opacity:1" />
+    </linearGradient>
+    <marker id="arrW" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#fff"/>
+    </marker>
+    <marker id="arrG" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#22c55e"/>
+    </marker>
+    <marker id="arrO" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#f97316"/>
+    </marker>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="700" fill="#1a1a2e" rx="10"/>
+
+  <!-- Title -->
+  <text x="480" y="35" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="22" font-weight="bold">
+    Data Center Three-Tier Architecture
+  </text>
+  <text x="480" y="55" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="13">
+    Edge Modules → Site Supervisor → Corporate Dashboard
+  </text>
+
+  <!-- ==================== TIER 1: CORPORATE ==================== -->
+  <text x="30" y="90" fill="#a855f7" font-family="Arial, sans-serif" font-size="12" font-weight="bold">CORPORATE</text>
+
+  <g filter="url(#shadow)">
+    <rect x="280" y="80" width="400" height="65" fill="url(#corpGrad)" rx="10"/>
+    <text x="480" y="107" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="16" font-weight="bold">Corporate / Cloud Layer</text>
+    <text x="480" y="130" text-anchor="middle" fill="#e0d0ff" font-family="Arial, sans-serif" font-size="12">Grafana | SCADA | Tenant Portals — MQTT Subscribe / OPC UA Browse</text>
+  </g>
+
+  <!-- Corp to Supervisor lines -->
+  <line x1="480" y1="145" x2="480" y2="170" stroke="#a855f7" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrW)"/>
+
+  <!-- ==================== TIER 2: SUPERVISOR ==================== -->
+  <text x="30" y="190" fill="#00ADD8" font-family="Arial, sans-serif" font-size="12" font-weight="bold">SUPERVISOR</text>
+
+  <g filter="url(#shadow)">
+    <rect x="180" y="178" width="600" height="110" fill="#222" rx="10" stroke="#00ADD8" stroke-width="2"/>
+
+    <!-- Boss -->
+    <rect x="340" y="188" width="280" height="40" fill="url(#supGrad)" rx="6"/>
+    <text x="480" y="214" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Supervisor Boss — Concentrator</text>
+
+    <!-- Minions row -->
+    <rect x="200" y="240" width="160" height="35" fill="#334" rx="5" stroke="#00ADD8" stroke-width="1"/>
+    <text x="280" y="263" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="11">Minion 0: OPC UA → A1</text>
+
+    <rect x="380" y="240" width="160" height="35" fill="#334" rx="5" stroke="#00ADD8" stroke-width="1"/>
+    <text x="460" y="263" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="11">Minion 1: OPC UA → A2</text>
+
+    <rect x="560" y="240" width="160" height="35" fill="#334" rx="5" stroke="#00ADD8" stroke-width="1"/>
+    <text x="640" y="263" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="11">Minion 2: OPC UA → A3</text>
+  </g>
+
+  <!-- Rollup label -->
+  <text x="815" y="220" fill="#888" font-family="Arial, sans-serif" font-size="10" font-style="italic">Total_Power_kW</text>
+  <text x="815" y="233" fill="#888" font-family="Arial, sans-serif" font-size="10" font-style="italic">Avg_Supply_Temp</text>
+  <text x="815" y="246" fill="#888" font-family="Arial, sans-serif" font-size="10" font-style="italic">Modules_Online</text>
+
+  <!-- Dual-path labels -->
+  <rect x="40" y="310" width="80" height="22" fill="url(#mqttGrad)" rx="4"/>
+  <text x="80" y="326" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="10" font-weight="bold">MQTT</text>
+  <text x="130" y="326" fill="#22c55e" font-family="Arial, sans-serif" font-size="10">Primary</text>
+
+  <rect x="40" y="340" width="80" height="22" fill="url(#dnp3Grad)" rx="4"/>
+  <text x="80" y="356" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="10" font-weight="bold">DNP3</text>
+  <text x="130" y="356" fill="#f97316" font-family="Arial, sans-serif" font-size="10">Backup</text>
+
+  <!-- Supervisor to Edge lines (dual path) -->
+  <!-- MQTT (green solid) -->
+  <line x1="280" y1="288" x2="180" y2="395" stroke="#22c55e" stroke-width="2" marker-end="url(#arrG)"/>
+  <line x1="460" y1="288" x2="480" y2="395" stroke="#22c55e" stroke-width="2" marker-end="url(#arrG)"/>
+  <line x1="640" y1="288" x2="780" y2="395" stroke="#22c55e" stroke-width="2" marker-end="url(#arrG)"/>
+  <!-- DNP3 (orange dashed) -->
+  <line x1="290" y1="288" x2="190" y2="395" stroke="#f97316" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrO)"/>
+  <line x1="470" y1="288" x2="490" y2="395" stroke="#f97316" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrO)"/>
+  <line x1="650" y1="288" x2="790" y2="395" stroke="#f97316" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrO)"/>
+
+  <!-- ==================== TIER 3: EDGE MODULES ==================== -->
+  <text x="30" y="415" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="12" font-weight="bold">EDGE MODULES</text>
+
+  <!-- Edge Module A1 -->
+  <g filter="url(#shadow)">
+    <rect x="50" y="400" width="260" height="150" fill="#222" rx="10" stroke="#4ecdc4" stroke-width="2"/>
+
+    <rect x="100" y="410" width="160" height="30" fill="url(#edgeGrad)" rx="6"/>
+    <text x="180" y="431" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Edge Module A1</text>
+    <text x="180" y="460" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="11">Boss: OPC UA + DNP3 + MQTT</text>
+
+    <rect x="65" y="475" width="72" height="28" fill="#334" rx="4" stroke="#4ecdc4" stroke-width="1"/>
+    <text x="101" y="494" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="9">M0: Modbus</text>
+
+    <rect x="144" y="475" width="72" height="28" fill="#334" rx="4" stroke="#4ecdc4" stroke-width="1"/>
+    <text x="180" y="494" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="9">M1: BACnet</text>
+
+    <rect x="223" y="475" width="72" height="28" fill="#334" rx="4" stroke="#4ecdc4" stroke-width="1"/>
+    <text x="259" y="494" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="9">M2: EIP</text>
+
+    <text x="180" y="540" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="10">Pod 1 — Row A</text>
+  </g>
+
+  <!-- Edge Module A2 -->
+  <g filter="url(#shadow)">
+    <rect x="350" y="400" width="260" height="150" fill="#222" rx="10" stroke="#4ecdc4" stroke-width="2"/>
+
+    <rect x="400" y="410" width="160" height="30" fill="url(#edgeGrad)" rx="6"/>
+    <text x="480" y="431" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Edge Module A2</text>
+    <text x="480" y="460" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="11">Boss: OPC UA + DNP3 + MQTT</text>
+
+    <rect x="365" y="475" width="72" height="28" fill="#334" rx="4" stroke="#4ecdc4" stroke-width="1"/>
+    <text x="401" y="494" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="9">M0: Modbus</text>
+
+    <rect x="444" y="475" width="72" height="28" fill="#334" rx="4" stroke="#4ecdc4" stroke-width="1"/>
+    <text x="480" y="494" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="9">M1: BACnet</text>
+
+    <rect x="523" y="475" width="72" height="28" fill="#334" rx="4" stroke="#4ecdc4" stroke-width="1"/>
+    <text x="559" y="494" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="9">M2: EIP</text>
+
+    <text x="480" y="540" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="10">Pod 2 — Row B</text>
+  </g>
+
+  <!-- Edge Module A3 -->
+  <g filter="url(#shadow)">
+    <rect x="650" y="400" width="260" height="150" fill="#222" rx="10" stroke="#4ecdc4" stroke-width="2"/>
+
+    <rect x="700" y="410" width="160" height="30" fill="url(#edgeGrad)" rx="6"/>
+    <text x="780" y="431" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Edge Module A3</text>
+    <text x="780" y="460" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="11">Boss: OPC UA + DNP3 + MQTT</text>
+
+    <rect x="665" y="475" width="72" height="28" fill="#334" rx="4" stroke="#4ecdc4" stroke-width="1"/>
+    <text x="701" y="494" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="9">M0: Modbus</text>
+
+    <rect x="744" y="475" width="72" height="28" fill="#334" rx="4" stroke="#4ecdc4" stroke-width="1"/>
+    <text x="780" y="494" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="9">M1: BACnet</text>
+
+    <rect x="823" y="475" width="72" height="28" fill="#334" rx="4" stroke="#4ecdc4" stroke-width="1"/>
+    <text x="859" y="494" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="9">M2: SNMP</text>
+
+    <text x="780" y="540" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="10">Pod 3 — Row C</text>
+  </g>
+
+  <!-- Edge to Devices lines -->
+  <line x1="101" y1="555" x2="80" y2="590" stroke="#ffe66d" stroke-width="1.5" stroke-opacity="0.7"/>
+  <line x1="180" y1="555" x2="180" y2="590" stroke="#ffe66d" stroke-width="1.5" stroke-opacity="0.7"/>
+  <line x1="259" y1="555" x2="280" y2="590" stroke="#ffe66d" stroke-width="1.5" stroke-opacity="0.7"/>
+
+  <line x1="401" y1="555" x2="380" y2="590" stroke="#ffe66d" stroke-width="1.5" stroke-opacity="0.7"/>
+  <line x1="480" y1="555" x2="480" y2="590" stroke="#ffe66d" stroke-width="1.5" stroke-opacity="0.7"/>
+  <line x1="559" y1="555" x2="580" y2="590" stroke="#ffe66d" stroke-width="1.5" stroke-opacity="0.7"/>
+
+  <line x1="701" y1="555" x2="680" y2="590" stroke="#ffe66d" stroke-width="1.5" stroke-opacity="0.7"/>
+  <line x1="780" y1="555" x2="780" y2="590" stroke="#ffe66d" stroke-width="1.5" stroke-opacity="0.7"/>
+  <line x1="859" y1="555" x2="880" y2="590" stroke="#ffe66d" stroke-width="1.5" stroke-opacity="0.7"/>
+
+  <!-- ==================== TIER 4: DEVICES ==================== -->
+  <text x="30" y="610" fill="#ffe66d" font-family="Arial, sans-serif" font-size="12" font-weight="bold">DEVICES</text>
+
+  <!-- Pod 1 devices -->
+  <rect x="50" y="595" width="60" height="40" fill="url(#devGrad)" rx="5"/>
+  <text x="80" y="615" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">CRAC</text>
+  <text x="80" y="628" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8">Liebert</text>
+
+  <rect x="150" y="595" width="60" height="40" fill="url(#devGrad)" rx="5"/>
+  <text x="180" y="615" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">AHU</text>
+  <text x="180" y="628" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8">Honeywell</text>
+
+  <rect x="250" y="595" width="60" height="40" fill="url(#devGrad)" rx="5"/>
+  <text x="280" y="615" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">PDU</text>
+  <text x="280" y="628" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8">Rockwell</text>
+
+  <!-- Pod 2 devices -->
+  <rect x="350" y="595" width="60" height="40" fill="url(#devGrad)" rx="5"/>
+  <text x="380" y="615" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">CRAC</text>
+  <text x="380" y="628" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8">Stulz</text>
+
+  <rect x="450" y="595" width="60" height="40" fill="url(#devGrad)" rx="5"/>
+  <text x="480" y="615" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">UPS</text>
+  <text x="480" y="628" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8">APC</text>
+
+  <rect x="550" y="595" width="60" height="40" fill="url(#devGrad)" rx="5"/>
+  <text x="580" y="615" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">Gen</text>
+  <text x="580" y="628" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8">Cummins</text>
+
+  <!-- Pod 3 devices -->
+  <rect x="650" y="595" width="60" height="40" fill="url(#devGrad)" rx="5"/>
+  <text x="680" y="615" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">CRAC</text>
+  <text x="680" y="628" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8">Schneider</text>
+
+  <rect x="750" y="595" width="60" height="40" fill="url(#devGrad)" rx="5"/>
+  <text x="780" y="615" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">Fire</text>
+  <text x="780" y="628" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8">Notifier</text>
+
+  <rect x="850" y="595" width="60" height="40" fill="url(#devGrad)" rx="5"/>
+  <text x="880" y="615" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">PDU</text>
+  <text x="880" y="628" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8">ServerTech</text>
+
+  <!-- Protocol labels at bottom -->
+  <text x="80" y="654" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">Modbus RTU</text>
+  <text x="180" y="654" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">BACnet/IP</text>
+  <text x="280" y="654" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">EtherNet/IP</text>
+  <text x="380" y="654" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">Modbus TCP</text>
+  <text x="480" y="654" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">Modbus TCP</text>
+  <text x="580" y="654" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">Modbus RTU</text>
+  <text x="680" y="654" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">Modbus TCP</text>
+  <text x="780" y="654" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">BACnet MSTP</text>
+  <text x="880" y="654" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">SNMP v3</text>
+
+  <!-- Footer -->
+  <text x="480" y="690" text-anchor="middle" fill="#555" font-family="Arial, sans-serif" font-size="11">
+    Each GOPLC instance: ~16 MB RAM | 12 native protocols | IEC 61131-3 ST logic
+  </text>
+</svg>

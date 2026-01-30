@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 540">
+  <defs>
+    <linearGradient id="primaryG3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ADD8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#007d9c;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="supG3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="backupG3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ecdc4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2ab7aa;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="dlGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff6b6b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c44545;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="devG3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffe66d;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d4b93c;stop-opacity:1" />
+    </linearGradient>
+    <marker id="aRed3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ff6b6b"/>
+    </marker>
+    <marker id="aGray3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#666"/>
+    </marker>
+    <filter id="glow3">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="860" height="540" fill="#1a1a2e" rx="10"/>
+
+  <!-- Title -->
+  <text x="430" y="30" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="20" font-weight="bold">
+    Test 3: DataLayer Backbone
+  </text>
+  <text x="430" y="50" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="12">
+    TCP DataLayer variable sync — DL_GET() reads, DL_LATENCY_US() health, HTTP POST failover
+  </text>
+
+  <!-- DataLayer Bus -->
+  <rect x="50" y="225" width="760" height="50" fill="url(#dlGrad)" rx="8" filter="url(#glow3)" fill-opacity="0.15" stroke="#ff6b6b" stroke-width="2"/>
+  <text x="430" y="248" text-anchor="middle" fill="#ff6b6b" font-family="Arial, sans-serif" font-size="14" font-weight="bold">
+    DataLayer TCP Bus
+  </text>
+  <text x="430" y="266" text-anchor="middle" fill="#ff9999" font-family="monospace" font-size="10">
+    DL_* prefixed VAR_GLOBAL variables synced automatically
+  </text>
+
+  <!-- Cluster 1: Primary Node -->
+  <g filter="url(#glow3)">
+    <rect x="30" y="70" width="230" height="140" fill="#222" rx="10" stroke="#00ADD8" stroke-width="2"/>
+    <rect x="70" y="80" width="150" height="28" fill="url(#primaryG3)" rx="6"/>
+    <text x="145" y="100" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Cluster 1: Primary</text>
+    <text x="145" y="125" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="11">DataLayer Server :4230</text>
+    <text x="145" y="142" text-anchor="middle" fill="#888" font-family="monospace" font-size="10">DL_SERVER_ID = 1</text>
+    <text x="145" y="158" text-anchor="middle" fill="#888" font-family="monospace" font-size="10">DL_IS_PRIMARY = TRUE</text>
+
+    <!-- Devices -->
+    <rect x="45" y="168" width="38" height="22" fill="url(#devG3)" rx="3"/>
+    <text x="64" y="183" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8" font-weight="bold">CRAC</text>
+    <rect x="90" y="168" width="38" height="22" fill="url(#devG3)" rx="3"/>
+    <text x="109" y="183" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8" font-weight="bold">UPS</text>
+    <rect x="135" y="168" width="38" height="22" fill="url(#devG3)" rx="3"/>
+    <text x="154" y="183" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8" font-weight="bold">PDU</text>
+    <rect x="180" y="168" width="38" height="22" fill="url(#devG3)" rx="3"/>
+    <text x="199" y="183" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8" font-weight="bold">GEN</text>
+    <rect x="225" y="168" width="28" height="22" fill="url(#devG3)" rx="3"/>
+    <text x="239" y="183" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="7" font-weight="bold">FIRE</text>
+  </g>
+
+  <!-- Connect Primary to Bus -->
+  <line x1="145" y1="210" x2="145" y2="225" stroke="#ff6b6b" stroke-width="2" marker-end="url(#aRed3)"/>
+  <text x="175" y="220" fill="#22c55e" font-family="monospace" font-size="9">DL_HEARTBEAT++</text>
+
+  <!-- Cluster 3: Backup Node -->
+  <g filter="url(#glow3)">
+    <rect x="620" y="70" width="210" height="140" fill="#222" rx="10" stroke="#4ecdc4" stroke-width="2"/>
+    <rect x="660" y="80" width="130" height="28" fill="url(#backupG3)" rx="6"/>
+    <text x="725" y="100" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Cluster 3: Backup</text>
+    <text x="725" y="125" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="11">DataLayer Server :4232</text>
+    <text x="725" y="142" text-anchor="middle" fill="#888" font-family="monospace" font-size="10">DL_SERVER_ID = 3</text>
+    <text x="725" y="158" text-anchor="middle" fill="#888" font-family="monospace" font-size="10">DL_IS_PRIMARY = FALSE</text>
+
+    <!-- Devices -->
+    <rect x="635" y="168" width="38" height="22" fill="url(#devG3)" rx="3"/>
+    <text x="654" y="183" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8" font-weight="bold">CRAC</text>
+    <rect x="680" y="168" width="38" height="22" fill="url(#devG3)" rx="3"/>
+    <text x="699" y="183" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8" font-weight="bold">UPS</text>
+    <rect x="725" y="168" width="38" height="22" fill="url(#devG3)" rx="3"/>
+    <text x="744" y="183" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8" font-weight="bold">PDU</text>
+    <rect x="770" y="168" width="38" height="22" fill="url(#devG3)" rx="3"/>
+    <text x="789" y="183" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="8" font-weight="bold">GEN</text>
+    <rect x="799" y="168" width="24" height="22" fill="url(#devG3)" rx="3"/>
+    <text x="811" y="183" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="7" font-weight="bold">FIR</text>
+  </g>
+
+  <!-- Connect Backup to Bus -->
+  <line x1="725" y1="210" x2="725" y2="225" stroke="#ff6b6b" stroke-width="2" marker-end="url(#aRed3)"/>
+  <text x="755" y="220" fill="#f97316" font-family="monospace" font-size="9">DL_HEARTBEAT++</text>
+
+  <!-- Cluster 2: DataLayer Supervisor -->
+  <g filter="url(#glow3)">
+    <rect x="280" y="290" width="300" height="230" fill="#222" rx="10" stroke="#a855f7" stroke-width="2"/>
+    <rect x="340" y="300" width="180" height="28" fill="url(#supG3)" rx="6"/>
+    <text x="430" y="320" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Cluster 2: Supervisor</text>
+    <text x="430" y="347" text-anchor="middle" fill="#a855f7" font-family="Arial, sans-serif" font-size="12" font-weight="bold">DataLayerSupervisor</text>
+
+    <!-- Read method -->
+    <rect x="300" y="360" width="260" height="45" fill="#334" rx="5" stroke="#ff6b6b" stroke-width="1"/>
+    <text x="430" y="378" text-anchor="middle" fill="#ff6b6b" font-family="monospace" font-size="10">DL_GET(activeNode, 'DL_CRAC_*')</text>
+    <text x="430" y="396" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">DL_LATENCY_US(activeNode, 'DL_HEARTBEAT')</text>
+
+    <!-- Health check -->
+    <rect x="300" y="415" width="260" height="35" fill="#2a1a3e" rx="5" stroke="#a855f7" stroke-width="1"/>
+    <text x="430" y="433" text-anchor="middle" fill="#f97316" font-family="monospace" font-size="10">latency &lt; 0 OR &gt; 2000ms → failover</text>
+    <text x="430" y="445" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">STALE_THRESHOLD_MS = 2000</text>
+
+    <!-- HTTP POST failover -->
+    <rect x="300" y="460" width="260" height="45" fill="#334" rx="5" stroke="#ef4444" stroke-width="1"/>
+    <text x="430" y="478" text-anchor="middle" fill="#ef4444" font-family="Arial, sans-serif" font-size="10" font-weight="bold">Failover via HTTP POST</text>
+    <text x="430" y="495" text-anchor="middle" fill="#888" font-family="monospace" font-size="8">POST /api/config {"datalayer":{"address":"...:4232"}}</text>
+  </g>
+
+  <!-- Connect Supervisor to Bus -->
+  <line x1="430" y1="290" x2="430" y2="275" stroke="#ff6b6b" stroke-width="2" marker-end="url(#aRed3)"/>
+  <text x="430" y="288" text-anchor="middle" fill="#ff6b6b" font-family="monospace" font-size="9">DL_GET()</text>
+
+  <!-- Comparison with other tests -->
+  <rect x="30" y="300" width="230" height="115" fill="#181828" rx="8" stroke="#444" stroke-width="1"/>
+  <text x="145" y="322" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">DataLayer Advantages</text>
+
+  <text x="50" y="342" fill="#ff6b6b" font-family="Arial, sans-serif" font-size="10">No OPC UA overhead</text>
+  <text x="50" y="360" fill="#ff6b6b" font-family="Arial, sans-serif" font-size="10">Sub-microsecond (SHM)</text>
+  <text x="50" y="378" fill="#ff6b6b" font-family="Arial, sans-serif" font-size="10">Automatic var sync</text>
+  <text x="50" y="396" fill="#ff6b6b" font-family="Arial, sans-serif" font-size="10">Runtime config via API</text>
+
+  <!-- Latency box -->
+  <rect x="30" y="425" width="230" height="95" fill="#181828" rx="8" stroke="#444" stroke-width="1"/>
+  <text x="145" y="447" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">Latency Comparison</text>
+
+  <rect x="50" y="455" width="100" height="22" fill="#ff6b6b" rx="4" fill-opacity="0.2"/>
+  <text x="100" y="471" text-anchor="middle" fill="#ff6b6b" font-family="monospace" font-size="10">SHM: &lt;1 us</text>
+
+  <rect x="50" y="482" width="190" height="22" fill="#f97316" rx="4" fill-opacity="0.2"/>
+  <text x="145" y="498" text-anchor="middle" fill="#f97316" font-family="monospace" font-size="10">TCP LAN: 100-500 us</text>
+
+  <!-- Right side: key variables -->
+  <rect x="600" y="300" width="230" height="115" fill="#181828" rx="8" stroke="#444" stroke-width="1"/>
+  <text x="715" y="322" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">Key Variables</text>
+
+  <text x="620" y="342" fill="#888" font-family="monospace" font-size="10">DL_HEARTBEAT : DINT</text>
+  <text x="620" y="360" fill="#888" font-family="monospace" font-size="10">DL_SERVER_ID : DINT</text>
+  <text x="620" y="378" fill="#888" font-family="monospace" font-size="10">DL_IS_PRIMARY : BOOL</text>
+  <text x="620" y="396" fill="#888" font-family="monospace" font-size="10">DL_FAILOVER_COUNT : DINT</text>
+
+  <rect x="600" y="425" width="230" height="50" fill="#181828" rx="8" stroke="#444" stroke-width="1"/>
+  <text x="715" y="447" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">All 5 Devices Prefixed</text>
+  <text x="715" y="467" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">DL_CRAC_*, DL_UPS_*, DL_PDU_*...</text>
+</svg>

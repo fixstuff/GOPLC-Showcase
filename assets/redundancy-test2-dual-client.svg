@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 520">
+  <defs>
+    <linearGradient id="primaryG2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ADD8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#007d9c;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="supG2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="backupG2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ecdc4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2ab7aa;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="devG2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffe66d;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d4b93c;stop-opacity:1" />
+    </linearGradient>
+    <marker id="aGreen2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#22c55e"/>
+    </marker>
+    <marker id="aCyan2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#4ecdc4"/>
+    </marker>
+    <filter id="glow2">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="860" height="520" fill="#1a1a2e" rx="10"/>
+
+  <!-- Title -->
+  <text x="430" y="30" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="20" font-weight="bold">
+    Test 2: Dual-Client Approach
+  </text>
+  <text x="430" y="50" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="12">
+    Both clients always connected — instant boolean failover, automatic failback
+  </text>
+
+  <!-- Cluster 1: Primary Server -->
+  <g filter="url(#glow2)">
+    <rect x="30" y="80" width="230" height="260" fill="#222" rx="10" stroke="#00ADD8" stroke-width="2"/>
+    <rect x="75" y="90" width="140" height="30" fill="url(#primaryG2)" rx="6"/>
+    <text x="145" y="111" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Cluster 1: Primary</text>
+    <text x="145" y="140" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="12">OPC UA Server :4850</text>
+    <text x="145" y="158" text-anchor="middle" fill="#888" font-family="monospace" font-size="10">server_id = 1</text>
+
+    <!-- Devices row -->
+    <rect x="45" y="172" width="48" height="26" fill="url(#devG2)" rx="3"/>
+    <text x="69" y="190" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="9" font-weight="bold">CRAC</text>
+    <rect x="100" y="172" width="48" height="26" fill="url(#devG2)" rx="3"/>
+    <text x="124" y="190" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="9" font-weight="bold">UPS</text>
+    <rect x="155" y="172" width="48" height="26" fill="url(#devG2)" rx="3"/>
+    <text x="179" y="190" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="9" font-weight="bold">PDU</text>
+    <rect x="70" y="205" width="48" height="26" fill="url(#devG2)" rx="3"/>
+    <text x="94" y="223" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="9" font-weight="bold">GEN</text>
+    <rect x="125" y="205" width="48" height="26" fill="url(#devG2)" rx="3"/>
+    <text x="149" y="223" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="9" font-weight="bold">FIRE</text>
+
+    <text x="145" y="255" text-anchor="middle" fill="#22c55e" font-family="monospace" font-size="11">heartbeat++</text>
+
+    <rect x="50" y="270" width="95" height="22" fill="#22c55e" rx="11" fill-opacity="0.2"/>
+    <text x="97" y="286" text-anchor="middle" fill="#22c55e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">ACTIVE</text>
+
+    <rect x="155" y="270" width="95" height="22" fill="#00ADD8" rx="11" fill-opacity="0.15"/>
+    <text x="202" y="286" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="10">Monitored</text>
+  </g>
+
+  <!-- Cluster 2: Dual-Client Supervisor -->
+  <g filter="url(#glow2)">
+    <rect x="310" y="80" width="260" height="330" fill="#222" rx="10" stroke="#a855f7" stroke-width="2"/>
+    <rect x="350" y="90" width="180" height="30" fill="url(#supG2)" rx="6"/>
+    <text x="440" y="111" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Cluster 2: Supervisor</text>
+    <text x="440" y="138" text-anchor="middle" fill="#a855f7" font-family="Arial, sans-serif" font-size="12" font-weight="bold">DualClientSupervisor</text>
+
+    <!-- Two clients -->
+    <rect x="330" y="155" width="200" height="50" fill="#334" rx="6" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="430" y="175" text-anchor="middle" fill="#22c55e" font-family="Arial, sans-serif" font-size="11" font-weight="bold">link_primary</text>
+    <text x="430" y="195" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">currHB_primary | staleCount_primary</text>
+
+    <rect x="330" y="215" width="200" height="50" fill="#334" rx="6" stroke="#4ecdc4" stroke-width="1.5"/>
+    <text x="430" y="235" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="11" font-weight="bold">link_backup</text>
+    <text x="430" y="255" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">currHB_backup | staleCount_backup</text>
+
+    <!-- Switch logic -->
+    <rect x="340" y="280" width="180" height="55" fill="#2a1a3e" rx="6" stroke="#a855f7" stroke-width="1"/>
+    <text x="430" y="298" text-anchor="middle" fill="#a855f7" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Failover Logic</text>
+    <text x="430" y="315" text-anchor="middle" fill="#f97316" font-family="monospace" font-size="9">!primaryOk AND backupOk → switch</text>
+    <text x="430" y="328" text-anchor="middle" fill="#22c55e" font-family="monospace" font-size="9">primaryOk recovered → failback</text>
+
+    <!-- Active selector -->
+    <rect x="350" y="345" width="160" height="30" fill="#334" rx="5"/>
+    <text x="430" y="365" text-anchor="middle" fill="#fff" font-family="monospace" font-size="10">activeClient := ?</text>
+
+    <text x="440" y="400" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">useBackup: BOOL (the switch)</text>
+  </g>
+
+  <!-- Cluster 3: Backup Server -->
+  <g filter="url(#glow2)">
+    <rect x="620" y="80" width="210" height="260" fill="#222" rx="10" stroke="#4ecdc4" stroke-width="2"/>
+    <rect x="660" y="90" width="130" height="30" fill="url(#backupG2)" rx="6"/>
+    <text x="725" y="111" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Cluster 3: Backup</text>
+    <text x="725" y="140" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="12">OPC UA Server :4852</text>
+    <text x="725" y="158" text-anchor="middle" fill="#888" font-family="monospace" font-size="10">server_id = 3</text>
+
+    <!-- Devices row -->
+    <rect x="635" y="172" width="48" height="26" fill="url(#devG2)" rx="3"/>
+    <text x="659" y="190" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="9" font-weight="bold">CRAC</text>
+    <rect x="690" y="172" width="48" height="26" fill="url(#devG2)" rx="3"/>
+    <text x="714" y="190" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="9" font-weight="bold">UPS</text>
+    <rect x="745" y="172" width="48" height="26" fill="url(#devG2)" rx="3"/>
+    <text x="769" y="190" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="9" font-weight="bold">PDU</text>
+    <rect x="660" y="205" width="48" height="26" fill="url(#devG2)" rx="3"/>
+    <text x="684" y="223" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="9" font-weight="bold">GEN</text>
+    <rect x="715" y="205" width="48" height="26" fill="url(#devG2)" rx="3"/>
+    <text x="739" y="223" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="9" font-weight="bold">FIRE</text>
+
+    <text x="725" y="255" text-anchor="middle" fill="#22c55e" font-family="monospace" font-size="11">heartbeat++</text>
+
+    <rect x="640" y="270" width="80" height="22" fill="#f97316" rx="11" fill-opacity="0.2"/>
+    <text x="680" y="286" text-anchor="middle" fill="#f97316" font-family="Arial, sans-serif" font-size="10" font-weight="bold">STANDBY</text>
+
+    <rect x="730" y="270" width="80" height="22" fill="#4ecdc4" rx="11" fill-opacity="0.15"/>
+    <text x="770" y="286" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="10">Monitored</text>
+  </g>
+
+  <!-- Connections: both always active -->
+  <!-- Primary connection (solid green) -->
+  <line x1="310" y1="180" x2="260" y2="180" stroke="#22c55e" stroke-width="3" marker-end="url(#aGreen2)"/>
+  <text x="285" y="172" text-anchor="middle" fill="#22c55e" font-family="Arial, sans-serif" font-size="9">Always on</text>
+
+  <!-- Backup connection (solid cyan) -->
+  <line x1="570" y1="240" x2="620" y2="240" stroke="#4ecdc4" stroke-width="3" marker-end="url(#aCyan2)"/>
+  <text x="595" y="232" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="9">Always on</text>
+
+  <!-- Comparison box at bottom -->
+  <rect x="50" y="420" width="760" height="80" fill="#181828" rx="8" stroke="#444" stroke-width="1"/>
+  <text x="430" y="445" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Key Advantage vs Test 1</text>
+
+  <rect x="80" y="455" width="200" height="30" fill="#334" rx="5" stroke="#22c55e" stroke-width="1"/>
+  <text x="180" y="475" text-anchor="middle" fill="#22c55e" font-family="Arial, sans-serif" font-size="11">Zero reconnection delay</text>
+
+  <rect x="310" y="455" width="200" height="30" fill="#334" rx="5" stroke="#a855f7" stroke-width="1"/>
+  <text x="410" y="475" text-anchor="middle" fill="#a855f7" font-family="Arial, sans-serif" font-size="11">Boolean switch (1 scan)</text>
+
+  <rect x="540" y="455" width="240" height="30" fill="#334" rx="5" stroke="#4ecdc4" stroke-width="1"/>
+  <text x="660" y="475" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="11">Auto failback when primary recovers</text>
+</svg>

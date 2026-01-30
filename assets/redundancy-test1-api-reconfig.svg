@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 520">
+  <defs>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ADD8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#007d9c;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="supervisorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="backupGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ecdc4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2ab7aa;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="devGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffe66d;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d4b93c;stop-opacity:1" />
+    </linearGradient>
+    <marker id="arrGreen" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#22c55e"/>
+    </marker>
+    <marker id="arrRed" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ef4444"/>
+    </marker>
+    <marker id="arrOrange" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#f97316"/>
+    </marker>
+    <filter id="glow">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="860" height="520" fill="#1a1a2e" rx="10"/>
+
+  <!-- Title -->
+  <text x="430" y="30" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="20" font-weight="bold">
+    Test 1: API-Driven OPC UA Reconfiguration
+  </text>
+  <text x="430" y="50" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="12">
+    Single client disconnects from primary, reconnects to backup on heartbeat staleness
+  </text>
+
+  <!-- Cluster 1: Primary Server -->
+  <g filter="url(#glow)">
+    <rect x="30" y="80" width="250" height="290" fill="#222" rx="10" stroke="#00ADD8" stroke-width="2"/>
+    <rect x="80" y="90" width="150" height="30" fill="url(#primaryGrad)" rx="6"/>
+    <text x="155" y="111" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Cluster 1: Primary</text>
+    <text x="155" y="140" text-anchor="middle" fill="#00ADD8" font-family="Arial, sans-serif" font-size="12">OPC UA Server :4840</text>
+    <text x="155" y="158" text-anchor="middle" fill="#888" font-family="monospace" font-size="10">server_id = 1</text>
+
+    <!-- Device icons -->
+    <rect x="50" y="175" width="60" height="30" fill="url(#devGrad1)" rx="4"/>
+    <text x="80" y="195" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">CRAC</text>
+
+    <rect x="125" y="175" width="60" height="30" fill="url(#devGrad1)" rx="4"/>
+    <text x="155" y="195" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">UPS</text>
+
+    <rect x="200" y="175" width="60" height="30" fill="url(#devGrad1)" rx="4"/>
+    <text x="230" y="195" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">PDU</text>
+
+    <rect x="80" y="215" width="60" height="30" fill="url(#devGrad1)" rx="4"/>
+    <text x="110" y="235" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">GEN</text>
+
+    <rect x="160" y="215" width="60" height="30" fill="url(#devGrad1)" rx="4"/>
+    <text x="190" y="235" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">FIRE</text>
+
+    <!-- Heartbeat -->
+    <text x="155" y="270" text-anchor="middle" fill="#22c55e" font-family="monospace" font-size="11">heartbeat++</text>
+    <text x="155" y="290" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="10">Simulated data:</text>
+    <text x="155" y="305" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="10">SIN/COS waveforms</text>
+
+    <!-- Status badge -->
+    <rect x="50" y="325" width="80" height="24" fill="#22c55e" rx="12" fill-opacity="0.2"/>
+    <text x="90" y="342" text-anchor="middle" fill="#22c55e" font-family="Arial, sans-serif" font-size="11" font-weight="bold">ACTIVE</text>
+
+    <text x="155" y="360" text-anchor="middle" fill="#555" font-family="monospace" font-size="9">ns=1;s=crac_supply_temp</text>
+  </g>
+
+  <!-- Cluster 2: Supervisor -->
+  <g filter="url(#glow)">
+    <rect x="340" y="80" width="200" height="290" fill="#222" rx="10" stroke="#a855f7" stroke-width="2"/>
+    <rect x="370" y="90" width="140" height="30" fill="url(#supervisorGrad)" rx="6"/>
+    <text x="440" y="111" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Cluster 2: Supervisor</text>
+    <text x="440" y="140" text-anchor="middle" fill="#a855f7" font-family="Arial, sans-serif" font-size="12">OPC UA Client</text>
+
+    <!-- State machine -->
+    <rect x="360" y="160" width="160" height="25" fill="#334" rx="4" stroke="#22c55e" stroke-width="1"/>
+    <text x="440" y="178" text-anchor="middle" fill="#22c55e" font-family="monospace" font-size="10">State 0: Init → Connect</text>
+
+    <rect x="360" y="195" width="160" height="25" fill="#334" rx="4" stroke="#a855f7" stroke-width="1"/>
+    <text x="440" y="213" text-anchor="middle" fill="#a855f7" font-family="monospace" font-size="10">State 1: Monitor HB</text>
+
+    <rect x="360" y="230" width="160" height="25" fill="#334" rx="4" stroke="#ef4444" stroke-width="1"/>
+    <text x="440" y="248" text-anchor="middle" fill="#ef4444" font-family="monospace" font-size="10">State 2: Failover!</text>
+
+    <!-- Failover logic -->
+    <text x="440" y="280" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="10">Staleness check:</text>
+    <text x="440" y="295" text-anchor="middle" fill="#f97316" font-family="monospace" font-size="10">5 stale reads → switch</text>
+
+    <!-- Key variables -->
+    <text x="440" y="325" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">failoverCount: DINT</text>
+    <text x="440" y="340" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">usingBackup: BOOL</text>
+    <text x="440" y="355" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">staleCount: INT</text>
+  </g>
+
+  <!-- Cluster 3: Backup Server -->
+  <g filter="url(#glow)">
+    <rect x="600" y="80" width="230" height="290" fill="#222" rx="10" stroke="#4ecdc4" stroke-width="2"/>
+    <rect x="650" y="90" width="130" height="30" fill="url(#backupGrad)" rx="6"/>
+    <text x="715" y="111" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Cluster 3: Backup</text>
+    <text x="715" y="140" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="12">OPC UA Server :4842</text>
+    <text x="715" y="158" text-anchor="middle" fill="#888" font-family="monospace" font-size="10">server_id = 3</text>
+
+    <!-- Device icons -->
+    <rect x="620" y="175" width="60" height="30" fill="url(#devGrad1)" rx="4"/>
+    <text x="650" y="195" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">CRAC</text>
+
+    <rect x="690" y="175" width="60" height="30" fill="url(#devGrad1)" rx="4"/>
+    <text x="720" y="195" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">UPS</text>
+
+    <rect x="760" y="175" width="60" height="30" fill="url(#devGrad1)" rx="4"/>
+    <text x="790" y="195" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">PDU</text>
+
+    <rect x="650" y="215" width="60" height="30" fill="url(#devGrad1)" rx="4"/>
+    <text x="680" y="235" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">GEN</text>
+
+    <rect x="725" y="215" width="60" height="30" fill="url(#devGrad1)" rx="4"/>
+    <text x="755" y="235" text-anchor="middle" fill="#1a1a2e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">FIRE</text>
+
+    <!-- Heartbeat -->
+    <text x="715" y="270" text-anchor="middle" fill="#22c55e" font-family="monospace" font-size="11">heartbeat++</text>
+    <text x="715" y="290" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="10">Independent data gen</text>
+    <text x="715" y="305" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="10">(hot standby)</text>
+
+    <!-- Status badge -->
+    <rect x="625" y="325" width="80" height="24" fill="#f97316" rx="12" fill-opacity="0.2"/>
+    <text x="665" y="342" text-anchor="middle" fill="#f97316" font-family="Arial, sans-serif" font-size="11" font-weight="bold">STANDBY</text>
+  </g>
+
+  <!-- Connection: Supervisor → Primary (active) -->
+  <line x1="340" y1="200" x2="280" y2="200" stroke="#22c55e" stroke-width="3" marker-end="url(#arrGreen)"/>
+  <text x="310" y="192" text-anchor="middle" fill="#22c55e" font-family="Arial, sans-serif" font-size="10">Active</text>
+
+  <!-- Connection: Supervisor → Backup (failover, dashed) -->
+  <line x1="540" y1="200" x2="600" y2="200" stroke="#ef4444" stroke-width="2" stroke-dasharray="8,4" marker-end="url(#arrRed)"/>
+  <text x="570" y="192" text-anchor="middle" fill="#ef4444" font-family="Arial, sans-serif" font-size="10">Failover</text>
+
+  <!-- Failover flow at bottom -->
+  <rect x="50" y="400" width="760" height="100" fill="#181828" rx="8" stroke="#444" stroke-width="1"/>
+  <text x="430" y="425" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Failover Sequence</text>
+
+  <!-- Steps -->
+  <rect x="70" y="440" width="130" height="40" fill="#334" rx="5" stroke="#22c55e" stroke-width="1"/>
+  <text x="135" y="458" text-anchor="middle" fill="#22c55e" font-family="Arial, sans-serif" font-size="10">Read heartbeat</text>
+  <text x="135" y="472" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">ns=1;s=heartbeat</text>
+
+  <text x="215" y="462" fill="#666" font-family="Arial, sans-serif" font-size="16">→</text>
+
+  <rect x="230" y="440" width="130" height="40" fill="#334" rx="5" stroke="#f97316" stroke-width="1"/>
+  <text x="295" y="458" text-anchor="middle" fill="#f97316" font-family="Arial, sans-serif" font-size="10">Detect stale</text>
+  <text x="295" y="472" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">stale >= 5</text>
+
+  <text x="375" y="462" fill="#666" font-family="Arial, sans-serif" font-size="16">→</text>
+
+  <rect x="390" y="440" width="130" height="40" fill="#334" rx="5" stroke="#ef4444" stroke-width="1"/>
+  <text x="455" y="458" text-anchor="middle" fill="#ef4444" font-family="Arial, sans-serif" font-size="10">Disconnect primary</text>
+  <text x="455" y="472" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">DELETE client</text>
+
+  <text x="535" y="462" fill="#666" font-family="Arial, sans-serif" font-size="16">→</text>
+
+  <rect x="550" y="440" width="130" height="40" fill="#334" rx="5" stroke="#4ecdc4" stroke-width="1"/>
+  <text x="615" y="458" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="10">Connect backup</text>
+  <text x="615" y="472" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">CREATE → :4842</text>
+
+  <text x="695" y="462" fill="#666" font-family="Arial, sans-serif" font-size="16">→</text>
+
+  <rect x="710" y="440" width="80" height="40" fill="#22c55e" rx="5" fill-opacity="0.2" stroke="#22c55e" stroke-width="1"/>
+  <text x="750" y="465" text-anchor="middle" fill="#22c55e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">Resume</text>
+</svg>
