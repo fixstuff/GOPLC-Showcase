@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Industrial-Grade PLC Runtime in Go</strong><br>
-  IEC 61131-3 Structured Text | 12+ Protocol Drivers | Web IDE | 160,000+ Lines of Code
+  IEC 61131-3 Structured Text | 12+ Protocol Drivers | Web IDE | 180,000+ Lines of Code
 </p>
 
 <p align="center">
@@ -18,10 +18,13 @@
 
 <p align="center">
   <a href="#features">Features</a> •
-  <a href="#protocols">Protocols</a> •
   <a href="#web-ide">Web IDE</a> •
+  <a href="#node-red-integration">Node-RED</a> •
+  <a href="#debugger">Debugger</a> •
+  <a href="#protocols">Protocols</a> •
+  <a href="#clustering">Clustering</a> •
+  <a href="#redundancy--failover">Redundancy</a> •
   <a href="#quick-start">Quick Start</a> •
-  <a href="#examples">Examples</a> •
   <a href="#architecture">Architecture</a>
 </p>
 
@@ -33,10 +36,12 @@ GOPLC is a **full-featured PLC runtime** written entirely in Go. It executes IEC
 
 - **Multi-task scheduler** with priorities, watchdogs, and microsecond-precision scan times
 - **12+ industrial protocols** including Modbus, EtherNet/IP, DNP3, BACnet, OPC UA, and FINS
-- **Built-in Web IDE** with syntax highlighting, live debugging, and project management
+- **Built-in Web IDE** with Monaco editor, statement-level debugger, and project management
+- **Integrated Node-RED** with 7 custom PLC nodes for building HMI dashboards
+- **AI Assistant** supporting Claude, OpenAI, and Ollama for code generation
 - **1,450+ built-in functions** covering math, strings, crypto, HTTP, databases, and more
 - **Real-time capable** with memory locking, CPU affinity, and GC tuning
-- **Multi-PLC clustering** for distributed automation systems
+- **Boss/Minion clustering** scaling to 10,000+ PLC instances
 
 <p align="center">
   <img src="assets/screenshots/web-ide.png" alt="GOPLC Web IDE" width="800">
@@ -54,8 +59,10 @@ GOPLC is a **full-featured PLC runtime** written entirely in Go. It executes IEC
 | **Multi-task Scheduler** | Cooperative scheduling with priorities (1-255) |
 | **Scan Times** | From 100μs to hours, configurable per task |
 | **Watchdog Protection** | Per-task watchdogs with fault/halt options |
-| **Hot Reload** | Update programs without stopping the runtime |
+| **Hot Reload** | Update individual tasks without stopping the runtime |
 | **Function Blocks** | TON, TOF, TP, RTO, CTU, CTD, CTUD, R_TRIG, F_TRIG, SR, RS, SEMA |
+| **RETAIN Variables** | Persistent variables across warm/cold restarts |
+| **Project Files** | Single `.goplc` file contains programs, tasks, configs, HMI pages |
 
 ### 1,450+ Built-in Functions
 
@@ -84,6 +91,300 @@ realtime:
   gc_percent: 500          # Reduce GC frequency
   rt_priority: 50          # SCHED_FIFO priority (requires privileges)
 ```
+
+---
+
+## Web IDE
+
+GOPLC includes a full-featured browser-based IDE built on 18 modular JavaScript components:
+
+<p align="center">
+  <img src="assets/screenshots/ide-features.png" alt="IDE Features" width="800">
+</p>
+
+### IDE Features
+
+- **Monaco Editor** with full IEC 61131-3 syntax highlighting
+- **Project Tree** showing tasks, programs, functions, libraries
+- **Live Variable Watch** with real-time updates via WebSocket
+- **Runtime Control** - Start/Stop/Reset/Upload/Download
+- **Project Management** - New/Open/Save/Export/Import (`.goplc` format)
+- **Task Configuration** - Priorities, scan times, watchdogs
+- **Per-Task Hot Reload** - Update one task without stopping others
+- **Multi-Runtime Switch** - Connect to different PLC instances
+- **Hash-Based Sync Indicator** - Shows if IDE matches runtime code
+- **Config Editor** - YAML configuration with syntax highlighting
+- **Cross-Reference Search** - Find variable/function usage across all programs
+- **Tags Browser** - Browse all tags with sorting and filtering
+
+### Online Mode
+
+CoDeSys-style live variable debugging — monitor and modify PLC variables in real-time while the program executes:
+
+- **Split-Panel Layout** - Variable list panel alongside the editor with no layout shift
+- **Click-to-Edit Values** - Click any variable value to write a new value to the running PLC
+- **250ms Live Updates** - Continuous polling with change highlighting
+- **Boolean Coloring** - TRUE values in green, FALSE in red
+- **Type-Based Formatting** - Specialized display for BOOL, INT, REAL, TIME, STRING
+- **FB Instance Support** - View function block member variables
+- **Pause/Step/Resume** - Per-scan stepping for system-level debugging
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=Sdb1rMul7Mg">
+    <img src="https://img.youtube.com/vi/Sdb1rMul7Mg/maxresdefault.jpg" alt="GOPLC Online Live View Demo" width="700">
+  </a>
+  <br><em>Click to watch: Online Live View Demo</em>
+</p>
+
+### IDE Screenshots
+
+<table>
+<tr>
+<td align="center"><img src="assets/screenshots/monitor-variables.png" width="400"><br><b>Monitor - Variables</b><br>Live task/variable view with Watch List</td>
+<td align="center"><img src="assets/screenshots/watch-list.png" width="300"><br><b>Watch List</b><br>Real-time variable monitoring</td>
+</tr>
+<tr>
+<td align="center"><img src="assets/screenshots/config-editor.png" width="400"><br><b>Config Editor</b><br>YAML configuration with syntax highlighting</td>
+<td align="center"><img src="assets/screenshots/xref-search.png" width="400"><br><b>Cross Reference</b><br>Search across all programs</td>
+</tr>
+<tr>
+<td align="center"><img src="assets/screenshots/datalayer-sync.png" width="400"><br><b>DataLayer Sync</b><br>Multi-PLC variable synchronization</td>
+<td align="center"><img src="assets/screenshots/esp32-hmi.png" width="200"><br><b>ESP32 HMI</b><br>Hardware status display</td>
+</tr>
+</table>
+
+---
+
+## Debugger
+
+Full statement-level step debugger comparable to CoDeSys and commercial PLC IDEs. Zero runtime overhead when disabled — a single atomic boolean check on the fast path.
+
+### Debug Controls
+
+| Action | Shortcut | Description |
+|--------|----------|-------------|
+| **Continue** | F5 | Resume execution until the next breakpoint |
+| **Step Over** | F10 | Execute the current line, skip over function/FB calls |
+| **Step Into** | F11 | Step into function and function block calls |
+| **Step Out** | Shift+F11 | Run until the current function/FB returns |
+
+### Debug Features
+
+- **Line Breakpoints** - Click the editor gutter to set/clear breakpoints on any ST line
+- **Breakpoint Enable/Disable** - Toggle breakpoints without removing them
+- **Call Stack** - View the full function block / function call chain at each stop
+- **Variable Inspection** - Examine all variables and their current values at each step
+- **Multi-Task Broadcast** - When any task hits a breakpoint, ALL tasks pause for a consistent system snapshot
+- **Watchdog Auto-Suspend** - Watchdog timers automatically suspend while stopped in the debugger
+- **Hit Counter** - Track how many times each breakpoint has been triggered
+
+### Debug API
+
+```bash
+# Enable the debugger
+curl -X POST http://localhost:8082/api/debug/step/enable
+
+# Set a breakpoint at line 15 of MainProgram
+curl -X POST http://localhost:8082/api/debug/step/breakpoints \
+  -d '{"program": "MainProgram", "line": 15}'
+
+# Continue execution
+curl -X POST http://localhost:8082/api/debug/step/continue
+
+# Step into the next statement
+curl -X POST http://localhost:8082/api/debug/step/into
+
+# Step over the current statement
+curl -X POST http://localhost:8082/api/debug/step/over
+
+# Step out of the current function/FB
+curl -X POST http://localhost:8082/api/debug/step/out
+
+# Get current debug state (position, stopped status, call stack)
+curl http://localhost:8082/api/debug/step/state
+```
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=N2t-iAHdrvc">
+    <img src="https://img.youtube.com/vi/N2t-iAHdrvc/maxresdefault.jpg" alt="GOPLC Debugger Demo" width="700">
+  </a>
+  <br><em>Click to watch: Debugger Demo</em>
+</p>
+
+---
+
+## Node-RED Integration
+
+GOPLC manages Node-RED as an integrated subprocess with full lifecycle management, a reverse proxy, and **7 custom PLC nodes** for building industrial HMI dashboards — all accessible through the same port as the Web IDE.
+
+### How It Works
+
+```
+GOPLC (port 8082)
+├── /ide/          → Web IDE
+├── /nodered/      → Node-RED editor (reverse proxied)
+├── /hmi/          → Built-in HMI pages
+└── /api/          → REST API
+```
+
+- Node-RED auto-starts with GOPLC and auto-restarts on crash (exponential backoff)
+- No separate port needed — reverse proxy serves Node-RED through GOPLC's API port
+- GOPLC host/port injected into Node-RED's global context for zero-config node connections
+
+### 7 Custom PLC Nodes
+
+| Node | Description |
+|------|-------------|
+| **goplc-connection** | Config node — auto-detects host/port from global context |
+| **goplc-read** | Read a single variable or all variables from the PLC |
+| **goplc-write** | Write values to PLC variables |
+| **goplc-subscribe** | Real-time WebSocket variable updates with on-change filtering |
+| **goplc-runtime** | Start/stop/status control of the PLC runtime |
+| **goplc-task** | Task management — reload, status, per-task control |
+| **goplc-cluster** | Read/write variables on cluster minions via boss proxy |
+
+### Dashboard Support
+
+Auto-installs `@flowfuse/node-red-dashboard` (Dashboard 2.0) for building operator HMI screens. Includes demo flows:
+
+- **Industrial HMI Demo** - Water treatment plant dashboard with live gauges, trends, and alarm panels
+- **Dual Runtime** - Multi-PLC communication and monitoring
+- **Quick Start Dashboard** - Simple template to get started
+
+### AI Flow Generation
+
+The AI assistant can generate complete Node-RED flows from natural language descriptions. Generated flows include custom PLC nodes pre-configured for the current runtime. Import directly from the AI chat with one click.
+
+### Configuration
+
+```yaml
+nodered:
+  enabled: true
+  port: 1880                    # Node-RED internal port
+  auto_start: true
+  restart_on_crash: true
+  max_restarts: 5
+  restart_backoff_ms: 2000
+  user_dir: "data/nodered"
+  flow_file: "flows.json"
+  credential_secret: ""         # Optional encryption key
+  extra_modules:                # Auto-install on startup
+    - "@flowfuse/node-red-dashboard"
+```
+
+### Node-RED API
+
+```bash
+# Check Node-RED status (uptime, PID, restart count)
+curl http://localhost:8082/api/nodered/status
+
+# Start/stop/restart Node-RED subprocess
+curl -X POST http://localhost:8082/api/nodered/start
+curl -X POST http://localhost:8082/api/nodered/stop
+curl -X POST http://localhost:8082/api/nodered/restart
+```
+
+---
+
+## AI Assistant
+
+Built-in AI coding assistant that understands all 1,450+ ST functions and can generate Structured Text code, HMI pages, and Node-RED flows from natural language descriptions.
+
+### Multi-Provider Support
+
+| Provider | Models | Use Case |
+|----------|--------|----------|
+| **Claude** (Anthropic) | claude-sonnet-4-20250514 (default) | Best ST code quality |
+| **OpenAI** | GPT-4o, GPT-4, etc. | Alternative cloud provider |
+| **Ollama** | qwen2.5-coder, deepseek-r1, etc. | Fully local/offline |
+
+### What It Can Generate
+
+- **Structured Text Programs** - PID loops, state machines, alarm handlers, protocol integrations. Detected as `iec` code blocks with an "Insert as Program" button.
+- **HMI Pages** - Custom web dashboards with live PLC data. Detected as HTML with "Preview" and "Save as HMI Page" buttons.
+- **Node-RED Flows** - Complete flow JSON with custom PLC nodes. Detected automatically with an "Import to Node-RED" button.
+
+### Context-Aware
+
+The AI receives the full function registry (1,450+ signatures with return types), current runtime variables, active tasks, and loaded programs as context — so it generates code that works with your specific setup.
+
+### Configuration
+
+```yaml
+ai:
+  enabled: true
+  provider: "claude"            # claude | openai | ollama
+  api_key_env: "ANTHROPIC_API_KEY"
+  model: "claude-sonnet-4-20250514"
+  endpoint: ""                  # Required for Ollama (e.g., http://localhost:11434/v1)
+  max_tokens: 8192
+  temperature: 0.3
+```
+
+---
+
+## HMI Builder
+
+Create and serve custom web-based operator displays directly from the IDE.
+
+### Built-in Default Dashboard
+
+GOPLC ships with a default HMI dashboard at `/hmi/default-dashboard` showing:
+
+- Runtime state, uptime, scan count, and memory usage
+- Live trend charts for task scan times
+- System information and feature summary
+
+### Custom Pages
+
+- Create custom HTML pages via the AI assistant or manually
+- Pages stored inside the `.goplc` project file (portable, single-file deployment)
+- Helper library (`goplc-hmi.js`) provides variable read/write from HMI pages
+- Served at `/hmi/:page-name` with no additional configuration
+
+### HMI API
+
+```bash
+# List all HMI pages
+curl http://localhost:8082/api/hmi/pages
+
+# Create a new page
+curl -X POST http://localhost:8082/api/hmi/pages \
+  -d '{"name": "tank-overview", "content": "<html>...</html>"}'
+
+# Get/update/delete pages
+curl http://localhost:8082/api/hmi/pages/tank-overview
+curl -X PUT http://localhost:8082/api/hmi/pages/tank-overview -d '{"content": "..."}'
+curl -X DELETE http://localhost:8082/api/hmi/pages/tank-overview
+```
+
+---
+
+## Config Wizard
+
+Searchable topic browser with static forms and AI-assisted setup that generates ready-to-apply YAML configuration. Lowers the barrier for configuring protocols, clustering, and services.
+
+### Available Topics
+
+| Topic | Mode | Description |
+|-------|------|-------------|
+| **AI Setup** | Form | Configure AI provider, API key, model |
+| **Modbus Server** | Form | TCP server with register mapping |
+| **Modbus Client** | Form | TCP client with polling intervals |
+| **OPC UA Server** | Form | Server configuration |
+| **FINS** | Form | Omron FINS protocol setup |
+| **EtherNet/IP** | Form | Adapter and scanner configuration |
+| **DNP3** | Form | Master/outstation setup |
+| **S7comm** | Form | Siemens S7 configuration |
+| **Cluster Boss** | Form | Boss with member list (add/remove rows) |
+| **Cluster Minion** | Form | Minion with unix socket |
+| **I/O Mapping** | Form | Map ST variables to protocol addresses |
+| **Modbus Bridge** | AI | Custom gateway configurations |
+| **Performance** | AI | Tuning and optimization guidance |
+| **Real-time** | AI | RT container mode setup |
+| **DataLayer** | AI | Multi-PLC sync configuration |
+
+Each form generates a YAML snippet that can be applied via hot-reload — no restart needed.
 
 ---
 
@@ -134,6 +435,7 @@ GOPLC includes **53,000+ lines** of industrial protocol code for seamless integr
 - Time synchronization
 - Serial transport (RS-232/RS-485)
 - Data link layer with FCB/FCV
+- Store-and-forward with SQLite buffering, GZIP compression, AES-256-GCM encryption
 
 </details>
 
@@ -276,42 +578,133 @@ curl -X POST http://localhost:8082/api/analyzer/decode \
 
 ---
 
-## Web IDE
+## Clustering
 
-GOPLC includes a full-featured browser-based IDE:
+GOPLC supports distributed PLC architecture using a Boss/Minion pattern that scales to 10,000+ instances on a single machine.
+
+### Boss/Minion Architecture
+
+```
+Boss PLC (coordinator, port 8082)
+├── Unix Socket → Minion: CRAC controller
+├── Unix Socket → Minion: Fire suppression
+├── Unix Socket → Minion: Power distribution
+└── TCP fallback → Minion: Remote site
+```
+
+- **Boss** aggregates and proxies API calls to all minions
+- **Minions** are fully isolated PLC instances (own scheduler, protocols, data)
+- Communication via **Unix sockets** (same host) or **TCP** (networked)
+- All minion access goes through the Boss API — minions never exposed directly
+- **Nested proxy** supports multi-tier topologies: Supervisor → Edge Boss → Minions
+
+### Per-Task Hot Reload
+
+Deploy updates to individual tasks without stopping the runtime:
+
+```bash
+# Reload only the MQTTTask — MainTask keeps running
+curl -X POST http://localhost:8082/api/tasks/MQTTTask/reload
+```
+
+### Cluster API
+
+```bash
+# Read variables from a specific minion
+curl http://localhost:8082/api/cluster/crac/api/variables
+
+# Write to a minion's variable
+curl -X PUT http://localhost:8082/api/cluster/fire/api/variables/AlarmActive \
+  -d '{"value": true}'
+
+# Reload a task on a specific minion
+curl -X POST http://localhost:8082/api/cluster/pdu/api/tasks/MainTask/reload
+
+# Nested: supervisor → edge boss → minion
+curl http://localhost:8082/api/cluster/edge-boss/api/cluster/crac/api/variables
+```
+
+### DataLayer Mesh
+
+Minions publish `DL_*` prefixed variables to the Boss via DataLayer. The Boss aggregates variables from all minions and rebroadcasts, creating a real-time variable mesh across the cluster.
+
+### Configuration
+
+```yaml
+# Boss config
+api:
+  port: 8082
+  cluster:
+    members:
+      - name: crac
+        socket: /run/goplc/crac.sock
+      - name: fire
+        socket: /run/goplc/fire.sock
+      - name: remote-plc
+        url: http://10.0.0.50:8500
+
+# Minion config
+api:
+  socket: /run/goplc/crac.sock   # No port needed
+```
+
+---
+
+## Redundancy & Failover
+
+GOPLC supports hot-standby redundancy with automatic failover for high-availability deployments. A **Supervisor** monitors identical primary and backup clusters — if the primary fails, the supervisor switches to the backup with zero data loss.
 
 <p align="center">
-  <img src="assets/screenshots/ide-features.png" alt="IDE Features" width="800">
+  <img src="assets/redundancy-architecture.svg" alt="Redundancy Architecture" width="850">
 </p>
 
-### IDE Features
+### Failover Performance & Strategies
 
-- **Monaco Editor** with ST syntax highlighting
-- **Project Tree** showing tasks, programs, functions, libraries
-- **Live Variable Watch** with real-time updates via WebSocket
-- **Runtime Control** - Start/Stop/Reset/Upload/Download
-- **Project Management** - New/Open/Save/Export/Import
-- **Task Configuration** - Priorities, scan times, watchdogs
-- **Multi-Runtime Switch** - Connect to different PLC instances
-- **Sync Indicator** - Shows if IDE matches runtime code
-- **AI Assistant** - Claude-powered ST code generation
+Three redundancy strategies with sub-second failover, automatic failback, and zero data loss via store-and-forward buffering:
 
-### IDE Screenshots
+<p align="center">
+  <img src="assets/failover-performance.svg" alt="Failover Timing Performance" width="800">
+</p>
 
-<table>
-<tr>
-<td align="center"><img src="assets/screenshots/monitor-variables.png" width="400"><br><b>Monitor - Variables</b><br>Live task/variable view with Watch List</td>
-<td align="center"><img src="assets/screenshots/watch-list.png" width="300"><br><b>Watch List</b><br>Real-time variable monitoring</td>
-</tr>
-<tr>
-<td align="center"><img src="assets/screenshots/config-editor.png" width="400"><br><b>Config Editor</b><br>YAML configuration with syntax highlighting</td>
-<td align="center"><img src="assets/screenshots/xref-search.png" width="400"><br><b>Cross Reference</b><br>Search across all programs</td>
-</tr>
-<tr>
-<td align="center"><img src="assets/screenshots/datalayer-sync.png" width="400"><br><b>DataLayer Sync</b><br>Multi-PLC variable synchronization</td>
-<td align="center"><img src="assets/screenshots/esp32-hmi.png" width="200"><br><b>ESP32 HMI</b><br>Hardware status display</td>
-</tr>
-</table>
+### Data Pipeline
+
+Both clusters independently publish telemetry for failover timing analysis and data continuity verification:
+
+<p align="center">
+  <img src="assets/failover-data-pipeline.svg" alt="Failover Data Pipeline" width="800">
+</p>
+
+---
+
+## Datacenter Gateway
+
+GOPLC as a universal protocol gateway for data center infrastructure management — bridging CRAC units, PDUs, UPS systems, fire suppression, and building automation into a unified SCADA layer.
+
+### Three-Tier Architecture
+
+```
+Corporate Layer (Grafana, SCADA, cloud)
+         │
+    Site Supervisor (GOPLC Boss)
+    ├── OPC UA clients to each edge
+    ├── MQTT subscriber (primary path)
+    └── DNP3 master (failover path)
+         │
+    Edge Modules (GOPLC Clusters)
+    Boss → per-protocol minions
+    ├── Modbus TCP/RTU (CRAC, UPS, VFD)
+    ├── BACnet/IP (AHU, dampers, lighting)
+    ├── EtherNet/IP (power meters)
+    └── SNMP v3 (smart PDUs, switches)
+```
+
+### Dual-Path Communication
+
+- **Primary:** MQTT publish/subscribe (sub-second latency)
+- **Failover:** DNP3 outstation with store-and-forward (SQLite buffer, GZIP + AES-256-GCM encryption)
+- Automatic switchover when MQTT path goes stale
+
+See the full [Datacenter Gateway Whitepaper](docs/whitepaper-datacenter-gateway.md) for architecture details and deployment examples.
 
 ---
 
@@ -327,6 +720,19 @@ docker run -d --name goplc \
   -v $(pwd)/projects:/app/projects \
   goplc:latest --config /app/configs/default.yaml
 ```
+
+### Run with Node-RED
+
+```bash
+docker run -d --name goplc \
+  -p 8082:8082 \
+  -p 502:502 \
+  -v $(pwd)/data:/app/data \
+  -e ANTHROPIC_API_KEY=sk-... \
+  goplc:latest --config /app/configs/nodered.yaml
+```
+
+Node-RED is available at `http://localhost:8082/nodered/` — no separate port needed.
 
 ### Access the Web IDE
 
@@ -362,6 +768,14 @@ protocols:
   opcua:
     enabled: true
     port: 4840
+
+nodered:
+  enabled: true
+  auto_start: true
+
+ai:
+  provider: "claude"
+  api_key_env: "ANTHROPIC_API_KEY"
 
 api:
   port: 8082
@@ -494,7 +908,7 @@ Enables efficient bulk I/O operations: `(PTR_QW + offset)^ := value`
 | 5,000 | 20 GB | 4.0 MB | 67% |
 | **10,000** | **37.4 GB** | **3.9 MB** | **108%** |
 
-**Running ST Programs (50× SIN/COS, string ops, 100ms scan):**
+**Running ST Programs (50x SIN/COS, string ops, 100ms scan):**
 | Minions | RAM | Per Minion | CPU | Load |
 |---------|-----|------------|-----|------|
 | 1,000 | 15.8 GB | 15.8 MB | 63% | 2.96 |
@@ -502,7 +916,7 @@ Enables efficient bulk I/O operations: `(PTR_QW + offset)^ := value`
 
 **Key Findings:**
 - **Idle:** ~3.9 MB/minion → **~9,000 minions** at 75% resources
-- **Running:** ~16 MB/minion (4× overhead) → **~2,500 minions** at 75% resources
+- **Running:** ~16 MB/minion (4x overhead) → **~2,500 minions** at 75% resources
 - Memory is the limiter, not CPU
 
 ### Benchmarks
@@ -517,7 +931,7 @@ Enables efficient bulk I/O operations: `(PTR_QW + offset)^ := value`
 | **DataLayer latency** | <1ms P50, <3ms P99 |
 | **Memory footprint** | ~65MB typical, ~150MB with DataLayer |
 | **ST functions** | 1,450+ available |
-| **Lines of code** | 160,000+ Go |
+| **Lines of code** | 180,000+ Go |
 
 ### Latency Distribution (2ms scan, DataLayer TCP)
 
@@ -539,11 +953,40 @@ Full REST API for integration with SCADA, MES, and custom applications.
 | `GET/PUT /api/variables/:name` | Read/write variables |
 | `POST /api/runtime/start` | Start PLC runtime |
 | `POST /api/runtime/stop` | Stop PLC runtime |
+| `POST /api/tasks/:name/reload` | Hot-reload a single task |
 | `GET /api/diagnostics` | Full runtime diagnostics |
+| `GET /api/capabilities` | List supported protocols, functions, clustering |
+| `GET /api/docs/functions` | All 1,450+ function signatures |
 | `GET /api/analyzer/transactions` | Protocol capture data |
+| `GET /api/cluster/:name/*path` | Proxy to cluster minion |
+| `GET /api/nodered/status` | Node-RED subprocess status |
+| `GET /api/debug/step/state` | Debugger state and position |
 | `GET /ws` | WebSocket for real-time updates |
 
 See [`docs/API.md`](docs/API.md) for complete API reference.
+
+---
+
+## Diagnostics
+
+### Per-Module Debug System
+
+Runtime-toggleable logging with per-module granularity. 15+ modules including `webui`, `nextion`, `modbus`, `fins`, `enip`, `opcua`, `datalayer`, `hal`, and more.
+
+```bash
+# Get debug status for all modules
+curl http://localhost:8082/api/debug/status
+
+# Set module-specific log level
+curl -X PUT http://localhost:8082/api/debug/runtime/modules/modbus \
+  -d '{"level": "trace"}'
+
+# View debug ring buffer (optionally filter by module)
+curl http://localhost:8082/api/debug/log?module=modbus
+
+# Enable/disable entire debug system
+curl -X POST http://localhost:8082/api/debug/runtime -d '{"enabled": true}'
+```
 
 ---
 
@@ -552,11 +995,12 @@ See [`docs/API.md`](docs/API.md) for complete API reference.
 GOPLC is designed for:
 
 - **Industrial Automation** - Replace or supplement traditional PLCs
-- **Protocol Gateway** - Bridge between different protocols
+- **Protocol Gateway** - Bridge between different protocols (data center, building, utility)
 - **Edge Computing** - Run on Raspberry Pi, industrial PCs
+- **Distributed Control** - Boss/Minion clustering for large installations
+- **HMI/SCADA Backend** - Node-RED dashboards + high-performance data collection
 - **Simulation** - Test automation logic without hardware
 - **Education** - Learn PLC programming with modern tools
-- **SCADA Backend** - High-performance data collection
 
 ---
 
