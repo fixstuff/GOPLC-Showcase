@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 420">
+  <defs>
+    <linearGradient id="fpBgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="fpDetectGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff6b6b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c44545;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="fpSwitchGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f39c12;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d68910;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="fpTotalGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="fpBackGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4ecdc4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2ab7aa;stop-opacity:1" />
+    </linearGradient>
+    <filter id="fpGlow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="850" height="420" fill="url(#fpBgGrad)" rx="10"/>
+
+  <!-- Title -->
+  <text x="425" y="35" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="22" font-weight="bold">
+    Failover Timing Performance
+  </text>
+  <text x="425" y="55" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="12">
+    Heartbeat-based detection with automatic failover and failback
+  </text>
+
+  <!-- TIMELINE -->
+  <!-- Base line -->
+  <line x1="80" y1="140" x2="770" y2="140" stroke="#444" stroke-width="2"/>
+
+  <!-- Time markers -->
+  <line x1="80" y1="130" x2="80" y2="150" stroke="#666" stroke-width="2"/>
+  <text x="80" y="168" text-anchor="middle" fill="#666" font-family="monospace" font-size="10">0ms</text>
+
+  <line x1="310" y1="130" x2="310" y2="150" stroke="#666" stroke-width="2"/>
+
+  <line x1="425" y1="130" x2="425" y2="150" stroke="#666" stroke-width="2"/>
+
+  <line x1="770" y1="130" x2="770" y2="150" stroke="#666" stroke-width="2"/>
+  <text x="770" y="168" text-anchor="middle" fill="#666" font-family="monospace" font-size="10">600ms</text>
+
+  <!-- Failure event -->
+  <rect x="72" y="88" width="16" height="42" fill="#ff6b6b" rx="2" fill-opacity="0.3"/>
+  <line x1="80" y1="88" x2="80" y2="130" stroke="#ff6b6b" stroke-width="2" stroke-dasharray="4"/>
+  <text x="80" y="83" text-anchor="middle" fill="#ff6b6b" font-family="Arial, sans-serif" font-size="10" font-weight="bold">Primary</text>
+  <text x="80" y="75" text-anchor="middle" fill="#ff6b6b" font-family="Arial, sans-serif" font-size="10" font-weight="bold">Fails</text>
+
+  <!-- Detection phase bar -->
+  <rect x="80" y="110" width="345" height="22" fill="url(#fpDetectGrad)" rx="4" filter="url(#fpGlow)"/>
+  <text x="252" y="125" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Detection: 500ms</text>
+  <text x="252" y="105" text-anchor="middle" fill="#ff6b6b" font-family="monospace" font-size="9">5 stale heartbeat reads × 100ms scan</text>
+
+  <!-- Switchover phase bar -->
+  <rect x="425" y="110" width="115" height="22" fill="url(#fpSwitchGrad)" rx="4" filter="url(#fpGlow)"/>
+  <text x="482" y="125" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Switch: 100ms</text>
+
+  <!-- Switched event -->
+  <line x1="540" y1="88" x2="540" y2="130" stroke="#22c55e" stroke-width="2" stroke-dasharray="4"/>
+  <text x="540" y="83" text-anchor="middle" fill="#22c55e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">Backup</text>
+  <text x="540" y="75" text-anchor="middle" fill="#22c55e" font-family="Arial, sans-serif" font-size="10" font-weight="bold">Active</text>
+
+  <!-- Total bracket -->
+  <line x1="80" y1="180" x2="80" y2="195" stroke="#22c55e" stroke-width="1.5"/>
+  <line x1="80" y1="195" x2="540" y2="195" stroke="#22c55e" stroke-width="1.5"/>
+  <line x1="540" y1="180" x2="540" y2="195" stroke="#22c55e" stroke-width="1.5"/>
+  <rect x="250" y="200" width="120" height="26" fill="url(#fpTotalGrad)" rx="6" filter="url(#fpGlow)"/>
+  <text x="310" y="218" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Total: 600ms</text>
+
+  <!-- STRATEGY COMPARISON -->
+  <text x="425" y="260" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="16" font-weight="bold">
+    Redundancy Strategies
+  </text>
+
+  <!-- Strategy 1: API-Driven -->
+  <rect x="50" y="275" width="240" height="110" fill="#222" rx="8" stroke="#ff6b6b" stroke-width="1.5"/>
+  <text x="170" y="297" text-anchor="middle" fill="#ff6b6b" font-family="Arial, sans-serif" font-size="12" font-weight="bold">API-Driven OPC UA</text>
+  <text x="80" y="318" fill="#888" font-family="monospace" font-size="10">Detection:</text>
+  <text x="255" y="318" text-anchor="end" fill="#fff" font-family="monospace" font-size="10">500ms</text>
+  <text x="80" y="338" fill="#888" font-family="monospace" font-size="10">Switchover:</text>
+  <text x="255" y="338" text-anchor="end" fill="#fff" font-family="monospace" font-size="10">100ms</text>
+  <text x="80" y="358" fill="#888" font-family="monospace" font-size="10">Reconnect:</text>
+  <text x="255" y="358" text-anchor="end" fill="#f97316" font-family="monospace" font-size="10">Yes (latency)</text>
+  <text x="80" y="378" fill="#888" font-family="monospace" font-size="10">Total:</text>
+  <text x="255" y="378" text-anchor="end" fill="#ff6b6b" font-family="monospace" font-size="10" font-weight="bold">~600ms+</text>
+
+  <!-- Strategy 2: Dual-Client -->
+  <rect x="305" y="275" width="240" height="110" fill="#222" rx="8" stroke="#22c55e" stroke-width="2"/>
+  <text x="425" y="297" text-anchor="middle" fill="#22c55e" font-family="Arial, sans-serif" font-size="12" font-weight="bold">Dual-Client (Recommended)</text>
+  <text x="335" y="318" fill="#888" font-family="monospace" font-size="10">Detection:</text>
+  <text x="510" y="318" text-anchor="end" fill="#fff" font-family="monospace" font-size="10">500ms</text>
+  <text x="335" y="338" fill="#888" font-family="monospace" font-size="10">Switchover:</text>
+  <text x="510" y="338" text-anchor="end" fill="#fff" font-family="monospace" font-size="10">1 scan cycle</text>
+  <text x="335" y="358" fill="#888" font-family="monospace" font-size="10">Reconnect:</text>
+  <text x="510" y="358" text-anchor="end" fill="#22c55e" font-family="monospace" font-size="10" font-weight="bold">Zero delay</text>
+  <text x="335" y="378" fill="#888" font-family="monospace" font-size="10">Total:</text>
+  <text x="510" y="378" text-anchor="end" fill="#22c55e" font-family="monospace" font-size="10" font-weight="bold">~500ms</text>
+
+  <!-- Strategy 3: DataLayer -->
+  <rect x="560" y="275" width="240" height="110" fill="#222" rx="8" stroke="#4ecdc4" stroke-width="1.5"/>
+  <text x="680" y="297" text-anchor="middle" fill="#4ecdc4" font-family="Arial, sans-serif" font-size="12" font-weight="bold">DataLayer Backbone</text>
+  <text x="590" y="318" fill="#888" font-family="monospace" font-size="10">Detection:</text>
+  <text x="765" y="318" text-anchor="end" fill="#fff" font-family="monospace" font-size="10">DL_LATENCY</text>
+  <text x="590" y="338" fill="#888" font-family="monospace" font-size="10">Switchover:</text>
+  <text x="765" y="338" text-anchor="end" fill="#fff" font-family="monospace" font-size="10">HTTP reconfig</text>
+  <text x="590" y="358" fill="#888" font-family="monospace" font-size="10">Latency:</text>
+  <text x="765" y="358" text-anchor="end" fill="#4ecdc4" font-family="monospace" font-size="10" font-weight="bold">&lt;1µs (shm)</text>
+  <text x="590" y="378" fill="#888" font-family="monospace" font-size="10">Best for:</text>
+  <text x="765" y="378" text-anchor="end" fill="#4ecdc4" font-family="monospace" font-size="10" font-weight="bold">Same-host</text>
+
+  <!-- Footer -->
+  <text x="425" y="410" text-anchor="middle" fill="#555" font-family="Arial, sans-serif" font-size="10">
+    All strategies support automatic failback when primary recovers | Zero data loss with store-and-forward buffering
+  </text>
+</svg>
