@@ -662,6 +662,13 @@ api:
   socket: /run/goplc/crac.sock   # No port needed
 ```
 
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=VKavnWHM4H8">
+    <img src="https://img.youtube.com/vi/VKavnWHM4H8/maxresdefault.jpg" alt="GOPLC Cluster IDE Demo" width="700">
+  </a>
+  <br><em>Click to watch: Boss/Minion Cluster Demo — single-port IDE controlling boss and minions with separate tasks, scan times, and live variable windows</em>
+</p>
+
 ---
 
 ## Redundancy & Failover
