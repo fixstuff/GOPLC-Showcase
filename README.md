@@ -205,10 +205,10 @@ curl http://localhost:8082/api/debug/step/state
 ```
 
 <p align="center">
-  <a href="https://www.youtube.com/watch?v=N2t-iAHdrvc">
-    <img src="https://img.youtube.com/vi/N2t-iAHdrvc/maxresdefault.jpg" alt="GOPLC Debugger Demo" width="700">
+  <a href="https://www.youtube.com/watch?v=vO16D4oMQJY">
+    <img src="https://img.youtube.com/vi/vO16D4oMQJY/maxresdefault.jpg" alt="GOPLC Debugger Walkthrough" width="700">
   </a>
-  <br><em>Click to watch: Debugger Demo</em>
+  <br><em>Click to watch: Debugger Walkthrough</em>
 </p>
 
 ---
@@ -254,6 +254,13 @@ Auto-installs `@flowfuse/node-red-dashboard` (Dashboard 2.0) for building operat
 ### AI Flow Generation
 
 The AI assistant can generate complete Node-RED flows from natural language descriptions. Generated flows include custom PLC nodes pre-configured for the current runtime. Import directly from the AI chat with one click.
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=dVYpVslmxfc">
+    <img src="https://img.youtube.com/vi/dVYpVslmxfc/maxresdefault.jpg" alt="GOPLC Node-RED Integration Walkthrough" width="700">
+  </a>
+  <br><em>Click to watch: Node-RED Integration Walkthrough</em>
+</p>
 
 ### Configuration
 
@@ -307,6 +314,13 @@ Built-in AI coding assistant that understands all 1,450+ ST functions and can ge
 ### Context-Aware
 
 The AI receives the full function registry (1,450+ signatures with return types), current runtime variables, active tasks, and loaded programs as context — so it generates code that works with your specific setup.
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=N2t-iAHdrvc">
+    <img src="https://img.youtube.com/vi/N2t-iAHdrvc/maxresdefault.jpg" alt="GOPLC AI Code Writing Demo" width="700">
+  </a>
+  <br><em>Click to watch: AI Code Writing Demo</em>
+</p>
 
 ### Configuration
 
@@ -825,6 +839,13 @@ See the [`examples/configs/`](examples/configs/) directory:
 ---
 
 ## Performance
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=eV3Kc8fKmNk">
+    <img src="https://img.youtube.com/vi/eV3Kc8fKmNk/maxresdefault.jpg" alt="GOPLC Stress Test Walkthrough" width="700">
+  </a>
+  <br><em>Click to watch: Stress Test Walkthrough</em>
+</p>
 
 ### Live Multi-PLC Benchmark (January 2026)
 
