@@ -6,13 +6,13 @@
 
 <p align="center">
   <strong>Industrial-Grade PLC Runtime in Go</strong><br>
-  IEC 61131-3 Structured Text | 12+ Protocol Drivers | Web IDE | 180,000+ Lines of Code
+  IEC 61131-3 Structured Text | 13+ Protocol Drivers | Web IDE | 180,000+ Lines of Code
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go 1.21+">
   <img src="https://img.shields.io/badge/IEC_61131--3-Structured_Text-blue?style=for-the-badge" alt="IEC 61131-3">
-  <img src="https://img.shields.io/badge/Protocols-12+-green?style=for-the-badge" alt="12+ Protocols">
+  <img src="https://img.shields.io/badge/Protocols-13+-green?style=for-the-badge" alt="13+ Protocols">
   <img src="https://img.shields.io/badge/Functions-1,450+-orange?style=for-the-badge" alt="1,450+ Functions">
 </p>
 
@@ -24,6 +24,7 @@
   <a href="#protocols">Protocols</a> •
   <a href="#clustering">Clustering</a> •
   <a href="#redundancy--failover">Redundancy</a> •
+  <a href="#authentication">Authentication</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#architecture">Architecture</a>
 </p>
@@ -35,7 +36,7 @@
 GOPLC is a **full-featured PLC runtime** written entirely in Go. It executes IEC 61131-3 Structured Text programs with industrial-grade features:
 
 - **Multi-task scheduler** with priorities, watchdogs, and microsecond-precision scan times
-- **12+ industrial protocols** including Modbus, EtherNet/IP, DNP3, BACnet, OPC UA, and FINS
+- **13+ industrial protocols** including Modbus, EtherNet/IP, DNP3, BACnet, OPC UA, FINS, and IEC 104
 - **Built-in Web IDE** with Monaco editor, statement-level debugger, and project management
 - **Integrated Node-RED** with 7 custom PLC nodes for building HMI dashboards
 - **AI Assistant** supporting Claude, OpenAI, and Ollama for code generation
@@ -404,9 +405,9 @@ Each form generates a YAML snippet that can be applied via hot-reload — no res
 
 ## Protocols
 
-GOPLC includes **53,000+ lines** of industrial protocol code for seamless integration with existing automation systems.
+GOPLC includes **55,000+ lines** of industrial protocol code for seamless integration with existing automation systems.
 
-### Industrial Protocols (11 Total)
+### Industrial Protocols (12 Total)
 
 | Protocol | Role | Transport | Lines | Target Systems |
 |----------|------|-----------|-------|----------------|
@@ -417,6 +418,7 @@ GOPLC includes **53,000+ lines** of industrial protocol code for seamless integr
 | **OPC UA** | Server + Client | TCP | 4,496 | Modern - Cloud integration, MES, SCADA |
 | **FINS** | Server + Client | TCP, UDP | 3,565 | Omron - NX, NY, CP, CJ series PLCs |
 | **S7comm** | Server + Client | TCP (TPKT/COTP) | 2,441 | Siemens - S7-300, S7-400, S7-1200, S7-1500 |
+| **IEC 60870-5-104** | Client + Server | TCP | 2,100 | Utilities - Power grid SCADA, substation automation |
 | **PROFINET** | Server + Client | TCP, UDP | 1,997 | Siemens - Real-time industrial Ethernet |
 | **SEL** | Server + Client | Serial | 1,758 | Protective relays - Power system monitoring |
 | **SNMP v1/v2c/v3** | Client + Trap | UDP | 3,597 | Network devices - Switches, UPS, sensors |
@@ -511,6 +513,20 @@ GOPLC includes **53,000+ lines** of industrial protocol code for seamless integr
 
 </details>
 
+<details>
+<summary><strong>IEC 60870-5-104</strong> - Click to expand</summary>
+
+- Full Client and Server implementation
+- APCI frame handling (I, S, U formats)
+- ASDU types: single/double-point, measured values, step position, normalized/scaled/short floating point
+- Interrogation commands (station and group)
+- Command types: single, double, regulating step, set-point
+- Time-tagged variants for all information types
+- 26 ST functions for IEC 104 operations
+- Connection state machine with T1/T2/T3 timers
+
+</details>
+
 ### Communication Layer
 
 | Module | Purpose | Transport | Features |
@@ -574,7 +590,7 @@ curl -X POST http://localhost:8082/api/analyzer/decode \
   -d '{"protocol":"modbus-tcp","raw_hex":"00 01 00 00 00 06 01 03 00 00 00 0A"}'
 ```
 
-**Supported decoders:** Modbus TCP/RTU, DNP3, BACnet/IP, EtherNet/IP, OPC UA, S7, FINS, SEL
+**Supported decoders:** Modbus TCP/RTU, DNP3, BACnet/IP, EtherNet/IP, OPC UA, S7, FINS, IEC 104, SEL
 
 ### Protocol Coverage by Industry
 
@@ -582,10 +598,10 @@ curl -X POST http://localhost:8082/api/analyzer/decode \
 |----------|-----------|
 | **Manufacturing** | Modbus, EtherNet/IP, PROFINET, S7, FINS, OPC UA |
 | **Building Automation** | BACnet/IP, BACnet/MSTP, Modbus, SNMP, OPC UA |
-| **Utilities/SCADA** | DNP3, Modbus, SEL, OPC UA |
+| **Utilities/SCADA** | DNP3, IEC 104, Modbus, SEL, OPC UA |
 | **Oil & Gas** | Modbus, DNP3, OPC UA, EtherNet/IP |
 | **Water/Wastewater** | DNP3, Modbus, OPC UA |
-| **Power Generation** | DNP3, Modbus, SEL, IEC 61850 (planned) |
+| **Power Generation** | DNP3, IEC 104, Modbus, SEL, IEC 61850 (planned) |
 | **Food & Beverage** | EtherNet/IP, Modbus, OPC UA, S7 |
 | **Pharmaceutical** | OPC UA, Modbus, S7, EtherNet/IP |
 | **Data Centers** | SNMP, Modbus, BACnet |
@@ -669,6 +685,31 @@ api:
   <br><em>Click to watch: Boss/Minion Cluster Demo — single-port IDE controlling boss and minions with separate tasks, scan times, and live variable windows</em>
 </p>
 
+### Distributed Performance (Whitepaper Results)
+
+Measured on a 24-core / 32-thread AMD system running PID loop workloads:
+
+| Metric | Result |
+|--------|--------|
+| **Monolithic vs. Distributed** | **10.4x throughput** improvement (same 1,000-line workload, 10 minions) |
+| **Linear Scaling** | 97.7% efficiency at 400 minions, 94.9% at 500 |
+| **Peak Throughput** | 620,949 aggregate scans/s at 50μs scan (31 minions, 100.1% efficiency) |
+| **DataLayer Latency** | 1.7μs avg, 5.5μs p95, 8.2μs p99 |
+| **RT Mode Jitter** | 5.5x reduction at p95 (890μs → 163μs) |
+| **Container Overhead** | ~2% scan time, 0% scaling efficiency |
+| **Projected (768 threads)** | ~13M aggregate scans/s, ~12,000 simultaneous PID loops |
+
+**Industry Comparison:**
+
+| Platform | Min Cycle | Max Cores | Aggregate Scans/s | Architecture |
+|----------|-----------|-----------|-------------------|--------------|
+| Beckhoff TwinCAT 3 | 50μs | 4-8 (1 per task) | ~20,000 | Windows CE/RTOS |
+| Siemens S7-1500 | 250μs | 1 (ASIC) | ~4,000 | Proprietary |
+| Allen-Bradley ControlLogix | 500μs | 1 (per chassis) | ~2,000 | Single-threaded |
+| **GOPLC** | **50μs** | **All available** | **620,949** | **Distributed goroutines** |
+
+See the full [Clustering Whitepaper (PDF)](docs/whitepaper-clustering.pdf) for architecture details, methodology, and complete benchmark data.
+
 ---
 
 ## Redundancy & Failover
@@ -694,6 +735,40 @@ Both clusters independently publish telemetry for failover timing analysis and d
 <p align="center">
   <img src="assets/failover-data-pipeline.svg" alt="Failover Data Pipeline" width="800">
 </p>
+
+---
+
+## Authentication
+
+Optional JWT-based authentication that protects engineering endpoints while leaving operator paths open.
+
+### Access Control
+
+| Path Type | Examples | Authentication |
+|-----------|----------|----------------|
+| **Public** | `/hmi/*`, `/api/variables`, `/api/tags`, `/ws` | None required |
+| **Protected** | `/ide/*`, `/api/programs`, `/api/runtime`, `/api/tasks`, `/api/cluster`, `/api/config`, `/api/debug` | Bearer token required |
+
+### Features
+
+- **Disabled by default** — zero friction for development and standalone use
+- **HMAC-SHA256 tokens** with configurable expiry (no external dependencies)
+- **Bcrypt password verification** for secure credential storage
+- **Login page** with token refresh and logout
+- **Operator-friendly** — HMI dashboards and variable read/write work without credentials
+
+### Configuration
+
+```yaml
+auth:
+  enabled: true
+  secret: "your-jwt-secret"
+  token_expiry: "24h"
+  users:
+    - username: "engineer"
+      password_hash: "$2a$10$..."    # bcrypt hash
+      role: "admin"
+```
 
 ---
 
@@ -958,6 +1033,8 @@ Enables efficient bulk I/O operations: `(PTR_QW + offset)^ := value`
 | **PTR_QW writes** | ~300,000 registers/sec |
 | **DataLayer latency** | <1ms P50, <3ms P99 |
 | **Memory footprint** | ~65MB typical, ~150MB with DataLayer |
+| **Distributed speedup** | 10.4x throughput (same workload, 10 minions) |
+| **Aggregate throughput** | 620,949 scans/sec (31 minions at 50μs) |
 | **ST functions** | 1,450+ available |
 | **Lines of code** | 180,000+ Go |
 
