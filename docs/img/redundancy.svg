@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 400" font-family="Arial, sans-serif">
+  <rect width="750" height="400" fill="#fafafa" rx="8"/>
+  <text x="375" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#1a1a2e">Server-Level Redundancy vs Traditional PLC Redundancy</text>
+
+  <!-- Traditional side -->
+  <g transform="translate(20, 55)">
+    <text x="165" y="0" text-anchor="middle" font-size="13" font-weight="bold" fill="#c0392b">Traditional: 300 PLCs + 300 Backups</text>
+    <g transform="translate(15, 20)">
+      <rect x="0" y="0" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="32" y="0" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="64" y="0" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="96" y="0" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="128" y="0" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="160" y="0" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="192" y="0" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="224" y="0" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="256" y="0" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="288" y="0" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="0" y="26" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="32" y="26" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="64" y="26" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="96" y="26" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="128" y="26" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="160" y="26" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="192" y="26" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="224" y="26" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="256" y="26" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="288" y="26" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="0" y="56" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="32" y="56" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="64" y="56" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="96" y="56" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="128" y="56" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="160" y="56" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="192" y="56" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="224" y="56" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="256" y="56" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="288" y="56" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.7"/>
+      <rect x="0" y="82" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="32" y="82" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="64" y="82" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="96" y="82" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="128" y="82" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="160" y="82" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="192" y="82" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="224" y="82" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="256" y="82" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <rect x="288" y="82" width="28" height="22" rx="2" fill="#e74c3c" opacity="0.3"/>
+      <text x="155" y="125" text-anchor="middle" font-size="10" fill="#777">... x30 rows (600 total units)</text>
+    </g>
+    <text x="165" y="175" text-anchor="middle" font-size="11" fill="#333" font-weight="bold">$600K - $15M</text>
+    <text x="165" y="193" text-anchor="middle" font-size="10" fill="#777">5+ vendors, matched firmware</text>
+    <text x="165" y="208" text-anchor="middle" font-size="10" fill="#777">Seconds to minutes failover</text>
+    <text x="165" y="223" text-anchor="middle" font-size="10" fill="#777">Same-cabinet only</text>
+    <rect x="80" y="240" width="14" height="10" rx="1" fill="#e74c3c" opacity="0.7"/>
+    <text x="100" y="249" font-size="9" fill="#555">Primary</text>
+    <rect x="145" y="240" width="14" height="10" rx="1" fill="#e74c3c" opacity="0.3"/>
+    <text x="165" y="249" font-size="9" fill="#555">Backup (idle)</text>
+  </g>
+
+  <!-- VS divider -->
+  <line x1="375" y1="60" x2="375" y2="330" stroke="#ddd" stroke-width="1" stroke-dasharray="4,4"/>
+  <circle cx="375" cy="195" r="18" fill="#fff" stroke="#ddd" stroke-width="1"/>
+  <text x="375" y="200" text-anchor="middle" font-size="12" font-weight="bold" fill="#555">vs</text>
+
+  <!-- GOPLC side -->
+  <g transform="translate(410, 55)">
+    <text x="155" y="0" text-anchor="middle" font-size="13" font-weight="bold" fill="#27ae60">GOPLC: 2 Servers</text>
+    <rect x="30" y="30" width="250" height="90" rx="8" fill="#2980b9" stroke="#1f6da0" stroke-width="2"/>
+    <text x="155" y="55" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Primary Server</text>
+    <text x="155" y="75" text-anchor="middle" font-size="10" fill="#d6eaf8">Boss + N Minions (goroutines)</text>
+    <text x="155" y="92" text-anchor="middle" font-size="10" fill="#d6eaf8">All 300 PLC workloads in one process</text>
+    <text x="155" y="138" text-anchor="middle" font-size="10" fill="#27ae60" font-weight="bold">DataLayer TCP Sync</text>
+    <line x1="100" y1="145" x2="100" y2="160" stroke="#27ae60" stroke-width="2"/>
+    <line x1="210" y1="145" x2="210" y2="160" stroke="#27ae60" stroke-width="2"/>
+    <polygon points="95,158 105,158 100,165" fill="#27ae60"/>
+    <polygon points="205,158 215,158 210,165" fill="#27ae60"/>
+    <rect x="30" y="165" width="250" height="90" rx="8" fill="#27ae60" stroke="#1e8449" stroke-width="2" opacity="0.7"/>
+    <text x="155" y="190" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Standby Server</text>
+    <text x="155" y="210" text-anchor="middle" font-size="10" fill="#d5f5e3">Hot standby, sub-ms failover</text>
+    <text x="155" y="227" text-anchor="middle" font-size="10" fill="#d5f5e3">Different room / building OK</text>
+    <text x="155" y="285" text-anchor="middle" font-size="11" fill="#333" font-weight="bold">~$140K total</text>
+    <text x="155" y="303" text-anchor="middle" font-size="10" fill="#777">1 server SKU, any vendor</text>
+    <text x="155" y="318" text-anchor="middle" font-size="10" fill="#777">Sub-millisecond failover</text>
+    <text x="155" y="333" text-anchor="middle" font-size="10" fill="#777">Geographic separation</text>
+  </g>
+
+  <rect x="50" y="360" width="650" height="28" rx="6" fill="#27ae60" opacity="0.1" stroke="#27ae60" stroke-width="1"/>
+  <text x="375" y="379" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e8449">2 servers replace 600 PLC units — 95%+ cost reduction with faster failover</text>
+</svg>

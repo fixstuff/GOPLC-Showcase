@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 420" font-family="Arial, sans-serif">
+  <rect width="750" height="420" fill="#fafafa" rx="8"/>
+  <text x="375" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#1a1a2e">GOPLC Protocol Support</text>
+  <text x="375" y="46" text-anchor="middle" font-size="10" fill="#777">All protocols accessible from IEC 61131-3 Structured Text via built-in functions</text>
+
+  <!-- Center: GOPLC core -->
+  <circle cx="375" cy="220" r="55" fill="#2c3e50" stroke="#1a252f" stroke-width="2"/>
+  <text x="375" y="215" text-anchor="middle" font-size="14" font-weight="bold" fill="white">GOPLC</text>
+  <text x="375" y="233" text-anchor="middle" font-size="10" fill="#bdc3c7">Runtime</text>
+
+  <!-- Industrial Automation (top-left) -->
+  <rect x="30" y="60" width="180" height="130" rx="6" fill="#2980b9" stroke="#1f6da0" stroke-width="1.5"/>
+  <text x="120" y="82" text-anchor="middle" font-size="11" font-weight="bold" fill="white">Industrial Automation</text>
+  <text x="120" y="100" text-anchor="middle" font-size="9" fill="#d6eaf8">Modbus TCP/RTU</text>
+  <text x="120" y="115" text-anchor="middle" font-size="9" fill="#d6eaf8">EtherNet/IP (CIP)</text>
+  <text x="120" y="130" text-anchor="middle" font-size="9" fill="#d6eaf8">OPC UA</text>
+  <text x="120" y="145" text-anchor="middle" font-size="9" fill="#d6eaf8">FINS (Omron)</text>
+  <text x="120" y="160" text-anchor="middle" font-size="9" fill="#d6eaf8">S7comm (Siemens)</text>
+  <text x="120" y="178" text-anchor="middle" font-size="8" fill="#85c1e9">Client + Server</text>
+  <line x1="210" y1="130" x2="320" y2="200" stroke="#2980b9" stroke-width="2"/>
+
+  <!-- Utility/Power (top-right) -->
+  <rect x="540" y="60" width="180" height="115" rx="6" fill="#8e44ad" stroke="#6c3483" stroke-width="1.5"/>
+  <text x="630" y="82" text-anchor="middle" font-size="11" font-weight="bold" fill="white">Utility / Power</text>
+  <text x="630" y="100" text-anchor="middle" font-size="9" fill="#e8daef">IEC 60870-5-104</text>
+  <text x="630" y="115" text-anchor="middle" font-size="9" fill="#e8daef">DNP3 (planned)</text>
+  <text x="630" y="130" text-anchor="middle" font-size="9" fill="#e8daef">IEC 61850 (planned)</text>
+  <text x="630" y="163" text-anchor="middle" font-size="8" fill="#d2b4de">SCADA integration</text>
+  <line x1="540" y1="130" x2="430" y2="200" stroke="#8e44ad" stroke-width="2"/>
+
+  <!-- IT Integration (bottom-left) -->
+  <rect x="30" y="270" width="180" height="115" rx="6" fill="#e67e22" stroke="#d35400" stroke-width="1.5"/>
+  <text x="120" y="292" text-anchor="middle" font-size="11" font-weight="bold" fill="white">IT Integration</text>
+  <text x="120" y="310" text-anchor="middle" font-size="9" fill="#fdebd0">MQTT (pub/sub)</text>
+  <text x="120" y="325" text-anchor="middle" font-size="9" fill="#fdebd0">HTTP/REST Client</text>
+  <text x="120" y="340" text-anchor="middle" font-size="9" fill="#fdebd0">WebSocket Server</text>
+  <text x="120" y="355" text-anchor="middle" font-size="9" fill="#fdebd0">SQL (PostgreSQL)</text>
+  <text x="120" y="373" text-anchor="middle" font-size="8" fill="#f5cba7">Cloud + edge connectivity</text>
+  <line x1="210" y1="310" x2="320" y2="240" stroke="#e67e22" stroke-width="2"/>
+
+  <!-- Building / BMS (bottom-right) -->
+  <rect x="540" y="270" width="180" height="100" rx="6" fill="#27ae60" stroke="#1e8449" stroke-width="1.5"/>
+  <text x="630" y="292" text-anchor="middle" font-size="11" font-weight="bold" fill="white">Building / BMS</text>
+  <text x="630" y="310" text-anchor="middle" font-size="9" fill="#d5f5e3">BACnet/IP</text>
+  <text x="630" y="325" text-anchor="middle" font-size="9" fill="#d5f5e3">KNX (planned)</text>
+  <text x="630" y="340" text-anchor="middle" font-size="9" fill="#d5f5e3">DALI (planned)</text>
+  <text x="630" y="358" text-anchor="middle" font-size="8" fill="#a9dfbf">HVAC, lighting, metering</text>
+  <line x1="540" y1="310" x2="430" y2="240" stroke="#27ae60" stroke-width="2"/>
+
+  <text x="375" y="408" text-anchor="middle" font-size="10" fill="#777">All drivers run as independent goroutines — decoupled from the scan loop</text>
+</svg>
