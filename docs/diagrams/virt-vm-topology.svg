@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 760 310" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif">
+
+  <rect width="760" height="310" fill="white"/>
+
+  <!-- VM 1: crac-gateways -->
+  <rect x="14" y="14" width="228" height="276" rx="8" fill="#f0f4fa" stroke="#4a7fc1" stroke-width="1.5"/>
+  <rect x="26" y="26" width="204" height="36" rx="5" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1.5"/>
+  <text x="128" y="41" font-size="12" fill="#1a3a6b" font-weight="bold" text-anchor="middle">VM: crac-gateways</text>
+  <text x="128" y="55" font-size="10" fill="#888" text-anchor="middle">GOPLC cluster boss</text>
+
+  <!-- Spine for VM1 -->
+  <line x1="50" y1="62" x2="50" y2="276" stroke="#888" stroke-width="1.5"/>
+
+  <!-- VM1 minion branches -->
+  <line x1="50" y1="82" x2="68" y2="82" stroke="#888" stroke-width="1.5"/>
+  <line x1="50" y1="112" x2="68" y2="112" stroke="#888" stroke-width="1.5"/>
+  <line x1="50" y1="142" x2="68" y2="142" stroke="#888" stroke-width="1.5"/>
+  <line x1="50" y1="172" x2="68" y2="172" stroke="#888" stroke-width="1.5"/>
+  <line x1="50" y1="202" x2="68" y2="202" stroke="#888" stroke-width="1.5"/>
+  <line x1="50" y1="258" x2="68" y2="258" stroke="#888" stroke-width="1.5"/>
+
+  <!-- VM1 minion nodes -->
+  <rect x="68" y="70" width="162" height="26" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="78" y="84" font-size="10" fill="#1a3a6b">crac-gw-row-a-01</text>
+  <text x="78" y="94" font-size="9" fill="#888">→ 192.168.10.10 (Modbus)</text>
+
+  <rect x="68" y="100" width="162" height="26" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="78" y="114" font-size="10" fill="#1a3a6b">crac-gw-row-a-02</text>
+  <text x="78" y="124" font-size="9" fill="#888">→ 192.168.10.11</text>
+
+  <rect x="68" y="130" width="162" height="26" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="78" y="144" font-size="10" fill="#1a3a6b">crac-gw-row-a-03</text>
+  <text x="78" y="154" font-size="9" fill="#888">→ 192.168.10.12</text>
+
+  <rect x="68" y="160" width="162" height="26" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="78" y="178" font-size="9" fill="#888">...</text>
+
+  <rect x="68" y="190" width="162" height="26" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="78" y="204" font-size="10" fill="#1a3a6b">crac-gw-row-j-20</text>
+  <text x="78" y="214" font-size="9" fill="#888">→ 192.168.19.20</text>
+
+  <text x="128" y="238" font-size="9" fill="#888" text-anchor="middle">(200 minions total)</text>
+
+  <!-- VM 2: ups-gateways -->
+  <rect x="264" y="14" width="228" height="276" rx="8" fill="#f0f4fa" stroke="#4a7fc1" stroke-width="1.5"/>
+  <rect x="276" y="26" width="204" height="36" rx="5" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1.5"/>
+  <text x="378" y="41" font-size="12" fill="#1a3a6b" font-weight="bold" text-anchor="middle">VM: ups-gateways</text>
+  <text x="378" y="55" font-size="10" fill="#888" text-anchor="middle">GOPLC cluster boss</text>
+
+  <!-- Spine for VM2 -->
+  <line x1="300" y1="62" x2="300" y2="246" stroke="#888" stroke-width="1.5"/>
+
+  <!-- VM2 minion branches -->
+  <line x1="300" y1="82" x2="318" y2="82" stroke="#888" stroke-width="1.5"/>
+  <line x1="300" y1="112" x2="318" y2="112" stroke="#888" stroke-width="1.5"/>
+  <line x1="300" y1="142" x2="318" y2="142" stroke="#888" stroke-width="1.5"/>
+  <line x1="300" y1="202" x2="318" y2="202" stroke="#888" stroke-width="1.5"/>
+
+  <!-- VM2 minion nodes -->
+  <rect x="318" y="70" width="162" height="26" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="328" y="84" font-size="10" fill="#1a3a6b">ups-gw-room1-01</text>
+  <text x="328" y="94" font-size="9" fill="#888">→ 192.168.20.10</text>
+
+  <rect x="318" y="100" width="162" height="26" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="328" y="118" font-size="9" fill="#888">...</text>
+
+  <rect x="318" y="130" width="162" height="26" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="328" y="144" font-size="10" fill="#1a3a6b">ups-gw-room2-25</text>
+  <text x="328" y="154" font-size="9" fill="#888">→ 192.168.21.35</text>
+
+  <text x="378" y="190" font-size="9" fill="#888" text-anchor="middle">(125 minions total)</text>
+
+  <!-- VM 3: aggregators -->
+  <rect x="514" y="14" width="228" height="276" rx="8" fill="#f0f4fa" stroke="#4a7fc1" stroke-width="1.5"/>
+  <rect x="526" y="26" width="204" height="36" rx="5" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1.5"/>
+  <text x="628" y="41" font-size="12" fill="#1a3a6b" font-weight="bold" text-anchor="middle">VM: aggregators</text>
+  <text x="628" y="55" font-size="10" fill="#888" text-anchor="middle">GOPLC cluster boss</text>
+
+  <!-- Spine for VM3 -->
+  <line x1="550" y1="62" x2="550" y2="246" stroke="#888" stroke-width="1.5"/>
+
+  <!-- VM3 minion branches -->
+  <line x1="550" y1="82" x2="568" y2="82" stroke="#888" stroke-width="1.5"/>
+  <line x1="550" y1="112" x2="568" y2="112" stroke="#888" stroke-width="1.5"/>
+  <line x1="550" y1="142" x2="568" y2="142" stroke="#888" stroke-width="1.5"/>
+  <line x1="550" y1="172" x2="568" y2="172" stroke="#888" stroke-width="1.5"/>
+
+  <!-- VM3 minion nodes -->
+  <rect x="568" y="70" width="162" height="26" rx="4" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1"/>
+  <text x="578" y="87" font-size="11" fill="#1a3a6b">Minion: crac-family-agg</text>
+
+  <rect x="568" y="100" width="162" height="26" rx="4" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1"/>
+  <text x="578" y="117" font-size="11" fill="#1a3a6b">Minion: ups-family-agg</text>
+
+  <rect x="568" y="130" width="162" height="26" rx="4" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1"/>
+  <text x="578" y="147" font-size="11" fill="#1a3a6b">Minion: site-agg</text>
+
+  <rect x="568" y="160" width="162" height="26" rx="4" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1"/>
+  <text x="578" y="177" font-size="11" fill="#1a3a6b">Minion: mqtt-bridge</text>
+
+  <!-- Caption -->
+  <text x="380" y="300" font-size="10" fill="#aaa" text-anchor="middle">Option 1: One VM per device category — boss manages all gateways of that type as in-process minions</text>
+
+</svg>

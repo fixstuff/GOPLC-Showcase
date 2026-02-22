@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif">
+
+  <rect width="600" height="200" fill="white"/>
+
+  <!-- Docker Host box -->
+  <rect x="14" y="14" width="572" height="166" rx="8" fill="#f7f7f7" stroke="#888" stroke-width="1.5"/>
+  <text x="300" y="38" font-size="13" fill="#333" font-weight="bold" text-anchor="middle">Docker Host</text>
+
+  <!-- Vertical spine -->
+  <line x1="50" y1="46" x2="50" y2="168" stroke="#888" stroke-width="1.5"/>
+
+  <!-- Branches -->
+  <line x1="50" y1="66" x2="70" y2="66" stroke="#888" stroke-width="1.5"/>
+  <line x1="50" y1="96" x2="70" y2="96" stroke="#888" stroke-width="1.5"/>
+  <line x1="50" y1="126" x2="70" y2="126" stroke="#888" stroke-width="1.5"/>
+  <line x1="50" y1="156" x2="70" y2="156" stroke="#888" stroke-width="1.5"/>
+
+  <!-- Container nodes (boss containers) -->
+  <rect x="70" y="54" width="490" height="26" rx="4" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1.5"/>
+  <text x="80" y="70" font-size="11" fill="#1a3a6b" font-weight="bold">crac-boss</text>
+  <text x="200" y="70" font-size="11" fill="#888">(port 8510, boss with 250 minion goroutines)</text>
+
+  <rect x="70" y="84" width="490" height="26" rx="4" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1.5"/>
+  <text x="80" y="100" font-size="11" fill="#1a3a6b" font-weight="bold">ups-boss</text>
+  <text x="200" y="100" font-size="11" fill="#888">(port 8520, boss with 125 minion goroutines)</text>
+
+  <rect x="70" y="114" width="490" height="26" rx="4" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1.5"/>
+  <text x="80" y="130" font-size="11" fill="#1a3a6b" font-weight="bold">pdu-boss</text>
+  <text x="200" y="130" font-size="11" fill="#888">(port 8530, boss with 113 minion goroutines)</text>
+
+  <rect x="70" y="144" width="490" height="26" rx="4" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1.5"/>
+  <text x="80" y="160" font-size="11" fill="#1a3a6b" font-weight="bold">agg-boss</text>
+  <text x="200" y="160" font-size="11" fill="#888">(port 8540, boss with site/family aggregators)</text>
+
+</svg>

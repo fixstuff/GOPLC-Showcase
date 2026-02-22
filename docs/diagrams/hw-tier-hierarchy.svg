@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 760 500" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#5a7ab5"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="760" height="500" fill="white"/>
+
+  <!-- SCADA / Enterprise tier (top label only) -->
+  <text x="290" y="28" font-size="13" fill="#333" font-weight="bold">SCADA / Enterprise / Historian</text>
+
+  <!-- Arrow: Site Agg → SCADA -->
+  <line x1="310" y1="50" x2="310" y2="38" stroke="#5a7ab5" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="320" y="47" font-size="10" fill="#5a7ab5">OPC UA + MQTT + InfluxDB</text>
+
+  <!-- Tier 4: Site Aggregator -->
+  <rect x="130" y="52" width="360" height="54" rx="6" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1.5"/>
+  <text x="310" y="75" font-size="14" fill="#1a3a6b" font-weight="bold" text-anchor="middle">Site Aggregator</text>
+  <text x="310" y="94" font-size="11" fill="#1a3a6b" text-anchor="middle">(cross-family KPIs, alarms)</text>
+  <text x="545" y="68" font-size="11" fill="#888">Tier 4 — one per datacenter</text>
+  <text x="545" y="83" font-size="11" fill="#888">OPC UA server + MQTT + InfluxDB</text>
+
+  <!-- Arrow: Family Aggs → Site Agg -->
+  <line x1="310" y1="135" x2="310" y2="123" stroke="#5a7ab5" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="320" y="132" font-size="10" fill="#5a7ab5">OPC UA clients</text>
+
+  <!-- Tier 3: Family Aggregators (3 boxes) -->
+  <rect x="30" y="137" width="170" height="54" rx="6" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1.5"/>
+  <text x="115" y="159" font-size="13" fill="#1a3a6b" font-weight="bold" text-anchor="middle">CRAC Family</text>
+  <text x="115" y="178" font-size="12" fill="#1a3a6b" text-anchor="middle">Aggregator</text>
+
+  <rect x="220" y="137" width="170" height="54" rx="6" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1.5"/>
+  <text x="305" y="159" font-size="13" fill="#1a3a6b" font-weight="bold" text-anchor="middle">UPS Family</text>
+  <text x="305" y="178" font-size="12" fill="#1a3a6b" text-anchor="middle">Aggregator</text>
+
+  <rect x="410" y="137" width="170" height="54" rx="6" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1.5"/>
+  <text x="495" y="159" font-size="13" fill="#1a3a6b" font-weight="bold" text-anchor="middle">PDU Family</text>
+  <text x="495" y="178" font-size="12" fill="#1a3a6b" text-anchor="middle">Aggregator</text>
+
+  <text x="608" y="153" font-size="11" fill="#888">Tier 3 — one per</text>
+  <text x="608" y="168" font-size="11" fill="#888">device category</text>
+
+  <!-- Arrow: Device Gateways → Family Aggs -->
+  <line x1="310" y1="220" x2="310" y2="208" stroke="#5a7ab5" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="320" y="217" font-size="10" fill="#5a7ab5">OPC UA clients</text>
+
+  <!-- Tier 2: Device Gateways (5 boxes) -->
+  <rect x="14" y="222" width="92" height="54" rx="6" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1.5"/>
+  <text x="60" y="245" font-size="12" fill="#1a3a6b" font-weight="bold" text-anchor="middle">Device</text>
+  <text x="60" y="263" font-size="12" fill="#1a3a6b" text-anchor="middle">Gateway</text>
+
+  <rect x="118" y="222" width="92" height="54" rx="6" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1.5"/>
+  <text x="164" y="245" font-size="12" fill="#1a3a6b" font-weight="bold" text-anchor="middle">Device</text>
+  <text x="164" y="263" font-size="12" fill="#1a3a6b" text-anchor="middle">Gateway</text>
+
+  <rect x="222" y="222" width="92" height="54" rx="6" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1.5"/>
+  <text x="268" y="245" font-size="12" fill="#1a3a6b" font-weight="bold" text-anchor="middle">Device</text>
+  <text x="268" y="263" font-size="12" fill="#1a3a6b" text-anchor="middle">Gateway</text>
+
+  <rect x="326" y="222" width="92" height="54" rx="6" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1.5"/>
+  <text x="372" y="245" font-size="12" fill="#1a3a6b" font-weight="bold" text-anchor="middle">Device</text>
+  <text x="372" y="263" font-size="12" fill="#1a3a6b" text-anchor="middle">Gateway</text>
+
+  <rect x="430" y="222" width="92" height="54" rx="6" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1.5"/>
+  <text x="476" y="245" font-size="12" fill="#1a3a6b" font-weight="bold" text-anchor="middle">Device</text>
+  <text x="476" y="263" font-size="12" fill="#1a3a6b" text-anchor="middle">Gateway</text>
+
+  <text x="560" y="240" font-size="11" fill="#888">Tier 2 — one per</text>
+  <text x="560" y="255" font-size="11" fill="#888">physical device</text>
+
+  <!-- Arrow: Physical Devices → Device Gateways -->
+  <line x1="310" y1="310" x2="310" y2="293" stroke="#5a7ab5" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="200" y="308" font-size="10" fill="#5a7ab5">Modbus / BACnet / SNMP / EtherNet/IP / SEL / IEC 104</text>
+
+  <!-- Tier 1: Physical Devices -->
+  <rect x="14" y="312" width="510" height="60" rx="6" fill="#f0f0f0" stroke="#888888" stroke-width="1.5"/>
+  <text x="269" y="337" font-size="13" fill="#333" font-weight="bold" text-anchor="middle">Physical Devices  OR  GOPLC Simulators</text>
+  <text x="269" y="358" font-size="12" fill="#333" text-anchor="middle">CRAC, UPS, chiller, generator, PDU, sensor hub...</text>
+
+  <text x="560" y="330" font-size="11" fill="#888">Tier 1 — field</text>
+  <text x="560" y="345" font-size="11" fill="#888">equipment</text>
+
+  <!-- Legend -->
+  <rect x="30" y="415" width="16" height="14" rx="3" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1"/>
+  <text x="52" y="426" font-size="11" fill="#555">Aggregation tier (Tier 3–4)</text>
+  <rect x="220" y="415" width="16" height="14" rx="3" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="242" y="426" font-size="11" fill="#555">Device gateway (Tier 2)</text>
+  <rect x="400" y="415" width="16" height="14" rx="3" fill="#f0f0f0" stroke="#888888" stroke-width="1"/>
+  <text x="422" y="426" font-size="11" fill="#555">Field equipment / simulators (Tier 1)</text>
+
+  <!-- Tier label lines -->
+  <line x1="12" y1="137" x2="12" y2="191" stroke="#aaa" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="12" y1="222" x2="12" y2="276" stroke="#aaa" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="12" y1="312" x2="12" y2="372" stroke="#aaa" stroke-width="1" stroke-dasharray="4,3"/>
+</svg>

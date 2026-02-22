@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 700 520" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#5a7ab5"/>
+    </marker>
+  </defs>
+
+  <rect width="700" height="520" fill="white"/>
+
+  <!-- Server Farm box -->
+  <rect x="180" y="14" width="340" height="120" rx="8" fill="#f0f4fa" stroke="#4a7fc1" stroke-width="1.5"/>
+  <text x="350" y="36" font-size="13" fill="#1a3a6b" font-weight="bold" text-anchor="middle">Server Farm / VLAN 100</text>
+  <text x="350" y="52" font-size="11" fill="#888" text-anchor="middle">10.100.0.0/16</text>
+
+  <!-- VM Host inner box -->
+  <rect x="210" y="60" width="280" height="62" rx="5" fill="#dce8f8" stroke="#4a7fc1" stroke-width="1"/>
+  <text x="350" y="78" font-size="12" fill="#1a3a6b" font-weight="bold" text-anchor="middle">VM Host 1</text>
+  <text x="350" y="95" font-size="11" fill="#333" text-anchor="middle">gw-crac-01  gw-crac-02  gw-ups-01  ...</text>
+  <text x="350" y="112" font-size="10" fill="#888" text-anchor="middle">gateway instances</text>
+
+  <!-- Trunk line from Server Farm to Cisco switch -->
+  <line x1="350" y1="134" x2="350" y2="186" stroke="#5a7ab5" stroke-width="2.5"/>
+  <text x="360" y="165" font-size="11" fill="#5a7ab5">Trunk (all VLANs)</text>
+
+  <!-- Cisco Distribution Switch -->
+  <rect x="150" y="186" width="400" height="100" rx="8" fill="#e8eef8" stroke="#3a5fa0" stroke-width="2"/>
+  <text x="350" y="210" font-size="14" fill="#1a3a6b" font-weight="bold" text-anchor="middle">Cisco 9300 / 9500</text>
+  <text x="350" y="228" font-size="12" fill="#1a3a6b" text-anchor="middle">Distribution Switch</text>
+  <text x="220" y="250" font-size="10" fill="#555">SVI VLAN 100: 10.100.0.1/16</text>
+  <text x="220" y="264" font-size="10" fill="#555">SVI VLAN 110: 192.168.10.1/24</text>
+  <text x="400" y="250" font-size="10" fill="#555">SVI VLAN 111: 192.168.11.1/24</text>
+  <text x="400" y="264" font-size="10" fill="#555">SVI VLAN 112: 192.168.12.1/24</text>
+
+  <!-- Trunk lines from switch to edge switches -->
+  <!-- Left trunk -->
+  <line x1="240" y1="286" x2="155" y2="340" stroke="#5a7ab5" stroke-width="2"/>
+  <!-- Center trunk -->
+  <line x1="350" y1="286" x2="350" y2="340" stroke="#5a7ab5" stroke-width="2"/>
+  <!-- Right trunk -->
+  <line x1="460" y1="286" x2="545" y2="340" stroke="#5a7ab5" stroke-width="2"/>
+
+  <text x="80" y="316" font-size="10" fill="#5a7ab5">Trunk</text>
+  <text x="360" y="316" font-size="10" fill="#5a7ab5">Trunk</text>
+  <text x="510" y="316" font-size="10" fill="#5a7ab5">Trunk</text>
+
+  <!-- Edge Switch: CRAC Row A -->
+  <rect x="60" y="340" width="185" height="66" rx="6" fill="#f0f0f0" stroke="#888" stroke-width="1.5"/>
+  <text x="152" y="360" font-size="12" fill="#333" font-weight="bold" text-anchor="middle">Edge Switch</text>
+  <text x="152" y="376" font-size="11" fill="#333" text-anchor="middle">CRAC Row A</text>
+  <text x="152" y="391" font-size="10" fill="#888" text-anchor="middle">VLAN 110 / 192.168.10.0/24</text>
+
+  <!-- Edge Switch: UPS Room 1 -->
+  <rect x="258" y="340" width="185" height="66" rx="6" fill="#f0f0f0" stroke="#888" stroke-width="1.5"/>
+  <text x="350" y="360" font-size="12" fill="#333" font-weight="bold" text-anchor="middle">Edge Switch</text>
+  <text x="350" y="376" font-size="11" fill="#333" text-anchor="middle">UPS Room 1</text>
+  <text x="350" y="391" font-size="10" fill="#888" text-anchor="middle">VLAN 111 / 192.168.11.0/24</text>
+
+  <!-- Edge Switch: Chiller Plant -->
+  <rect x="456" y="340" width="185" height="66" rx="6" fill="#f0f0f0" stroke="#888" stroke-width="1.5"/>
+  <text x="548" y="360" font-size="12" fill="#333" font-weight="bold" text-anchor="middle">Edge Switch</text>
+  <text x="548" y="376" font-size="11" fill="#333" text-anchor="middle">Chiller Plant</text>
+  <text x="548" y="391" font-size="10" fill="#888" text-anchor="middle">VLAN 112 / 192.168.12.0/24</text>
+
+  <!-- Device endpoints CRAC Row A -->
+  <line x1="100" y1="406" x2="100" y2="440" stroke="#888" stroke-width="1.5"/>
+  <line x1="152" y1="406" x2="152" y2="440" stroke="#888" stroke-width="1.5"/>
+  <line x1="204" y1="406" x2="204" y2="440" stroke="#888" stroke-width="1.5"/>
+
+  <rect x="72" y="440" width="56" height="32" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="100" y="458" font-size="11" fill="#1a3a6b" text-anchor="middle">CRAC</text>
+  <text x="100" y="470" font-size="10" fill="#888" text-anchor="middle">.10</text>
+
+  <rect x="124" y="440" width="56" height="32" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="152" y="458" font-size="11" fill="#1a3a6b" text-anchor="middle">CRAC</text>
+  <text x="152" y="470" font-size="10" fill="#888" text-anchor="middle">.11</text>
+
+  <rect x="176" y="440" width="56" height="32" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="204" y="458" font-size="11" fill="#1a3a6b" text-anchor="middle">CRAC</text>
+  <text x="204" y="470" font-size="10" fill="#888" text-anchor="middle">.12</text>
+
+  <!-- Device endpoints UPS Room 1 -->
+  <line x1="298" y1="406" x2="298" y2="440" stroke="#888" stroke-width="1.5"/>
+  <line x1="350" y1="406" x2="350" y2="440" stroke="#888" stroke-width="1.5"/>
+  <line x1="402" y1="406" x2="402" y2="440" stroke="#888" stroke-width="1.5"/>
+
+  <rect x="270" y="440" width="56" height="32" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="298" y="458" font-size="11" fill="#1a3a6b" text-anchor="middle">UPS</text>
+  <text x="298" y="470" font-size="10" fill="#888" text-anchor="middle">.10</text>
+
+  <rect x="322" y="440" width="56" height="32" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="350" y="458" font-size="11" fill="#1a3a6b" text-anchor="middle">UPS</text>
+  <text x="350" y="470" font-size="10" fill="#888" text-anchor="middle">.11</text>
+
+  <rect x="374" y="440" width="56" height="32" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="402" y="458" font-size="11" fill="#1a3a6b" text-anchor="middle">UPS</text>
+  <text x="402" y="470" font-size="10" fill="#888" text-anchor="middle">.12</text>
+
+  <!-- Device endpoints Chiller Plant -->
+  <line x1="522" y1="406" x2="522" y2="440" stroke="#888" stroke-width="1.5"/>
+  <line x1="574" y1="406" x2="574" y2="440" stroke="#888" stroke-width="1.5"/>
+
+  <rect x="494" y="440" width="56" height="32" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="522" y="458" font-size="11" fill="#1a3a6b" text-anchor="middle">Chiller</text>
+  <text x="522" y="470" font-size="10" fill="#888" text-anchor="middle">.10</text>
+
+  <rect x="546" y="440" width="56" height="32" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="574" y="458" font-size="11" fill="#1a3a6b" text-anchor="middle">Chiller</text>
+  <text x="574" y="470" font-size="10" fill="#888" text-anchor="middle">.11</text>
+
+  <!-- Caption -->
+  <text x="350" y="506" font-size="10" fill="#aaa" text-anchor="middle">Option A: Cisco Distribution Switch with SVIs performs inter-VLAN routing at wire speed</text>
+
+</svg>

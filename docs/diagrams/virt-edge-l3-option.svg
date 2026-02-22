@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 400 180" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif">
+
+  <rect width="400" height="180" fill="white"/>
+
+  <!-- Root node: Edge L3 Switch -->
+  <rect x="60" y="20" width="280" height="44" rx="6" fill="#f0f0f0" stroke="#888" stroke-width="1.5"/>
+  <text x="200" y="40" font-size="13" fill="#333" font-weight="bold" text-anchor="middle">Edge L3 Switch</text>
+  <text x="200" y="56" font-size="10" fill="#888" text-anchor="middle">192.168.10.1/24 + uplink to 10.100.0.0/16</text>
+
+  <!-- Vertical spine -->
+  <line x1="100" y1="64" x2="100" y2="155" stroke="#888" stroke-width="1.5"/>
+
+  <!-- Branches -->
+  <line x1="100" y1="85" x2="120" y2="85" stroke="#888" stroke-width="1.5"/>
+  <line x1="100" y1="115" x2="120" y2="115" stroke="#888" stroke-width="1.5"/>
+  <line x1="100" y1="145" x2="120" y2="145" stroke="#888" stroke-width="1.5"/>
+
+  <!-- Device nodes -->
+  <rect x="120" y="73" width="100" height="26" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="170" y="90" font-size="12" fill="#1a3a6b" text-anchor="middle">CRAC .10</text>
+
+  <rect x="120" y="103" width="100" height="26" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="170" y="120" font-size="12" fill="#1a3a6b" text-anchor="middle">CRAC .11</text>
+
+  <rect x="120" y="133" width="100" height="26" rx="4" fill="#e8f2e8" stroke="#4a9c4a" stroke-width="1"/>
+  <text x="170" y="150" font-size="12" fill="#1a3a6b" text-anchor="middle">CRAC .12</text>
+
+  <text x="200" y="170" font-size="10" fill="#aaa" text-anchor="middle">Option B: Edge L3 switch as router (not recommended at scale)</text>
+
+</svg>
