@@ -1,6 +1,8 @@
 # GOPLC Clustering Whitepaper: Distributed Real-Time PLC Performance
 
-**White Paper | February 2026**
+**Author:** James Belcher
+**Date:** February 2026
+**Version:** 1.0
 
 ---
 
@@ -323,7 +325,7 @@ Realistically, dual-socket NUMA scaling would likely achieve 60-80% of the linea
 
 A large automotive manufacturing plant typically runs 200-500 PLCs. A single dual-EPYC server running GOPLC could consolidate all of them — 12,000 independent control loops at 1-millisecond scan times, or 768 loops at 50-microsecond scan times.
 
-The server costs approximately $70,000 fully configured. The PLCs it replaces cost $600,000 to $15,000,000 depending on vendor and complexity. The economics are not incremental — they are transformational.
+The server costs approximately $70,000 fully configured. GOPLC cluster licensing for a 12,000-minion deployment adds $7.2M at $600/instance — still a fraction of the $600K–$15M in hardware being replaced, and with zero vendor-specific spare parts or programming environments. The PLCs it replaces cost $600,000 to $15,000,000 depending on vendor and complexity. The economics are not incremental — they are transformational.
 
 ### 6.3 Future Hardware
 
@@ -501,7 +503,7 @@ The industrial PLC market is built on an architectural assumption from 1968: one
 
 **Scaling.** Linear throughput growth from 1 to 500 minions. Projected 13 million aggregate scans per second on current high-end server hardware. Architecture scales with Moore's Law — more cores, more minions, same efficiency.
 
-**Economics.** One server replaces hundreds of PLCs. Two servers provide full redundancy with sub-millisecond failover. Zero vendor lock-in, zero per-unit licensing, commodity hardware.
+**Economics.** One server replaces hundreds of PLCs. Two servers provide full redundancy with sub-millisecond failover. No vendor lock-in. Competitive per-instance licensing — $400 per standalone runtime, $600 per cluster instance — with the economic case built on hardware consolidation, not software cost. Commodity hardware throughout.
 
 **Deployment.** Docker containers with zero overhead. Kubernetes-ready. Bosch ctrlX CORE integration. Bare metal with PREEMPT_RT for maximum determinism.
 

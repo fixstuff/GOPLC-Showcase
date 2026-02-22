@@ -283,6 +283,50 @@ GOPLC also runs as a Docker container (Alpine-based, ~20 MB image, Kubernetes he
 
 ---
 
+## Scale Estimates
+
+### Instance Counts at Hyperscale
+
+The gateway hierarchy scales to facilities of any size. Using industry-standard
+equipment density (4–6 CRACs/MW, 40–50 rack PDUs/MW, 2–3 UPS modules/MW):
+
+| Facility Size | Device Gateways (practical) | Aggregation Tier | Total Instances |
+|:-------------|----------------------------:|----------------:|----------------:|
+| **50 MW** | ~737 | 13 | **~750** |
+| **100 MW** | ~1,385 | 15 | **~1,400** |
+| **500 MW** | ~6,583 | 17 | **~6,600** |
+| **1 GW** | ~12,978 | 22 | **~13,000** |
+
+Practical counts use grouping for high-density, low-complexity device types
+(rack PDUs, environmental sensors): one gateway instance polling 10–20 devices
+of the same type via SNMP, rather than strict 1:1 mapping.
+
+### Hardware vs. Virtualized Deployment Cost
+
+The gateway tier can be deployed on dedicated edge SBCs (ctrlX CORE) or as
+containerized instances on existing server infrastructure reaching field devices
+via routed VLANs on the datacenter's existing Cisco distribution switch.
+
+| Facility | Edge SBC Model (infra + SW) | Virtualized Model (infra + SW) | Savings |
+|:---------|----------------------------:|-------------------------------:|--------:|
+| **50 MW** | $1.01M–$1.43M | $482K–$520K | 52–66% |
+| **100 MW** | $1.89M–$2.66M | $888K–$948K | 54–64% |
+| **500 MW** | $8.91M–$12.54M | $4.17M–$4.44M | 50–65% |
+| **1 GW** | $17.55M–$24.70M | $8.19M–$8.68M | 51–53% |
+
+*ctrlX CORE SBC at $600–700/unit. GOPLC standalone license $400/instance,
+cluster license $600/instance. Virtual infra = commodity servers + VLAN config.
+Savings driven by infrastructure elimination; cluster licensing is $200/instance
+more expensive than standalone.*
+
+For a detailed treatment of both architectures see:
+- *GOPLC DC Simulation: Hardware Gateway Architecture* — edge SBC deployment,
+  tiered hierarchy, standalone vs. cluster configuration
+- *GOPLC DC Simulation: Virtualized Gateway Architecture* — server VM deployment,
+  Cisco SVI routing, migration path from hardware
+
+---
+
 ## Comparison with Existing Solutions
 
 | Capability | GOPLC | Ignition | Niagara | Custom Scripts |
@@ -310,7 +354,7 @@ For data center operators navigating the 2026 capacity expansion, GOPLC provides
 
 ---
 
-**Contact:** James Belcher -- jamesbel@gmail.com | [LinkedIn](https://www.linkedin.com/in/james-belcher-63784390/)
+**Contact:** James Belcher -- jbelcher@jmbtechnical.com | [LinkedIn](https://www.linkedin.com/in/james-belcher-63784390/)
 
 ---
 
