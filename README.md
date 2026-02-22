@@ -26,7 +26,8 @@
   <a href="#redundancy--failover">Redundancy</a> •
   <a href="#authentication">Authentication</a> •
   <a href="#quick-start">Quick Start</a> •
-  <a href="#architecture">Architecture</a>
+  <a href="#architecture">Architecture</a> •
+  <a href="#whitepapers">Whitepapers</a>
 </p>
 
 ---
@@ -708,7 +709,7 @@ Measured on a 24-core / 32-thread AMD system running PID loop workloads:
 | Allen-Bradley ControlLogix | 500μs | 1 (per chassis) | ~2,000 | Single-threaded |
 | **GOPLC** | **50μs** | **All available** | **620,949** | **Distributed goroutines** |
 
-See the full [Clustering Whitepaper (PDF)](docs/whitepaper-clustering.pdf) for architecture details, methodology, and complete benchmark data.
+See the full [Clustering Whitepaper (PDF)](docs/whitepaper-clustering.pdf) for architecture details, methodology, and complete benchmark data. See also the [DC Simulation Hardware Whitepaper](docs/WHITEPAPER_DC_SIMULATION_HARDWARE.md) for hyperscale deployment estimates (50 MW–1 GW).
 
 ---
 
@@ -800,7 +801,7 @@ Corporate Layer (Grafana, SCADA, cloud)
 - **Failover:** DNP3 outstation with store-and-forward (SQLite buffer, GZIP + AES-256-GCM encryption)
 - Automatic switchover when MQTT path goes stale
 
-See the full [Datacenter Gateway Whitepaper](docs/whitepaper-datacenter-gateway.md) for architecture details and deployment examples.
+See the full [Datacenter Gateway Whitepaper](docs/whitepaper-datacenter-gateway.md) for architecture details and deployment examples. For scale analysis and cost modeling see the [Hardware Gateway Whitepaper](docs/WHITEPAPER_DC_SIMULATION_HARDWARE.md) and [Virtualized Gateway Whitepaper](docs/WHITEPAPER_DC_SIMULATION_VIRTUAL.md).
 
 ---
 
@@ -1109,9 +1110,20 @@ GOPLC is designed for:
 
 ---
 
+## Whitepapers
+
+| Whitepaper | Description |
+|------------|-------------|
+| [Clustering: Distributed Real-Time PLC Performance](docs/whitepaper-clustering.md) ([PDF](docs/whitepaper-clustering.pdf)) | Architecture, benchmark methodology, and measured results: 10.4x throughput improvement, 620,949 aggregate scans/sec, linear scaling to 500+ minions, water treatment plant validation |
+| [Datacenter Gateway: Universal Protocol Gateway](docs/whitepaper-datacenter-gateway.md) ([PDF](docs/whitepaper-datacenter-gateway.pdf)) | Three-tier DC hierarchy, 12 protocol drivers, dual-path MQTT + DNP3 store-and-forward, redundancy strategies, AI-assisted commissioning, ctrlX CORE deployment |
+| [DC Simulation: Hardware Gateway Architecture](docs/WHITEPAPER_DC_SIMULATION_HARDWARE.md) ([PDF](docs/WHITEPAPER_DC_SIMULATION_HARDWARE.pdf)) | 11 device simulators, 6 gateway blueprints, scale estimates 50 MW–1 GW, ctrlX CORE edge SBC deployment, standalone vs cluster decision matrix, full cost model |
+| [DC Simulation: Virtualized Gateway Architecture](docs/WHITEPAPER_DC_SIMULATION_VIRTUAL.md) ([PDF](docs/WHITEPAPER_DC_SIMULATION_VIRTUAL.pdf)) | Server VM gateways via Cisco SVI routing, 51–66% total cost reduction vs hardware, migration path, IEC 62443 security considerations |
+
+---
+
 ## License
 
-GOPLC is proprietary software. Contact for licensing inquiries.
+GOPLC is proprietary software. Contact jbelcher@jmbtechnical.com for licensing inquiries.
 
 ---
 
