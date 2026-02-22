@@ -21,10 +21,15 @@
   <a href="#web-ide">Web IDE</a> •
   <a href="#node-red-integration">Node-RED</a> •
   <a href="#debugger">Debugger</a> •
+  <a href="#ai-assistant">AI</a> •
+  <a href="#agentic-control-loop">Agentic</a> •
+  <a href="#hardware-manifests">Manifests</a> •
   <a href="#protocols">Protocols</a> •
   <a href="#clustering">Clustering</a> •
   <a href="#redundancy--failover">Redundancy</a> •
-  <a href="#authentication">Authentication</a> •
+  <a href="#authentication">Auth</a> •
+  <a href="#licensing">Licensing</a> •
+  <a href="#snap--ctrlx-core">Snap</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#architecture">Architecture</a> •
   <a href="#whitepapers">Whitepapers</a>
@@ -339,6 +344,81 @@ ai:
 
 ---
 
+## Agentic Control Loop
+
+An autonomous AI control agent that operates the PLC directly — separate from the code-writing assistant. Instead of generating code for a human to review, it reads sensors, writes setpoints, deploys programs, and manages tasks via tool calls in a multi-turn loop.
+
+### 12 Built-in Control Tools
+
+| Tool | Category | Description |
+|------|----------|-------------|
+| `read_variable` | Read-only | Read current PLC variable value |
+| `list_variables` | Read-only | List all variables with optional prefix filter |
+| `get_task_status` | Read-only | All task states, scan times, faults |
+| `get_diagnostics` | Read-only | Memory, uptime, scan stats |
+| `get_faults` | Read-only | Active task fault messages |
+| `write_variable` | Normal | Write setpoint or control variable |
+| `reload_task` | Normal | Hot-reload task without stopping others |
+| `start_task` | Normal | Start named task or all tasks |
+| `create_manifest` | Normal | Register hardware descriptor |
+| `create_hmi_page` | Normal | Generate Node-RED Dashboard 2.0 flow |
+| `deploy_program` | Normal | AI-generate and deploy a control program |
+| `stop_task` | Critical | Stop a running task |
+
+```bash
+curl -X POST http://localhost:8082/api/ai/control \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Ramp the temperature setpoint to 50 degrees and start the pump",
+    "max_turns": 6
+  }'
+```
+
+The response includes `actions_executed` — a full log of every tool call and result — and `turns_used` showing how many AI iterations were needed. Multi-turn conversation history is supported for follow-up instructions.
+
+---
+
+## Hardware Manifests
+
+Declarative YAML descriptors for physical hardware. GOPLC reads manifests and auto-generates a `SysInit_{id}` ST program that opens hardware channels on startup and maps sensor readings to named PLC variables.
+
+```yaml
+id: "greenhouse_1"
+name: "Tomato Greenhouse"
+hardware:
+  - id: "temp_sensor"
+    type: "phidgets"
+    channel_type: "temperature"
+    serial: -1          # -1 = any connected device
+    hub_port: 0
+    st_var: "temp_c"
+
+  - id: "heater_relay"
+    type: "phidgets"
+    channel_type: "digital_output"
+    hub_port: 2
+    st_var: "heater_on"
+
+  - id: "custom_sensor"
+    type: "custom"
+    open_call: "MY_DEVICE_OPEN('{name}')"
+    read_call: "MY_DEVICE_READ('{name}')"
+    write_call: "MY_DEVICE_WRITE('{name}', {var})"
+```
+
+GOPLC generates `VAR_GLOBAL` declarations for all `st_var` bindings and a startup sequence that initializes each hardware channel. Manifests can be created manually, via API, or through the agentic control loop.
+
+**API:**
+
+```bash
+GET    /api/system/manifests              # List all manifests
+POST   /api/system/manifests              # Create manifest
+PUT    /api/system/manifests/:id          # Update manifest
+DELETE /api/system/manifests/:id          # Delete manifest
+```
+
+---
+
 ## HMI Builder
 
 Create and serve custom web-based operator displays directly from the IDE.
@@ -550,6 +630,7 @@ GOPLC includes **55,000+ lines** of industrial protocol code for seamless integr
 | **Raspberry Pi GPIO** | Direct | Digital I/O | Edge computing, local control |
 | **PCF8574** | I2C | 8-bit I/O Expander | Expand GPIO count |
 | **Grove ADC** | I2C | Analog Input | Seeed Studio sensors |
+| **Phidgets** | USB/VINT | Multi-sensor | Temperature, humidity, voltage, current, relays, motors, encoders (simulation mode; real hardware via CGO extension) |
 
 **Implemented - Testing Soon:**
 
@@ -761,15 +842,99 @@ Optional JWT-based authentication that protects engineering endpoints while leav
 ### Configuration
 
 ```yaml
-auth:
-  enabled: true
-  secret: "your-jwt-secret"
-  token_expiry: "24h"
-  users:
-    - username: "engineer"
-      password_hash: "$2a$10$..."    # bcrypt hash
-      role: "admin"
+api:
+  auth:
+    enabled: true
+    jwt_secret: "your-jwt-secret"     # auto-generated if empty (won't survive restart)
+    token_expiry_hours: 24
+    users:
+      - username: admin
+        password_hash: "$2a$10$..."   # bcrypt hash
 ```
+
+```bash
+# Generate a bcrypt hash for the config
+goplc auth hash-password mypassword
+
+# Generate a random JWT secret
+goplc auth generate-secret
+```
+
+---
+
+## Licensing
+
+Offline HMAC-signed unlock codes — no server, no internet, no phone-home. Runs in a 2-hour restartable demo mode until activated.
+
+### Activation Flow
+
+1. Get your installation ID: `GET /api/license/info`
+2. Email the hardware ID to the developer
+3. Receive an unlock code (`GOPLC-XXXXXX`)
+4. Activate: `POST /api/license/activate` with `{"unlock_code": "GOPLC-..."}`
+
+| Status | Meaning |
+|--------|---------|
+| `demo` | 2-hour trial, restartable via API |
+| `active` | Valid unlock code installed |
+| `expired` | Demo expired, activation required |
+
+```bash
+# Check license status and get installation ID
+curl http://localhost:8082/api/license/info
+
+# Activate with an unlock code
+curl -X POST http://localhost:8082/api/license/activate \
+  -H "Content-Type: application/json" \
+  -d '{"unlock_code": "GOPLC-XXXXXXXXXXXXXXXX"}'
+
+# Restart the 2-hour demo timer
+curl -X POST http://localhost:8082/api/license/restart-demo
+```
+
+License cache is Fernet-encrypted and stored outside the bind-mounted data directory. Unlock codes are HMAC-signed — the binary verifies only; generation uses a separate developer-side tool. The `PURGE_LICENSE=true` environment variable wipes license data on startup for clean reinstalls.
+
+---
+
+## Snap / ctrlX CORE
+
+Package GOPLC as an Ubuntu Core snap for the [Bosch ctrlX CORE](https://www.boschrexroth.com/ctrlx-core) ecosystem (ARM64, strict confinement).
+
+```bash
+make snap-stage            # ARM64 target (ctrlX CORE)
+make snap-stage-amd64      # amd64 (local testing)
+./build-snap.sh            # Full build + snapcraft pack
+```
+
+Post-install configuration via `snap set`:
+
+```bash
+sudo snap set goplc-runtime api-port=8082
+sudo snap set goplc-runtime cluster=true minions=4
+sudo snap restart goplc-runtime
+```
+
+### ctrlX Data Layer Bridge
+
+Bidirectional variable sync between GOPLC and the ctrlX Data Layer via REST (no CGO required):
+
+```yaml
+ctrlx_datalayer:
+  enabled: true
+  base_url: "https://localhost"
+  username: "ctrlx-user"
+  password: "ctrlx-password"
+  publish_prefix: "goplc-runtime"        # ctrlX node path prefix
+  publish_vars: ["temp_c", "pump_on"]    # PLC → ctrlX Data Layer
+  subscribe_vars: ["ctrlx/setpoint"]     # ctrlX Data Layer → PLC
+  sync_interval_ms: 100
+  insecure_tls: true
+```
+
+- PLC variables published as ctrlX Data Layer nodes under `publish_prefix/`
+- ctrlX nodes read back into PLC variables on each sync interval
+- Authenticates via ctrlX identity manager JWT
+- Pure HTTP/REST — no libcomm_datalayer bindings required
 
 ---
 
