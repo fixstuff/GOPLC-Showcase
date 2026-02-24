@@ -29,7 +29,7 @@ GOPLC is an IEC 61131-3 PLC runtime written in Go that functions as a universal 
 
 This paper describes the architecture, protocol capabilities, redundancy mechanisms, and deployment model for GOPLC in data center BMS and EPMS applications.
 
-![GOPLC Architecture Overview](../GOPLC-Showcase/assets/architecture-overview.svg)
+![GOPLC Architecture Overview](../assets/architecture-overview.svg)
 
 ---
 
@@ -48,7 +48,7 @@ The global data center market reached approximately $430 billion in 2026, projec
 
 GOPLC deploys in a three-tier hierarchy mirroring physical data center topology: edge modules, site supervisors, and corporate dashboards.
 
-![Data Center Three-Tier Architecture](../GOPLC-Showcase/assets/datacenter-three-tier.svg)
+![Data Center Three-Tier Architecture](../assets/datacenter-three-tier.svg)
 
 ### Edge Module Layer
 
@@ -124,7 +124,7 @@ Redundancy in data center monitoring is not optional. GOPLC provides three compl
 
 Every edge module exposes data through MQTT (fast, sub-second) and DNP3 outstation (store-and-forward, event-buffered). When the MQTT path fails, the DNP3 outstation continues buffering events with timestamps in its SQLite-backed queue. On reconnection, the supervisor's DNP3 master retrieves the full event history in order — zero data loss, timestamp integrity preserved, no single point of failure.
 
-![Dual-Path Communication](../GOPLC-Showcase/assets/datacenter-dual-path.svg)
+![Dual-Path Communication](../assets/datacenter-dual-path.svg)
 
 ### Redundancy Test Implementations
 
@@ -132,15 +132,15 @@ Three redundancy approaches have been implemented and tested as full 3-cluster s
 
 **Test 1: API-Driven OPC UA Reconfiguration** — Single OPC UA client connects to primary. On heartbeat staleness (5 consecutive stale reads), the supervisor disconnects, deletes the client, creates a new one pointed at the backup, and reconnects. Clean but incurs reconnection latency.
 
-![Test 1: API-Driven Reconfiguration](../GOPLC-Showcase/assets/redundancy-test1-api-reconfig.svg)
+![Test 1: API-Driven Reconfiguration](../assets/redundancy-test1-api-reconfig.svg)
 
 **Test 2: Dual-Client Approach** — Two OPC UA clients are always connected simultaneously (one to primary, one to backup). Both heartbeats are monitored continuously. Failover is a boolean switch (`useBackup := TRUE`) — zero reconnection delay. Automatic failback when primary recovers.
 
-![Test 2: Dual-Client](../GOPLC-Showcase/assets/redundancy-test2-dual-client.svg)
+![Test 2: Dual-Client](../assets/redundancy-test2-dual-client.svg)
 
 **Test 3: DataLayer Backbone** — Primary and backup nodes publish `DL_*` prefixed variables to a TCP DataLayer. The supervisor reads via `DL_GET()` and monitors health via `DL_LATENCY_US()`. Failover triggers an `HTTP_POST` to reconfigure the DataLayer address. Sub-microsecond latency on shared memory, 100-500 us on TCP LAN.
 
-![Test 3: DataLayer Backbone](../GOPLC-Showcase/assets/redundancy-test3-datalayer.svg)
+![Test 3: DataLayer Backbone](../assets/redundancy-test3-datalayer.svg)
 
 ### OPC UA Client-Side Failover (Test 1 Detail)
 
@@ -187,7 +187,7 @@ Detection time: 5 scan cycles (500ms at 100ms scan). Switchover: one scan cycle.
 
 For multi-cluster deployments, each node publishes a heartbeat variable. Remote nodes appear automatically with a `REMOTE_` prefix via the DataLayer. If `REMOTE_PLC1_DL_HEARTBEAT` goes stale for 10 consecutive reads, the local node activates backup logic. DataLayer latency: <1 us (shared memory, same machine) or 100-500 us (TCP, cross-machine).
 
-![Latency Distribution](../GOPLC-Showcase/assets/latency-distribution.svg)
+![Latency Distribution](../assets/latency-distribution.svg)
 
 ### Resilience Functions
 
@@ -227,9 +227,9 @@ All measurements on Intel i9-13900KS, 62 GB RAM, January 2026:
 | DataLayer latency (shared memory) | <1 us |
 | 24-hour soak test | 0 missed scans, 0 memory leaks |
 
-![Scan Time Distribution](../GOPLC-Showcase/assets/scan-time-distribution.svg)
+![Scan Time Distribution](../assets/scan-time-distribution.svg)
 
-![5000 Server Benchmark](../GOPLC-Showcase/assets/benchmark-5000-servers.svg)
+![5000 Server Benchmark](../assets/benchmark-5000-servers.svg)
 
 ---
 
@@ -273,7 +273,7 @@ A single GOPLC process spawns isolated PLC instances as goroutines. Each minion 
 | Idle | 10,000 | 37.4 GB | 3.9 MB |
 | Running ST programs | 1,000 | 15.8 GB | 15.8 MB |
 
-![Cluster Benchmark](../GOPLC-Showcase/assets/cluster-benchmark-comparison.svg)
+![Cluster Benchmark](../assets/cluster-benchmark-comparison.svg)
 
 A typical edge module needs 3-5 minions — well within the capacity of the ctrlX CORE X3. For the supervisor tier, a rack-mount server or VM handles dozens of edge module connections.
 

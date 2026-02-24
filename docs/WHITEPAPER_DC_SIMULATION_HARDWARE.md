@@ -133,7 +133,7 @@ Simulators do not return static values. Each implements a realistic process mode
 - **Thermal drift**: Sinusoidal oscillation on configurable periods (15s–300s) with
   random noise overlay, simulating real HVAC process dynamics
 - **First-order lag filters**: Fan speed, temperature, and pressure slew toward targets
-  with configurable time constants (α = 0.1–0.4), preventing unrealistic step changes
+  with configurable time constants (alpha = 0.1–0.4), preventing unrealistic step changes
 - **State machines**: Generators implement a full Off → Pre-start → Cranking → Warmup →
   Running → Cooldown → Fault lifecycle with realistic timing (5s fuel prime, 10s crank,
   30s warmup, 60s cooldown)
@@ -556,13 +556,13 @@ as goroutines in a single process — no Docker or separate binaries needed.
 
 | Criterion                | Standalone          | Cluster             | Recommendation                                     |
 | :----------------------- | :-----------------: | :-----------------: | :------------------------------------------------- |
-| Fault isolation          | ★★★★★               | ★★★                 | Standalone for safety-critical                     |
-| Management simplicity    | ★★                  | ★★★★★               | Cluster for 10+ instances                          |
-| Fleet visibility         | ★★ (needs fleet mgr)| ★★★★                | Cluster for unified dashboards                     |
-| Resource efficiency      | ★★★                 | ★★★★                | Cluster — shared memory, no port waste             |
-| Development/testing      | ★★                  | ★★★★★               | Cluster in-process mode                            |
-| Production edge deploy   | ★★★★★               | ★★★                 | Standalone on ctrlX CORE                           |
-| Aggregator tier          | ★★★                 | ★★★★★               | Cluster — aggregators need coordination            |
+| Fault isolation          | *****               | ***                 | Standalone for safety-critical                     |
+| Management simplicity    | **                  | *****               | Cluster for 10+ instances                          |
+| Fleet visibility         | ** (needs fleet mgr)| ****                | Cluster for unified dashboards                     |
+| Resource efficiency      | ***                 | ****                | Cluster — shared memory, no port waste             |
+| Development/testing      | **                  | *****               | Cluster in-process mode                            |
+| Production edge deploy   | *****               | ***                 | Standalone on ctrlX CORE                           |
+| Aggregator tier          | ***                 | *****               | Cluster — aggregators need coordination            |
 
 ### 8.4 Hybrid Approach (Recommended for Production)
 
