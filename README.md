@@ -6,13 +6,13 @@
 
 <p align="center">
   <strong>Industrial-Grade PLC Runtime in Go</strong><br>
-  IEC 61131-3 Structured Text | 13+ Protocol Drivers | Web IDE | 180,000+ Lines of Code
+  IEC 61131-3 Structured Text | 14+ Protocol Drivers | Web IDE | 180,000+ Lines of Code
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go 1.21+">
   <img src="https://img.shields.io/badge/IEC_61131--3-Structured_Text-blue?style=for-the-badge" alt="IEC 61131-3">
-  <img src="https://img.shields.io/badge/Protocols-13+-green?style=for-the-badge" alt="13+ Protocols">
+  <img src="https://img.shields.io/badge/Protocols-14+-green?style=for-the-badge" alt="14+ Protocols">
   <img src="https://img.shields.io/badge/Functions-1,450+-orange?style=for-the-badge" alt="1,450+ Functions">
 </p>
 
@@ -42,7 +42,8 @@
 GOPLC is a **full-featured PLC runtime** written entirely in Go. It executes IEC 61131-3 Structured Text programs with industrial-grade features:
 
 - **Multi-task scheduler** with priorities, watchdogs, and microsecond-precision scan times
-- **13+ industrial protocols** including Modbus, EtherNet/IP, DNP3, BACnet, OPC UA, FINS, and IEC 104
+- **14+ industrial protocols** including Modbus, EtherNet/IP, DNP3, BACnet, OPC UA, FINS, IEC 104, and ctrlX EtherCAT (native IPC + REST)
+- **ctrlX CORE EtherCAT I/O** — native Data Layer IPC via Bosch SDK: 500 Hz polling, 0.69ms scan, 10x faster than REST
 - **Built-in Web IDE** with Monaco editor, statement-level debugger, and project management
 - **Integrated Node-RED** with 7 custom PLC nodes for building HMI dashboards
 - **AI Assistant** supporting Claude, OpenAI, and Ollama for code generation
@@ -488,7 +489,7 @@ Each form generates a YAML snippet that can be applied via hot-reload — no res
 
 GOPLC includes **55,000+ lines** of industrial protocol code for seamless integration with existing automation systems.
 
-### Industrial Protocols (12 Total)
+### Industrial Protocols (14 Total)
 
 | Protocol | Role | Transport | Lines | Target Systems |
 |----------|------|-----------|-------|----------------|
@@ -504,6 +505,8 @@ GOPLC includes **55,000+ lines** of industrial protocol code for seamless integr
 | **SEL** | Server + Client | Serial | 1,758 | Protective relays - Power system monitoring |
 | **SNMP v1/v2c/v3** | Client + Trap | UDP | 3,597 | Network devices - Switches, UPS, sensors |
 | **DF1** | Client | Serial | 1,417 | Allen-Bradley legacy - SLC 500, MicroLogix, PLC-5 |
+| **ctrlX EtherCAT** | DI + DO | REST or Native IPC | 1,200 | Bosch ctrlX CORE - EtherCAT I/O modules |
+| **Phidgets** | Sensors + Actuators | USB/VINT | 800 | Phidgets USB/VINT sensor and actuator modules |
 
 ### Protocol Features
 
@@ -608,6 +611,28 @@ GOPLC includes **55,000+ lines** of industrial protocol code for seamless integr
 
 </details>
 
+<details>
+<summary><strong>ctrlX EtherCAT I/O</strong> - Click to expand</summary>
+
+- **Two transport modes** switchable from ST code — no recompilation needed
+- **REST mode** (`'rest'`): HTTP/TLS to ctrlX Data Layer REST API. Works everywhere, 100ms default poll
+- **Native IPC mode** (`'dl'`): Direct function calls via official Bosch `ctrlx-datalayer-golang/v2` SDK (CGo). 2ms poll, 500 Hz I/O, sub-millisecond latency
+- 10 ST functions: `CTRLX_EC_CREATE`, `START`, `STOP`, `CONNECTED`, `READ_DI`, `WRITE_DO`, `READ_DO`, `STATS`, `BROWSE`, `DELETE`
+- `CTRLX_EC_WRITE_DO` returns FALSE when disconnected — ST-level connection loss detection
+- Verified on Bosch ctrlX CORE X3 (ARM64 Cortex-A53) with physical loopback DO→DI
+- Snap bundles `libcomm_datalayer.so` + `libsystemd.so` for native IPC at runtime
+
+**Performance (measured on X3 hardware):**
+
+| Metric | REST Mode | Native IPC Mode |
+|--------|-----------|-----------------|
+| Poll interval | 100ms | **2ms** |
+| Avg scan | 1.2ms | **0.69ms** |
+| I/O update rate | 10 Hz | **500 Hz** |
+| Determinism | Variable (HTTP stack) | **Consistent (IPC)** |
+
+</details>
+
 ### Communication Layer
 
 | Module | Purpose | Transport | Features |
@@ -631,6 +656,7 @@ GOPLC includes **55,000+ lines** of industrial protocol code for seamless integr
 | **PCF8574** | I2C | 8-bit I/O Expander | Expand GPIO count |
 | **Grove ADC** | I2C | Analog Input | Seeed Studio sensors |
 | **Phidgets** | USB/VINT | Multi-sensor | Temperature, humidity, voltage, current, relays, motors, encoders (simulation mode; real hardware via CGO extension) |
+| **ctrlX EtherCAT I/O** | REST or Native IPC | 16 DI + 16 DO | Bosch ctrlX CORE — 500 Hz native IPC, 0.69ms scan, verified on X3 hardware |
 
 **Implemented - Testing Soon:**
 
@@ -914,9 +940,40 @@ sudo snap set goplc-runtime cluster=true minions=4
 sudo snap restart goplc-runtime
 ```
 
-### ctrlX Data Layer Bridge
+### ctrlX Data Layer Integration
 
-Bidirectional variable sync between GOPLC and the ctrlX Data Layer via REST (no CGO required):
+Two approaches for integrating with the ctrlX ecosystem:
+
+#### EtherCAT I/O (Real-Time Hardware I/O)
+
+Direct read/write of EtherCAT digital I/O modules with dual transport:
+
+```iec
+// Native IPC mode — 500 Hz polling, sub-millisecond latency
+CTRLX_EC_CREATE('ec1', '', '', '', 'XI110116', 'XI211116', 16, 16, 10, 'dl');
+CTRLX_EC_START('ec1');
+
+// Read inputs, write outputs
+di_val := CTRLX_EC_READ_DI('ec1', 1);
+write_ok := CTRLX_EC_WRITE_DO('ec1', 1, TRUE);  // Returns FALSE if disconnected
+
+// Switch to REST mode (no recompile needed)
+CTRLX_EC_CREATE('ec2', '', '', '', 'XI110116', 'XI211116', 16, 16, 100, 'rest');
+```
+
+| Transport | Polling | Avg Scan | I/O Rate | Determinism |
+|-----------|---------|----------|----------|-------------|
+| REST | 100ms | 1.2ms | 10 Hz | Variable (HTTP stack) |
+| **Native IPC** | **2ms** | **0.69ms** | **500 Hz** | **Consistent (direct IPC)** |
+
+- Uses official Bosch `ctrlx-datalayer-golang/v2` SDK (CGo) for native IPC
+- Verified on ctrlX CORE X3 (ARM64) with physical loopback testing
+- `CTRLX_EC_WRITE_DO` returns FALSE on disconnect — ST-level fault detection
+- 10 ST functions for full I/O lifecycle management
+
+#### Data Layer Bridge (Variable Synchronization)
+
+Bidirectional variable sync between GOPLC and the ctrlX Data Layer:
 
 ```yaml
 ctrlx_datalayer:
@@ -934,7 +991,7 @@ ctrlx_datalayer:
 - PLC variables published as ctrlX Data Layer nodes under `publish_prefix/`
 - ctrlX nodes read back into PLC variables on each sync interval
 - Authenticates via ctrlX identity manager JWT
-- Pure HTTP/REST — no libcomm_datalayer bindings required
+- Pure HTTP/REST — no native libraries required
 
 ---
 
@@ -1209,6 +1266,22 @@ Enables efficient bulk I/O operations: `(PTR_QW + offset)^ := value`
 <p align="center">
   <img src="assets/latency-distribution.svg" alt="Latency Distribution" width="600">
 </p>
+
+### ctrlX EtherCAT Native IPC (March 2026, X3 Hardware)
+
+Measured on Bosch ctrlX CORE X3 (ARM64 Cortex-A53) with XI110116 (16 DI) + XI211116 (16 DO) physical loopback:
+
+| Metric | REST Mode | Native IPC Mode |
+|--------|-----------|-----------------|
+| Poll interval | 100ms | **2ms** |
+| Task scan time | 50ms | **5ms** |
+| Avg scan duration | 1.2ms | **0.69ms** |
+| Max scan duration | 30ms | **13ms** |
+| I/O update rate | 10 Hz | **500 Hz** |
+| Read errors | 0 | **0** |
+| Watchdog trips | 0 | **0** |
+
+The native IPC path uses the official Bosch `ctrlx-datalayer-golang/v2` SDK — direct function calls through `libcomm_datalayer.so` instead of HTTP/TLS/JSON. The EtherCAT bus itself cycles at 2ms (500 Hz), and native IPC matches that rate with zero errors.
 
 ---
 
