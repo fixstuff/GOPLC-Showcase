@@ -6,14 +6,14 @@
 
 <p align="center">
   <strong>Industrial-Grade PLC Runtime in Go</strong><br>
-  IEC 61131-3 Structured Text | 14+ Protocol Drivers | Web IDE | 180,000+ Lines of Code
+  IEC 61131-3 Structured Text | 14+ Protocol Drivers | Web IDE | 260,000+ Lines of Code
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go 1.21+">
+  <img src="https://img.shields.io/badge/Go-1.24+-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go 1.24+">
   <img src="https://img.shields.io/badge/IEC_61131--3-Structured_Text-blue?style=for-the-badge" alt="IEC 61131-3">
   <img src="https://img.shields.io/badge/Protocols-14+-green?style=for-the-badge" alt="14+ Protocols">
-  <img src="https://img.shields.io/badge/Functions-1,450+-orange?style=for-the-badge" alt="1,450+ Functions">
+  <img src="https://img.shields.io/badge/Functions-1,700+-orange?style=for-the-badge" alt="1,700+ Functions">
 </p>
 
 <p align="center">
@@ -47,7 +47,7 @@ GOPLC is a **full-featured PLC runtime** written entirely in Go. It executes IEC
 - **Built-in Web IDE** with Monaco editor, statement-level debugger, and project management
 - **Integrated Node-RED** with 7 custom PLC nodes for building HMI dashboards
 - **AI Assistant** supporting Claude, OpenAI, and Ollama for code generation
-- **1,450+ built-in functions** covering math, strings, crypto, HTTP, databases, and more
+- **1,700+ built-in functions** covering math, strings, crypto, HTTP, databases, and more
 - **Real-time capable** with memory locking, CPU affinity, and GC tuning
 - **Boss/Minion clustering** scaling to 10,000+ PLC instances
 
@@ -72,7 +72,7 @@ GOPLC is a **full-featured PLC runtime** written entirely in Go. It executes IEC
 | **RETAIN Variables** | Persistent variables across warm/cold restarts |
 | **Project Files** | Single `.goplc` file contains programs, tasks, configs, HMI pages |
 
-### 1,450+ Built-in Functions
+### 1,700+ Built-in Functions
 
 | Category | Count | Highlights |
 |----------|-------|------------|
@@ -303,7 +303,7 @@ curl -X POST http://localhost:8082/api/nodered/restart
 
 ## AI Assistant
 
-Built-in AI coding assistant that understands all 1,450+ ST functions and can generate Structured Text code, HMI pages, and Node-RED flows from natural language descriptions.
+Built-in AI coding assistant that understands all 1,700+ ST functions and can generate Structured Text code, HMI pages, and Node-RED flows from natural language descriptions.
 
 ### Multi-Provider Support
 
@@ -321,7 +321,7 @@ Built-in AI coding assistant that understands all 1,450+ ST functions and can ge
 
 ### Context-Aware
 
-The AI receives the full function registry (1,450+ signatures with return types), current runtime variables, active tasks, and loaded programs as context — so it generates code that works with your specific setup.
+The AI receives the full function registry (1,700+ signatures with return types), current runtime variables, active tasks, and loaded programs as context — so it generates code that works with your specific setup.
 
 <p align="center">
   <a href="https://www.youtube.com/watch?v=N2t-iAHdrvc">
@@ -658,6 +658,16 @@ GOPLC includes **55,000+ lines** of industrial protocol code for seamless integr
 | **Phidgets** | USB/VINT | Multi-sensor | Temperature, humidity, voltage, current, relays, motors, encoders (simulation mode; real hardware via CGO extension) |
 | **ctrlX EtherCAT I/O** | REST or Native IPC | 16 DI + 16 DO | Bosch ctrlX CORE — 500 Hz native IPC, 0.69ms scan, verified on X3 hardware |
 
+**Hobbyist Integrations:**
+
+GOPLC bridges the gap between industrial automation and hobbyist/maker hardware. All hobbyist devices use USB serial with automatic port discovery, heartbeat monitoring, and auto-recovery on disconnect/reconnect.
+
+| Device | Interface | Functions | Capabilities |
+|--------|-----------|-----------|-------------|
+| **Parallax Propeller 2** | Serial/USB | 19 ST functions | 8-core MCU — pin read/write, pin modes, ADC, status monitoring |
+| **Arduino** | Serial/USB | 18 ST functions | LED matrix, digital/analog I/O, servo, sensors |
+| **Flipper Zero** | Serial/USB | 35 ST functions | GPIO, buttons, IR TX/RX, Sub-GHz TX/RX, NFC, RFID — custom binary FAP driver |
+
 **Implemented - Testing Soon:**
 
 | Device | Interface | I/O Type | Use Case |
@@ -666,7 +676,6 @@ GOPLC includes **55,000+ lines** of industrial protocol code for seamless integr
 | **ADXL345** | I2C | Accelerometer | Vibration monitoring |
 | **DHT11/22** | 1-Wire | Temp/Humidity | Environmental sensing |
 | **TFT Display** | SPI | Graphics Display | Custom HMI screens |
-| **Propeller 2** | Serial | 8-core MCU | High-speed I/O, motor control |
 
 **Planned:**
 
@@ -761,6 +770,15 @@ curl -X POST http://localhost:8082/api/cluster/pdu/api/tasks/MainTask/reload
 # Nested: supervisor → edge boss → minion
 curl http://localhost:8082/api/cluster/edge-boss/api/cluster/crac/api/variables
 ```
+
+### Fleet Management
+
+Remote management of distributed GOPLC instances from the Boss IDE:
+
+- **Remote Snapshots** — capture and restore runtime state across the fleet
+- **Remote Deploy** — push project files and programs to minions
+- **System Control** — start, stop, reboot, and monitor remote instances
+- **Inventory** — version tracking and health status for all fleet members
 
 ### DataLayer Mesh
 
@@ -1258,8 +1276,8 @@ Enables efficient bulk I/O operations: `(PTR_QW + offset)^ := value`
 | **Memory footprint** | ~65MB typical, ~150MB with DataLayer |
 | **Distributed speedup** | 10.4x throughput (same workload, 10 minions) |
 | **Aggregate throughput** | 620,949 scans/sec (31 minions at 50μs) |
-| **ST functions** | 1,450+ available |
-| **Lines of code** | 180,000+ Go |
+| **ST functions** | 1,700+ available |
+| **Lines of code** | 260,000+ Go |
 
 ### Latency Distribution (2ms scan, DataLayer TCP)
 
@@ -1300,7 +1318,7 @@ Full REST API for integration with SCADA, MES, and custom applications.
 | `POST /api/tasks/:name/reload` | Hot-reload a single task |
 | `GET /api/diagnostics` | Full runtime diagnostics |
 | `GET /api/capabilities` | List supported protocols, functions, clustering |
-| `GET /api/docs/functions` | All 1,450+ function signatures |
+| `GET /api/docs/functions` | All 1,700+ function signatures |
 | `GET /api/analyzer/transactions` | Protocol capture data |
 | `GET /api/cluster/:name/*path` | Proxy to cluster minion |
 | `GET /api/nodered/status` | Node-RED subprocess status |
