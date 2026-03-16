@@ -1374,6 +1374,8 @@ GOPLC is designed for:
 | [Datacenter Gateway: Universal Protocol Gateway](docs/whitepaper-datacenter-gateway.md) ([PDF](docs/whitepaper-datacenter-gateway.pdf)) | Three-tier DC hierarchy, 12 protocol drivers, dual-path MQTT + DNP3 store-and-forward, redundancy strategies, AI-assisted commissioning, ctrlX CORE deployment |
 | [DC Simulation: Hardware Gateway Architecture](docs/WHITEPAPER_DC_SIMULATION_HARDWARE.md) ([PDF](docs/WHITEPAPER_DC_SIMULATION_HARDWARE.pdf)) | 11 device simulators, 6 gateway blueprints, scale estimates 50 MW–1 GW, ctrlX CORE edge SBC deployment, standalone vs cluster decision matrix, full cost model |
 | [DC Simulation: Virtualized Gateway Architecture](docs/WHITEPAPER_DC_SIMULATION_VIRTUAL.md) ([PDF](docs/WHITEPAPER_DC_SIMULATION_VIRTUAL.pdf)) | Server VM gateways via Cisco SVI routing, 51–66% total cost reduction vs hardware, migration path, IEC 62443 security considerations |
+| [The Operator's Revenge: Industrial Control at Software Speed](docs/WHITEPAPER_OPERATORS_REVENGE.md) | Why industrial automation needs a software-native PLC runtime — bridging the gap between IT velocity and OT reliability |
+| [Planetary Scale: From Edge to Orbit](docs/WHITEPAPER_PLANETARY_SCALE.md) | Scaling GOPLC from a single edge node to planetary-scale infrastructure — containerized fleets, satellite links, autonomous operations |
 
 ---
 
