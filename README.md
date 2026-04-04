@@ -6,14 +6,14 @@
 
 <p align="center">
   <strong>Industrial-Grade PLC Runtime in Go</strong><br>
-  IEC 61131-3 Structured Text | 14+ Protocol Drivers | Web IDE | 260,000+ Lines of Code
+  IEC 61131-3 Structured Text | 20+ Protocol Drivers | Web IDE | 280,000+ Lines of Code
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Go-1.24+-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go 1.24+">
   <img src="https://img.shields.io/badge/IEC_61131--3-Structured_Text-blue?style=for-the-badge" alt="IEC 61131-3">
-  <img src="https://img.shields.io/badge/Protocols-14+-green?style=for-the-badge" alt="14+ Protocols">
-  <img src="https://img.shields.io/badge/Functions-1,700+-orange?style=for-the-badge" alt="1,700+ Functions">
+  <img src="https://img.shields.io/badge/Protocols-20+-green?style=for-the-badge" alt="20+ Protocols">
+  <img src="https://img.shields.io/badge/Functions-1,900+-orange?style=for-the-badge" alt="1,900+ Functions">
 </p>
 
 <p align="center">
@@ -30,6 +30,7 @@
   <a href="#authentication">Auth</a> •
   <a href="#licensing">Licensing</a> •
   <a href="#snap--ctrlx-core">Snap</a> •
+  <a href="#download">Download</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#architecture">Architecture</a> •
   <a href="#whitepapers">Whitepapers</a>
@@ -42,12 +43,12 @@
 GOPLC is a **full-featured PLC runtime** written entirely in Go. It executes IEC 61131-3 Structured Text programs with industrial-grade features:
 
 - **Multi-task scheduler** with priorities, watchdogs, and microsecond-precision scan times
-- **14+ industrial protocols** including Modbus, EtherNet/IP, DNP3, BACnet, OPC UA, FINS, IEC 104, and ctrlX EtherCAT (native IPC + REST)
+- **20+ protocol drivers** including Modbus, EtherNet/IP, DNP3, BACnet, OPC UA, FINS, S7, IEC 104, Sparkplug B, KNX, M-Bus, SNMP, and ctrlX EtherCAT
 - **ctrlX CORE EtherCAT I/O** — native Data Layer IPC via Bosch SDK: 500 Hz polling, 0.69ms scan, 10x faster than REST
 - **Built-in Web IDE** with Monaco editor, statement-level debugger, and project management
 - **Integrated Node-RED** with 7 custom PLC nodes for building HMI dashboards
 - **AI Assistant** supporting Claude, OpenAI, and Ollama for code generation
-- **1,700+ built-in functions** covering math, strings, crypto, HTTP, databases, and more
+- **1,900+ built-in functions** covering math, strings, crypto, HTTP, databases, motion control, and more
 - **Real-time capable** with memory locking, CPU affinity, and GC tuning
 - **Boss/Minion clustering** scaling to 10,000+ PLC instances
 
@@ -72,19 +73,31 @@ GOPLC is a **full-featured PLC runtime** written entirely in Go. It executes IEC
 | **RETAIN Variables** | Persistent variables across warm/cold restarts |
 | **Project Files** | Single `.goplc` file contains programs, tasks, configs, HMI pages |
 
-### 1,700+ Built-in Functions
+### 1,900+ Built-in Functions
 
 | Category | Count | Highlights |
 |----------|-------|------------|
 | **Conversion** | 157 | INT_TO_REAL, DWORD_TO_TIME, HEX_TO_INT |
-| **Data Structures** | 130 | LIST_*, MAP_*, QUEUE_*, STACK_*, SET_* |
-| **Crypto** | 55 | AES_*, SHA*, RSA_*, JWT_*, HMAC_* |
-| **Resilience** | 40 | CIRCUIT_BREAKER_*, RATE_LIMIT_*, RETRY_* |
-| **Array** | 34 | ARRAY_SORT, ARRAY_FILTER, ARRAY_MAP, ARRAY_REDUCE |
-| **Debug** | 30 | DEBUG_TO_FILE, DEBUG_TO_SQLITE, DEBUG_TO_INFLUX |
-| **String** | 30 | CONCAT, SPLIT, REGEX_*, FORMAT, JSON_* |
-| **HTTP** | 22 | HTTP_GET, HTTP_POST, URL_ENCODE, WEBSOCKET_* |
-| **Database** | 18 | DB_CONNECT, DB_QUERY, DB_EXEC, DB_COMMIT |
+| **Data Structures** | 130 | LIST_*, MAP_*, QUEUE_*, STACK_*, SET_*, HEAP_*, DEQUE_* |
+| **Crypto & Encoding** | 55 | AES_*, SHA*, RSA_*, JWT_*, HMAC_*, BASE64_*, GZIP_* |
+| **MQTT & Sparkplug B** | 56 | MQTT_PUBLISH, MQTT_SUBSCRIBE, SPARKPLUG_NODE_*, SPARKPLUG_METRIC_* |
+| **SNMP** | 47 | SNMP_GET, SNMP_WALK, SNMP_AGENT_*, SNMP_TRAP_* (v1/v2c/v3) |
+| **Resilience** | 40 | CIRCUIT_BREAKER_*, RATE_LIMIT_*, RETRY_*, CACHE_*, BULKHEAD_* |
+| **Array (Functional)** | 50 | ARRAY_SORT, ARRAY_FILTER, ARRAY_MAP, ARRAY_REDUCE, ARRAY_ZIP_WITH |
+| **Debug** | 35 | DEBUG_TO_FILE, DEBUG_TO_SQLITE, DEBUG_TO_INFLUX, DEBUG_TO_SYSLOG |
+| **String & Regex** | 43 | CONCAT, SPLIT, REGEX_*, FORMAT, JSON_* |
+| **JSON** | 25 | JSON_PARSE, JSON_GET, JSON_SET, JSON_MERGE, JSON_PATH |
+| **Motion Control** | 23 | MC_POWER, MC_MOVE_ABSOLUTE, MC_HOME, MC_JOG, GSV/SSV |
+| **HTTP & URL** | 22 | HTTP_GET, HTTP_POST, URL_ENCODE, URL_PARSE, QUERY_STRING_* |
+| **Serial I/O** | 20 | SER_OPEN, SER_READ, SER_WRITE, SERIAL_PORTS, SERIAL_FIND |
+| **Database** | 21 | DB_CONNECT, DB_QUERY, DB_EXEC, DB_COMMIT, DB_LIST_TABLES |
+| **DateTime** | 23 | NOW, DATE_*, TIME_*, ADD_TIME, DAY_OF_WEEK, TICK_MS |
+| **InfluxDB** | 16 | INFLUX_CONNECT, INFLUX_WRITE, INFLUX_BATCH_ADD, INFLUX_BATCH_FLUSH |
+| **NMEA & GPS** | 26 | NMEA_PARSE, NMEA_GET_LAT, GPS_DISTANCE, GPS_BEARING, GPS_IN_RADIUS |
+| **File & Config** | 35 | FILE_READ, FILE_WRITE, CSV_PARSE, INI_READ, ZPL_BARCODE_128 |
+| **Specialty Protocols** | 76 | KNX_SEND, MBUS_PARSE, ARTNET_SEND, SACN_SEND, MIDI_NOTE_ON, OSC_SEND, AT_CMD |
+| **Math & Statistics** | 40 | SIN, COS, SQRT, POW, MEDIAN, STDDEV, CORRELATION, PERCENTILE |
+| **Barcode & Scale** | 17 | BARCODE_PARSE, BARCODE_GS1_GET, SCALE_PARSE, SCALE_GET_WEIGHT |
 | **+ OSCAT Library** | 557 | Complete OSCAT Basic library (384 functions + 173 FBs) |
 
 ### Real-time Capabilities
@@ -303,7 +316,7 @@ curl -X POST http://localhost:8082/api/nodered/restart
 
 ## AI Assistant
 
-Built-in AI coding assistant that understands all 1,700+ ST functions and can generate Structured Text code, HMI pages, and Node-RED flows from natural language descriptions.
+Built-in AI coding assistant that understands all 1,900+ ST functions and can generate Structured Text code, HMI pages, and Node-RED flows from natural language descriptions.
 
 ### Multi-Provider Support
 
@@ -321,7 +334,7 @@ Built-in AI coding assistant that understands all 1,700+ ST functions and can ge
 
 ### Context-Aware
 
-The AI receives the full function registry (1,700+ signatures with return types), current runtime variables, active tasks, and loaded programs as context — so it generates code that works with your specific setup.
+The AI receives the full function registry (1,900+ signatures with return types), current runtime variables, active tasks, and loaded programs as context — so it generates code that works with your specific setup.
 
 <p align="center">
   <a href="https://www.youtube.com/watch?v=N2t-iAHdrvc">
@@ -487,9 +500,9 @@ Each form generates a YAML snippet that can be applied via hot-reload — no res
 
 ## Protocols
 
-GOPLC includes **55,000+ lines** of industrial protocol code for seamless integration with existing automation systems.
+GOPLC includes **60,000+ lines** of protocol code for seamless integration with existing automation systems.
 
-### Industrial Protocols (14 Total)
+### Industrial & Specialty Protocols
 
 | Protocol | Role | Transport | Lines | Target Systems |
 |----------|------|-----------|-------|----------------|
@@ -501,12 +514,26 @@ GOPLC includes **55,000+ lines** of industrial protocol code for seamless integr
 | **FINS** | Server + Client | TCP, UDP | 3,565 | Omron - NX, NY, CP, CJ series PLCs |
 | **S7comm** | Server + Client | TCP (TPKT/COTP) | 2,441 | Siemens - S7-300, S7-400, S7-1200, S7-1500 |
 | **IEC 60870-5-104** | Client + Server | TCP | 2,100 | Utilities - Power grid SCADA, substation automation |
+| **Sparkplug B** | Node + Host | MQTT + Protobuf | 1,800 | IIoT - Unified Namespace, SCADA/MES integration |
 | **PROFINET** | Server + Client | TCP, UDP | 1,997 | Siemens - Real-time industrial Ethernet |
 | **SEL** | Server + Client | Serial | 1,758 | Protective relays - Power system monitoring |
-| **SNMP v1/v2c/v3** | Client + Trap | UDP | 3,597 | Network devices - Switches, UPS, sensors |
+| **SNMP v1/v2c/v3** | Client + Agent + Trap | UDP | 3,597 | Network devices - Switches, UPS, sensors |
 | **DF1** | Client | Serial | 1,417 | Allen-Bradley legacy - SLC 500, MicroLogix, PLC-5 |
+| **KNX** | Client | UDP/Multicast | 600 | Building automation - Lighting, blinds, HVAC |
+| **M-Bus** | Master | TCP, Serial | 700 | Utility metering - Water, gas, heat, electric |
 | **ctrlX EtherCAT** | DI + DO | REST or Native IPC | 1,200 | Bosch ctrlX CORE - EtherCAT I/O modules |
 | **Phidgets** | Sensors + Actuators | USB/VINT | 800 | Phidgets USB/VINT sensor and actuator modules |
+
+### Specialty Communication
+
+| Protocol | Functions | Transport | Use Case |
+|----------|-----------|-----------|----------|
+| **Art-Net / DMX512** | 7 | UDP | Stage lighting, architectural lighting control |
+| **sACN / E1.31** | 7 | UDP Multicast | Entertainment lighting with priority control |
+| **MIDI** | 16 | Serial/USB | Music production, audio equipment control |
+| **OSC** | 12 | UDP | Audio/visual software, show control |
+| **AT Commands** | 13 | Serial | Cellular modems, GSM/GPS modules |
+| **NMEA 0183** | 17 | Serial | GPS receivers, marine electronics |
 
 ### Protocol Features
 
@@ -598,6 +625,20 @@ GOPLC includes **55,000+ lines** of industrial protocol code for seamless integr
 </details>
 
 <details>
+<summary><strong>Sparkplug B v3.0</strong> - Click to expand</summary>
+
+- Eclipse Sparkplug B specification v3.0 over MQTT
+- Node lifecycle: NBIRTH, NDEATH, NDATA, NCMD
+- Protobuf-encoded payloads with sequence numbering
+- Metric types: boolean, integer, float, string with timestamps
+- Command subscription for remote control (NCMD)
+- Birth certificate on connect, death certificate via MQTT will
+- Multi-metric batch publishing per NDATA message
+- 26 ST functions for full node lifecycle management
+
+</details>
+
+<details>
 <summary><strong>IEC 60870-5-104</strong> - Click to expand</summary>
 
 - Full Client and Server implementation
@@ -658,14 +699,16 @@ GOPLC includes **55,000+ lines** of industrial protocol code for seamless integr
 | **Phidgets** | USB/VINT | Multi-sensor | Temperature, humidity, voltage, current, relays, motors, encoders (simulation mode; real hardware via CGO extension) |
 | **ctrlX EtherCAT I/O** | REST or Native IPC | 16 DI + 16 DO | Bosch ctrlX CORE — 500 Hz native IPC, 0.69ms scan, verified on X3 hardware |
 
-**Hobbyist Integrations:**
+**Hobbyist & Maker Integrations:**
 
-GOPLC bridges the gap between industrial automation and hobbyist/maker hardware. All hobbyist devices use USB serial with automatic port discovery, heartbeat monitoring, and auto-recovery on disconnect/reconnect.
+GOPLC bridges the gap between industrial automation and hobbyist/maker hardware. All devices use USB serial with automatic port discovery, heartbeat monitoring, and auto-recovery on disconnect/reconnect.
 
 | Device | Interface | Functions | Capabilities |
 |--------|-----------|-----------|-------------|
-| **Parallax Propeller 2** | Serial/USB | 19 ST functions | 8-core MCU — pin read/write, pin modes, ADC, status monitoring |
-| **Arduino** | Serial/USB | 18 ST functions | LED matrix, digital/analog I/O, servo, sensors |
+| **Parallax Propeller 2** | Serial/USB | 56 ST functions | 8-core MCU — GPIO, Smart Pins, UART, I2C, SPI, ADC/DAC, PWM, encoder, frequency counter, OLED SSD1306, servo |
+| **Teensy 4.x** | Serial/USB | 40+ ST functions | ARM Cortex-M7 — GPIO, ADC, PWM pairs, encoder, frequency counter, CAN bus, I2C, SPI, UART, PID, NeoPixel, OLED, RTC, TRNG |
+| **RP2040 / Pico** | Serial/USB | 25+ ST functions | Dual-core ARM — GPIO, ADC, PWM, I2C, SPI, UART, NeoPixel, OLED, servo, ultrasonic, temperature |
+| **Arduino R4 WiFi** | Serial/USB | 20 ST functions | Digital/analog I/O, servo, I2C, WiFi, BLE, LED matrix, temperature, ultrasonic |
 | **Flipper Zero** | Serial/USB | 35 ST functions | GPIO, buttons, IR TX/RX, Sub-GHz TX/RX, NFC, RFID — custom binary FAP driver |
 
 **Implemented - Testing Soon:**
@@ -713,15 +756,17 @@ curl -X POST http://localhost:8082/api/analyzer/decode \
 
 | Industry | Protocols |
 |----------|-----------|
-| **Manufacturing** | Modbus, EtherNet/IP, PROFINET, S7, FINS, OPC UA |
-| **Building Automation** | BACnet/IP, BACnet/MSTP, Modbus, SNMP, OPC UA |
-| **Utilities/SCADA** | DNP3, IEC 104, Modbus, SEL, OPC UA |
-| **Oil & Gas** | Modbus, DNP3, OPC UA, EtherNet/IP |
-| **Water/Wastewater** | DNP3, Modbus, OPC UA |
+| **Manufacturing** | Modbus, EtherNet/IP, PROFINET, S7, FINS, OPC UA, Sparkplug B |
+| **Building Automation** | BACnet/IP, BACnet/MSTP, KNX, Modbus, SNMP, OPC UA |
+| **Utilities/SCADA** | DNP3, IEC 104, Modbus, SEL, M-Bus, OPC UA |
+| **Oil & Gas** | Modbus, DNP3, OPC UA, EtherNet/IP, Sparkplug B |
+| **Water/Wastewater** | DNP3, Modbus, OPC UA, Sparkplug B |
 | **Power Generation** | DNP3, IEC 104, Modbus, SEL, IEC 61850 (planned) |
 | **Food & Beverage** | EtherNet/IP, Modbus, OPC UA, S7 |
 | **Pharmaceutical** | OPC UA, Modbus, S7, EtherNet/IP |
-| **Data Centers** | SNMP, Modbus, BACnet |
+| **Data Centers** | SNMP, Modbus, BACnet, Sparkplug B |
+| **Entertainment/AV** | Art-Net, sACN, MIDI, OSC |
+| **Marine/Fleet** | NMEA 0183, GPS, Modbus, MQTT |
 
 ---
 
@@ -775,10 +820,13 @@ curl http://localhost:8082/api/cluster/edge-boss/api/cluster/crac/api/variables
 
 Remote management of distributed GOPLC instances from the Boss IDE:
 
-- **Remote Snapshots** — capture and restore runtime state across the fleet
-- **Remote Deploy** — push project files and programs to minions
-- **System Control** — start, stop, reboot, and monitor remote instances
-- **Inventory** — version tracking and health status for all fleet members
+- **mDNS Auto-Discovery** — automatically finds GOPLC nodes on the local network via DNS-SD
+- **Persistent Node Registry** — fleet-registry.json survives restarts, manual node add/remove
+- **Snapshot Store** — SQLite metadata + gzip files on disk, auto-save on download/import, auto-prune at 50 local snapshots
+- **Remote Snapshot Management** — browse any node's history, push snapshots (single or bulk), drift detection across healthy nodes
+- **Project Deploy** — atomic restore+validate+download+start in one API call (`POST /api/project/deploy`)
+- **System Control** — graceful shutdown (`POST /api/system/shutdown`), process re-exec restart (`POST /api/system/restart`), runtime restart
+- **Fleet UI** — per-node snapshot browser, deploy/multi/export/delete, collect/export/purge toolbar, drift banner, column sorting, auto-refresh 15s
 
 ### DataLayer Mesh
 
@@ -908,14 +956,14 @@ goplc auth generate-secret
 
 ## Licensing
 
-Offline HMAC-signed unlock codes — no server, no internet, no phone-home. Runs in a 2-hour restartable demo mode until activated.
+HMAC-signed license keys with cloud activation. Runs in a 2-hour restartable demo mode until activated.
 
 ### Activation Flow
 
 1. Get your installation ID: `GET /api/license/info`
-2. Email the hardware ID to the developer
-3. Receive an unlock code (`GOPLC-XXXXXX`)
-4. Activate: `POST /api/license/activate` with `{"unlock_code": "GOPLC-..."}`
+2. Enter your license key in the IDE or via API
+3. Automatic cloud activation validates the key and binds to your machine
+4. Done — license persists across restarts and updates
 
 | Status | Meaning |
 |--------|---------|
@@ -1045,35 +1093,75 @@ See the full [Datacenter Gateway Whitepaper](docs/whitepaper-datacenter-gateway.
 
 ---
 
+## Download
+
+Pre-built binaries for Windows and Linux — single ~30 MB download, no installer needed.
+
+| Platform | Architecture | Download |
+|----------|-------------|----------|
+| **Windows** | x86_64 | `goplc-v1.0.520-windows.zip` |
+| **Linux** | x86_64 (amd64) | `goplc-v1.0.520-linux-amd64.tar.gz` |
+| **Linux** | ARM64 (aarch64) | `goplc-v1.0.520-linux-arm64.tar.gz` |
+
+Visit [jmbtechnical.com/goplc/download](https://jmbtechnical.com/goplc/download) to download the latest release.
+
+**What's included:** `goplc` binary, launcher script (app-mode browser), `config.yaml`, and a sample `counter.st` program. Extract, run, and open your browser — that's it.
+
+**Licensing:** Runs in a 2-hour restartable demo mode out of the box. Activate with a license key for unlimited use. See [Licensing](#licensing) for details.
+
+---
+
 ## Quick Start
 
-### Run with Docker
+### 1. Download & Extract
+
+Visit [jmbtechnical.com/goplc/download](https://jmbtechnical.com/goplc/download) and grab the package for your platform.
 
 ```bash
-docker run -d --name goplc \
-  -p 8082:8082 \
-  -p 502:502 \
-  -v $(pwd)/configs:/app/configs \
-  -v $(pwd)/projects:/app/projects \
-  goplc:latest --config /app/configs/default.yaml
+# Linux
+tar xzf goplc-v1.0.520-linux-amd64.tar.gz
+cd goplc
+
+# Windows — unzip goplc-v1.0.520-windows.zip
 ```
 
-### Run with Node-RED
+### 2. Run
 
 ```bash
+# Linux — launches GOPLC and opens browser in app mode
+./start-goplc.sh
+
+# Windows — double-click start-goplc.bat
+# Or run directly:
+./goplc --config config.yaml
+```
+
+### 3. Open the Web IDE
+
+Navigate to `http://localhost:8082/ide/` in your browser.
+
+### Docker (Alternative)
+
+Build a container from the downloaded binary:
+
+```dockerfile
+FROM alpine:3.19
+COPY goplc /usr/local/bin/goplc
+COPY config.yaml /app/config.yaml
+EXPOSE 8082 502
+WORKDIR /app
+ENTRYPOINT ["goplc", "--config", "/app/config.yaml"]
+```
+
+```bash
+# Extract the Linux binary, then build and run
+docker build -t goplc:latest .
 docker run -d --name goplc \
   -p 8082:8082 \
   -p 502:502 \
   -v $(pwd)/data:/app/data \
-  -e ANTHROPIC_API_KEY=sk-... \
-  goplc:latest --config /app/configs/nodered.yaml
+  goplc:latest
 ```
-
-Node-RED is available at `http://localhost:8082/nodered/` — no separate port needed.
-
-### Access the Web IDE
-
-Open `http://localhost:8082/ide/` in your browser.
 
 ### Configuration Example
 
@@ -1124,15 +1212,24 @@ api:
 
 ### Structured Text Programs
 
-See the [`examples/st/`](examples/st/) directory for sample programs:
+See the [`examples/st/`](examples/st/) directory for 14 ready-to-run programs:
 
 | Example | Description |
 |---------|-------------|
-| [`modbus_gateway.st`](examples/st/modbus_gateway.st) | Bridge between Modbus devices |
-| [`data_sync.st`](examples/st/data_sync.st) | Multi-PLC data synchronization |
-| [`esp32_io.st`](examples/st/esp32_io.st) | ESP32 remote I/O control |
-| [`pid_control.st`](examples/st/pid_control.st) | PID loop with anti-windup |
-| [`alarm_handler.st`](examples/st/alarm_handler.st) | Alarm management system |
+| [`pid_control.st`](examples/st/pid_control.st) | PID loop with anti-windup and bumpless transfer |
+| [`modbus_gateway.st`](examples/st/modbus_gateway.st) | Bridge between Modbus TCP devices |
+| [`modbus_client.st`](examples/st/modbus_client.st) | Modbus TCP client — registers, coils, read-verify |
+| [`data_sync.st`](examples/st/data_sync.st) | Multi-PLC DataLayer synchronization |
+| [`alarm_handler.st`](examples/st/alarm_handler.st) | Alarm management with shelving and history |
+| [`bacnet_client.st`](examples/st/bacnet_client.st) | BACnet/IP client — read objects, track status |
+| [`dnp3_master.st`](examples/st/dnp3_master.st) | DNP3 master — analog/binary inputs, pump control |
+| [`enip_scanner.st`](examples/st/enip_scanner.st) | EtherNet/IP scanner — CIP tag read/write |
+| [`esp32_io.st`](examples/st/esp32_io.st) | ESP32 remote I/O — 8 DI, 8 DO, 3 AI, 2 PWM, NeoPixel |
+| [`fins_client.st`](examples/st/fins_client.st) | Omron FINS client — DM word read/write |
+| [`iec104_client.st`](examples/st/iec104_client.st) | IEC 60870-5-104 client — SP, DP, floats, counters |
+| [`mqtt_publish.st`](examples/st/mqtt_publish.st) | MQTT pub/sub — telemetry, commands, liveness |
+| [`opcua_client.st`](examples/st/opcua_client.st) | OPC UA client — node read/write, method calls |
+| [`datalayer_ethercat.st`](examples/st/datalayer_ethercat.st) | ctrlX EtherCAT I/O — native IPC, DI/DO toggle |
 
 ### Configuration Examples
 
@@ -1276,8 +1373,8 @@ Enables efficient bulk I/O operations: `(PTR_QW + offset)^ := value`
 | **Memory footprint** | ~65MB typical, ~150MB with DataLayer |
 | **Distributed speedup** | 10.4x throughput (same workload, 10 minions) |
 | **Aggregate throughput** | 620,949 scans/sec (31 minions at 50μs) |
-| **ST functions** | 1,700+ available |
-| **Lines of code** | 260,000+ Go |
+| **ST functions** | 1,900+ available |
+| **Lines of code** | 280,000+ Go |
 
 ### Latency Distribution (2ms scan, DataLayer TCP)
 
@@ -1318,7 +1415,7 @@ Full REST API for integration with SCADA, MES, and custom applications.
 | `POST /api/tasks/:name/reload` | Hot-reload a single task |
 | `GET /api/diagnostics` | Full runtime diagnostics |
 | `GET /api/capabilities` | List supported protocols, functions, clustering |
-| `GET /api/docs/functions` | All 1,700+ function signatures |
+| `GET /api/docs/functions` | All 1,900+ function signatures |
 | `GET /api/analyzer/transactions` | Protocol capture data |
 | `GET /api/cluster/:name/*path` | Proxy to cluster minion |
 | `GET /api/nodered/status` | Node-RED subprocess status |
@@ -1358,9 +1455,11 @@ GOPLC is designed for:
 
 - **Industrial Automation** - Replace or supplement traditional PLCs
 - **Protocol Gateway** - Bridge between different protocols (data center, building, utility)
-- **Edge Computing** - Run on Raspberry Pi, industrial PCs
+- **Edge Computing** - Run on Raspberry Pi, industrial PCs, Bosch ctrlX CORE
 - **Distributed Control** - Boss/Minion clustering for large installations
 - **HMI/SCADA Backend** - Node-RED dashboards + high-performance data collection
+- **Fleet Management** - Centrally manage and deploy to hundreds of remote GOPLC nodes
+- **Robotics & Motion** - MC_* motion control functions, servo coordination, sensor fusion
 - **Simulation** - Test automation logic without hardware
 - **Education** - Learn PLC programming with modern tools
 
@@ -1374,8 +1473,9 @@ GOPLC is designed for:
 | [Datacenter Gateway: Universal Protocol Gateway](docs/whitepaper-datacenter-gateway.md) ([PDF](docs/whitepaper-datacenter-gateway.pdf)) | Three-tier DC hierarchy, 12 protocol drivers, dual-path MQTT + DNP3 store-and-forward, redundancy strategies, AI-assisted commissioning, ctrlX CORE deployment |
 | [DC Simulation: Hardware Gateway Architecture](docs/WHITEPAPER_DC_SIMULATION_HARDWARE.md) ([PDF](docs/WHITEPAPER_DC_SIMULATION_HARDWARE.pdf)) | 11 device simulators, 6 gateway blueprints, scale estimates 50 MW–1 GW, ctrlX CORE edge SBC deployment, standalone vs cluster decision matrix, full cost model |
 | [DC Simulation: Virtualized Gateway Architecture](docs/WHITEPAPER_DC_SIMULATION_VIRTUAL.md) ([PDF](docs/WHITEPAPER_DC_SIMULATION_VIRTUAL.pdf)) | Server VM gateways via Cisco SVI routing, 51–66% total cost reduction vs hardware, migration path, IEC 62443 security considerations |
-| [The Operator's Revenge: Industrial Control at Software Speed](docs/WHITEPAPER_OPERATORS_REVENGE.md) | Why industrial automation needs a software-native PLC runtime — bridging the gap between IT velocity and OT reliability |
-| [Planetary Scale: From Edge to Orbit](docs/WHITEPAPER_PLANETARY_SCALE.md) | Scaling GOPLC from a single edge node to planetary-scale infrastructure — containerized fleets, satellite links, autonomous operations |
+| [The Operator's Revenge: Industrial Control at Software Speed](docs/WHITEPAPER_OPERATORS_REVENGE.md) | Why industrial automation needs a software-native PLC runtime — 30 MB install vs multi-GB IDE installs, browser-based programming, zero proprietary cables |
+| [Planetary Scale: From Edge to Orbit](docs/WHITEPAPER_PLANETARY_SCALE.md) | 10,000 full runtimes on one desktop, 250M+ projected deterministic runtimes at datacenter scale, memory-wall analysis, DataLayer at planetary scale |
+| [Humanoid Robotics: Real-Time Control for Next-Gen Robots](docs/WHITEPAPER_HUMANOID_ROBOTICS.md) ([PDF](docs/GoPLC_Humanoid_Robotics_Whitepaper.pdf)) | GOPLC as a real-time control backbone for humanoid robotics — servo coordination, sensor fusion, safety interlocks, deterministic motion planning |
 
 ---
 
