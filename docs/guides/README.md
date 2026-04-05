@@ -47,6 +47,7 @@ First-class client and server implementations for every major automation protoco
 | **[Sparkplug B](goplc_sparkplug_guide.md)** | Sparkplug B / MQTT | 16 | Edge node, NBIRTH/NDATA lifecycle, Ignition integration. |
 | **[InfluxDB](goplc_influxdb_guide.md)** | InfluxDB v1/v2 | 16 | Write + batch, line protocol, Grafana dashboards. |
 | **[JSON](goplc_json_guide.md)** | JSON Functions | 22 | Parse, build, query, modify JSON from ST. Dot-path access, typed getters, JSONPath. |
+| **[HTTP Client](goplc_http_guide.md)** | HTTP Functions | 16 | GET/POST/PUT/DELETE from ST. Response maps, custom headers, JSON auto-parse, webhooks. |
 
 ## Platform
 
