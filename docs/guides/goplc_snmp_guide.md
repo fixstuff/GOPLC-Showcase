@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -12,9 +12,9 @@ GoPLC implements a complete **SNMP** stack — client, trap receiver, and agent 
 
 | Role | Functions | Use Case |
 |------|-----------|----------|
-| **Client** | `SNMPClientCreate` / `SNMPGet` / `SNMPSet` / `SNMPWalk` | Poll UPS, PDU, switches, printers — any SNMP-managed device |
-| **Trap Receiver** | `SNMPTrapStart` / `SNMPTrapGetBuffer` | Catch asynchronous alerts: link down, UPS on battery, temperature alarms |
-| **Agent (Server)** | `SNMPAgentCreate` / `SNMPAgentSetInt` / `SNMPAgentSetStr` | Expose PLC tags to NMS platforms: Nagios, PRTG, Zabbix, LibreNMS |
+| **Client** | `SNMP_CLIENT_CREATE` / `SNMP_GET` / `SNMP_SET` / `SNMP_WALK` | Poll UPS, PDU, switches, printers — any SNMP-managed device |
+| **Trap Receiver** | `SNMP_TRAP_START` / `SNMP_TRAP_GET_BUFFER` | Catch asynchronous alerts: link down, UPS on battery, temperature alarms |
+| **Agent (Server)** | `SNMP_AGENT_CREATE` / `SNMP_AGENT_SET_INT` / `SNMP_AGENT_SET_STR` | Expose PLC tags to NMS platforms: Nagios, PRTG, Zabbix, LibreNMS |
 
 All three roles run simultaneously. A single GoPLC instance can poll a datacenter UPS and PDU as a client, receive traps from managed switches, and serve its own OID tree to a network management system — all from the same ST program.
 
@@ -27,10 +27,10 @@ All three roles run simultaneously. A single GoPLC instance can poll a datacente
 │  ┌──────────────────────┐  ┌────────────────┐  ┌──────────────────┐  │
 │  │ ST Program (Client)  │  │ ST Program     │  │ ST Program       │  │
 │  │                      │  │ (Trap Receiver)│  │ (Agent/Server)   │  │
-│  │ SNMPClientCreate()   │  │                │  │                  │  │
-│  │ SNMPGet()            │  │ SNMPTrapStart()│  │ SNMPAgentCreate()│  │
-│  │ SNMPWalk()           │  │ SNMPTrapGet    │  │ SNMPAgentSetInt()│  │
-│  │ SNMPSet()            │  │   Buffer()     │  │ SNMPAgentSetStr()│  │
+│  │ SNMP_CLIENT_CREATE()   │  │                │  │                  │  │
+│  │ SNMP_GET()            │  │ SNMP_TRAP_START()│  │ SNMP_AGENT_CREATE()│  │
+│  │ SNMP_WALK()           │  │ SNMP_TRAP_GET    │  │ SNMP_AGENT_SET_INT()│  │
+│  │ SNMP_SET()            │  │   Buffer()     │  │ SNMP_AGENT_SET_STR()│  │
 │  └──────────┬───────────┘  └───────┬────────┘  └────────┬─────────┘  │
 │             │                      │                     │            │
 │             │  UDP Client          │  UDP Listener       │  UDP Agent │
@@ -62,17 +62,17 @@ GoPLC provides named constants for common OIDs so you never need to memorize dot
 
 | Constant | OID | Description |
 |----------|-----|-------------|
-| `SNMPOID_SysDescr` | 1.3.6.1.2.1.1.1.0 | System description |
-| `SNMPOID_SysObjectID` | 1.3.6.1.2.1.1.2.0 | System object identifier |
-| `SNMPOID_SysUpTime` | 1.3.6.1.2.1.1.3.0 | Uptime in hundredths of seconds |
-| `SNMPOID_SysContact` | 1.3.6.1.2.1.1.4.0 | Admin contact |
-| `SNMPOID_SysName` | 1.3.6.1.2.1.1.5.0 | Device hostname |
-| `SNMPOID_SysLocation` | 1.3.6.1.2.1.1.6.0 | Physical location |
-| `SNMPOID_IfNumber` | 1.3.6.1.2.1.2.1.0 | Number of network interfaces |
-| `SNMPOID_IfTable` | 1.3.6.1.2.1.2.2 | Interface table root |
-| `SNMPOID_UPSBatteryStatus` | 1.3.6.1.2.1.33.1.2.1.0 | UPS battery status |
-| `SNMPOID_UPSInputVoltage` | 1.3.6.1.2.1.33.1.3.3.1.3.1 | UPS input voltage |
-| `SNMPOID_UPSOutputLoad` | 1.3.6.1.2.1.33.1.4.4.1.5.1 | UPS output load percentage |
+| `SNMP_OID_SYS_DESCR` | 1.3.6.1.2.1.1.1.0 | System description |
+| `SNMP_OID_SYS_OBJECT_ID` | 1.3.6.1.2.1.1.2.0 | System object identifier |
+| `SNMP_OID_SYS_UPTIME` | 1.3.6.1.2.1.1.3.0 | Uptime in hundredths of seconds |
+| `SNMP_OID_SYS_CONTACT` | 1.3.6.1.2.1.1.4.0 | Admin contact |
+| `SNMP_OID_SYS_NAME` | 1.3.6.1.2.1.1.5.0 | Device hostname |
+| `SNMP_OID_SYS_LOCATION` | 1.3.6.1.2.1.1.6.0 | Physical location |
+| `SNMP_OID_IF_NUMBER` | 1.3.6.1.2.1.2.1.0 | Number of network interfaces |
+| `SNMP_OID_IF_TABLE` | 1.3.6.1.2.1.2.2 | Interface table root |
+| `SNMP_OID_UPS_BATTERY_STATUS` | 1.3.6.1.2.1.33.1.2.1.0 | UPS battery status |
+| `SNMP_OID_UPS_INPUT_VOLTAGE` | 1.3.6.1.2.1.33.1.3.3.1.3.1 | UPS input voltage |
+| `SNMP_OID_UPS_OUTPUT_LOAD` | 1.3.6.1.2.1.33.1.4.4.1.5.1 | UPS output load percentage |
 
 ---
 
@@ -80,17 +80,17 @@ GoPLC provides named constants for common OIDs so you never need to memorize dot
 
 ### 2.1 Connection Lifecycle
 
-#### SNMPClientCreate -- Create v1/v2c Client
+#### SNMP_CLIENT_CREATE -- Create v1/v2c Client
 
 ```iecst
 (* Minimal — defaults to port 161, community "public", version v2c *)
-ok := SNMPClientCreate('ups1', '10.0.1.50');
+ok := SNMP_CLIENT_CREATE('ups1', '10.0.1.50');
 
 (* Explicit port and community *)
-ok := SNMPClientCreate('pdu1', '10.0.1.51', 161, 'datacenter-ro', 'v2c');
+ok := SNMP_CLIENT_CREATE('pdu1', '10.0.1.51', 161, 'datacenter-ro', 'v2c');
 
 (* SNMPv1 device *)
-ok := SNMPClientCreate('old_switch', '10.0.1.10', 161, 'public', 'v1');
+ok := SNMP_CLIENT_CREATE('old_switch', '10.0.1.10', 161, 'public', 'v1');
 ```
 
 | Param | Type | Default | Description |
@@ -103,10 +103,10 @@ ok := SNMPClientCreate('old_switch', '10.0.1.10', 161, 'public', 'v1');
 
 **Returns:** `BOOL` -- TRUE on success.
 
-#### SNMPClientCreateV3 -- Create v3 Client (AuthPriv)
+#### SNMP_CLIENT_CREATE_V3 -- Create v3 Client (AuthPriv)
 
 ```iecst
-ok := SNMPClientCreateV3('secure_switch', '10.0.1.20',
+ok := SNMP_CLIENT_CREATE_V3('secure_switch', '10.0.1.20',
     'snmpAdmin',            (* USM username *)
     'SHA',                  (* auth protocol: MD5 or SHA *)
     'authPass123!',         (* auth passphrase *)
@@ -128,30 +128,30 @@ ok := SNMPClientCreateV3('secure_switch', '10.0.1.20',
 
 > **Security Note:** SNMPv3 with AuthPriv encrypts the entire PDU. Use this for any SNMP communication crossing untrusted networks. Community strings in v1/v2c travel in plaintext.
 
-#### SNMPClientConnect -- Establish Connection
+#### SNMP_CLIENT_CONNECT -- Establish Connection
 
 ```iecst
-ok := SNMPClientConnect('ups1');
+ok := SNMP_CLIENT_CONNECT('ups1');
 ```
 
-Opens the UDP socket and starts the background poll loop. The client automatically polls all OIDs retrieved via `SNMPGet` on a configurable interval, caching results for fast access from cyclic ST programs.
+Opens the UDP socket and starts the background poll loop. The client automatically polls all OIDs retrieved via `SNMP_GET` on a configurable interval, caching results for fast access from cyclic ST programs.
 
 **Returns:** `BOOL` -- TRUE on success.
 
-#### SNMPClientDisconnect -- Close Connection
+#### SNMP_CLIENT_DISCONNECT -- Close Connection
 
 ```iecst
-ok := SNMPClientDisconnect('ups1');
+ok := SNMP_CLIENT_DISCONNECT('ups1');
 ```
 
-Stops polling and closes the UDP socket. The client can be reconnected later with `SNMPClientConnect`.
+Stops polling and closes the UDP socket. The client can be reconnected later with `SNMP_CLIENT_CONNECT`.
 
 **Returns:** `BOOL` -- TRUE on success.
 
-#### SNMPClientIsConnected -- Check Status
+#### SNMP_CLIENT_IS_CONNECTED -- Check Status
 
 ```iecst
-IF SNMPClientIsConnected('ups1') THEN
+IF SNMP_CLIENT_IS_CONNECTED('ups1') THEN
     (* Safe to read cached values *)
 END_IF;
 ```
@@ -162,19 +162,19 @@ END_IF;
 
 ### 2.2 Reading Values
 
-#### SNMPGet -- Read Single OID (from Poll Cache)
+#### SNMP_GET -- Read Single OID (from Poll Cache)
 
 ```iecst
 (* Using built-in OID constant *)
-descr := SNMPGet('ups1', SNMPOID_SysDescr);
+descr := SNMP_GET('ups1', SNMP_OID_SYS_DESCR);
 (* Returns: 'APC Smart-UPS 3000 RM' *)
 
 (* Using dotted OID string *)
-voltage := SNMPGet('ups1', '1.3.6.1.2.1.33.1.3.3.1.3.1');
+voltage := SNMP_GET('ups1', '1.3.6.1.2.1.33.1.3.3.1.3.1');
 (* Returns: 120 (integer) *)
 
 (* Using built-in UPS constant *)
-load := SNMPGet('ups1', SNMPOID_UPSOutputLoad);
+load := SNMP_GET('ups1', SNMP_OID_UPS_OUTPUT_LOAD);
 (* Returns: 47 (percent) *)
 ```
 
@@ -185,13 +185,13 @@ load := SNMPGet('ups1', SNMPOID_UPSOutputLoad);
 
 **Returns:** `ANY` -- The value from the poll cache. Type depends on the MIB object: STRING for DisplayString, INT for Integer32/Gauge32/Counter32, etc.
 
-> **Important:** `SNMPGet` reads from the local poll cache, not the network. This makes it safe to call from fast cyclic tasks (1-10ms) without blocking. The background poller updates the cache asynchronously.
+> **Important:** `SNMP_GET` reads from the local poll cache, not the network. This makes it safe to call from fast cyclic tasks (1-10ms) without blocking. The background poller updates the cache asynchronously.
 
-#### SNMPGetMultiple -- Read Multiple OIDs at Once
+#### SNMP_GET_MULTIPLE -- Read Multiple OIDs at Once
 
 ```iecst
-result := SNMPGetMultiple('ups1', 
-    SNMPOID_SysName + ',' + SNMPOID_SysUpTime + ',' + SNMPOID_UPSBatteryStatus);
+result := SNMP_GET_MULTIPLE('ups1', 
+    SNMP_OID_SYS_NAME + ',' + SNMP_OID_SYS_UPTIME + ',' + SNMP_OID_UPS_BATTERY_STATUS);
 (* Returns: MAP with OID keys and their values *)
 (* {"1.3.6.1.2.1.1.5.0": "UPS-DC-RACK1", 
      "1.3.6.1.2.1.1.3.0": 8640000, 
@@ -205,10 +205,10 @@ result := SNMPGetMultiple('ups1',
 
 **Returns:** `MAP` -- OID-to-value mapping from cache.
 
-#### SNMPGetNext -- Get Next OID in Tree
+#### SNMP_GET_NEXT -- Get Next OID in Tree
 
 ```iecst
-result := SNMPGetNext('ups1', '1.3.6.1.2.1.1.1');
+result := SNMP_GET_NEXT('ups1', '1.3.6.1.2.1.1.1');
 (* Returns: MAP with "oid" and "value" keys *)
 (* {"oid": "1.3.6.1.2.1.1.1.0", "value": "APC Smart-UPS 3000"} *)
 ```
@@ -220,11 +220,11 @@ result := SNMPGetNext('ups1', '1.3.6.1.2.1.1.1');
 
 **Returns:** `MAP` -- Contains `oid` (the next OID) and `value`.
 
-#### SNMPWalk -- Walk an OID Subtree (BulkWalk)
+#### SNMP_WALK -- Walk an OID Subtree (BulkWalk)
 
 ```iecst
 (* Walk the entire interface table *)
-interfaces := SNMPWalk('switch1', SNMPOID_IfTable);
+interfaces := SNMP_WALK('switch1', SNMP_OID_IF_TABLE);
 (* Returns: []MAP — array of {oid, value} pairs *)
 (* [{"oid": "1.3.6.1.2.1.2.2.1.1.1", "value": 1},
      {"oid": "1.3.6.1.2.1.2.2.1.2.1", "value": "GigabitEthernet0/1"},
@@ -245,30 +245,30 @@ interfaces := SNMPWalk('switch1', SNMPOID_IfTable);
 
 ### 2.3 Convenience Getters
 
-These wrap `SNMPGet` with the appropriate system OID for cleaner code:
+These wrap `SNMP_GET` with the appropriate system OID for cleaner code:
 
 ```iecst
-descr    := SNMPGetSysDescr('ups1');      (* System description *)
-name     := SNMPGetSysName('ups1');       (* Device hostname *)
-uptime   := SNMPGetSysUptime('ups1');     (* Uptime in hundredths of seconds *)
-location := SNMPGetSysLocation('ups1');   (* Physical location string *)
-contact  := SNMPGetSysContact('ups1');    (* Admin contact string *)
+descr    := SNMP_GET_SYS_DESCR('ups1');      (* System description *)
+name     := SNMP_GET_SYS_NAME('ups1');       (* Device hostname *)
+uptime   := SNMP_GET_SYS_UPTIME('ups1');     (* Uptime in hundredths of seconds *)
+location := SNMP_GET_SYS_LOCATION('ups1');   (* Physical location string *)
+contact  := SNMP_GET_SYS_CONTACT('ups1');    (* Admin contact string *)
 ```
 
-Each returns the same type as the underlying `SNMPGet` call.
+Each returns the same type as the underlying `SNMP_GET` call.
 
 ---
 
 ### 2.4 Writing Values
 
-#### SNMPSet -- Write a Value to a Remote Device
+#### SNMP_SET -- Write a Value to a Remote Device
 
 ```iecst
 (* Set the system contact string *)
-ok := SNMPSet('switch1', SNMPOID_SysContact, 'OctetString', 'ops@example.com');
+ok := SNMP_SET('switch1', SNMP_OID_SYS_CONTACT, 'OctetString', 'ops@example.com');
 
 (* Set an integer value *)
-ok := SNMPSet('pdu1', '1.3.6.1.4.1.318.1.1.4.4.2.1.3.1', 'Integer', 1);
+ok := SNMP_SET('pdu1', '1.3.6.1.4.1.318.1.1.4.4.2.1.3.1', 'Integer', 1);
 (* APC PDU: outlet 1 immediate ON *)
 ```
 
@@ -287,10 +287,10 @@ ok := SNMPSet('pdu1', '1.3.6.1.4.1.318.1.1.4.4.2.1.3.1', 'Integer', 1);
 
 ### 2.5 Client Management
 
-#### SNMPClientGetStats -- Connection Statistics
+#### SNMP_CLIENT_GET_STATS -- Connection Statistics
 
 ```iecst
-stats := SNMPClientGetStats('ups1');
+stats := SNMP_CLIENT_GET_STATS('ups1');
 (* Returns: MAP *)
 (* {"requests_sent": 1847, "responses_received": 1845, 
      "timeouts": 2, "errors": 0, "last_poll_ms": 3} *)
@@ -298,20 +298,20 @@ stats := SNMPClientGetStats('ups1');
 
 **Returns:** `MAP` -- Request counts, error counts, and timing.
 
-#### SNMPClientDelete -- Remove Client
+#### SNMP_CLIENT_DELETE -- Remove Client
 
 ```iecst
-ok := SNMPClientDelete('ups1');
+ok := SNMP_CLIENT_DELETE('ups1');
 ```
 
 Disconnects (if connected) and removes the client instance. Frees all associated resources.
 
 **Returns:** `BOOL` -- TRUE on success.
 
-#### SNMPClientList -- List All Clients
+#### SNMP_CLIENT_LIST -- List All Clients
 
 ```iecst
-clients := SNMPClientList();
+clients := SNMP_CLIENT_LIST();
 (* Returns: ['ups1', 'pdu1', 'switch1'] *)
 ```
 
@@ -325,14 +325,14 @@ The trap receiver listens for asynchronous SNMP notifications (traps and informs
 
 ### 3.1 Trap Lifecycle
 
-#### SNMPTrapStart -- Start Listening
+#### SNMP_TRAP_START -- Start Listening
 
 ```iecst
 (* Listen on standard trap port with default community *)
-ok := SNMPTrapStart('datacenter_traps', 162);
+ok := SNMP_TRAP_START('datacenter_traps', 162);
 
 (* Restrict to specific communities *)
-ok := SNMPTrapStart('secure_traps', 1162, 'monitoring-rw,datacenter-ro');
+ok := SNMP_TRAP_START('secure_traps', 1162, 'monitoring-rw,datacenter-ro');
 ```
 
 | Param | Type | Default | Description |
@@ -345,28 +345,28 @@ ok := SNMPTrapStart('secure_traps', 1162, 'monitoring-rw,datacenter-ro');
 
 > **Port 162:** On Linux, binding to ports below 1024 requires root or `CAP_NET_BIND_SERVICE`. Run GoPLC with appropriate capabilities or use a port above 1024.
 
-#### SNMPTrapStop -- Stop Listening
+#### SNMP_TRAP_STOP -- Stop Listening
 
 ```iecst
-ok := SNMPTrapStop('datacenter_traps');
+ok := SNMP_TRAP_STOP('datacenter_traps');
 ```
 
 **Returns:** `BOOL` -- TRUE on success.
 
-#### SNMPTrapIsRunning -- Check Receiver Status
+#### SNMP_TRAP_IS_RUNNING -- Check Receiver Status
 
 ```iecst
-IF SNMPTrapIsRunning('datacenter_traps') THEN
+IF SNMP_TRAP_IS_RUNNING('datacenter_traps') THEN
     (* Receiver is active *)
 END_IF;
 ```
 
 **Returns:** `BOOL` -- TRUE if listening.
 
-#### SNMPTrapGetStats -- Receiver Statistics
+#### SNMP_TRAP_GET_STATS -- Receiver Statistics
 
 ```iecst
-stats := SNMPTrapGetStats('datacenter_traps');
+stats := SNMP_TRAP_GET_STATS('datacenter_traps');
 (* Returns: MAP *)
 (* {"traps_received": 42, "traps_dropped": 0, 
      "buffer_size": 1000, "buffer_used": 3} *)
@@ -378,10 +378,10 @@ stats := SNMPTrapGetStats('datacenter_traps');
 
 ### 3.2 Reading Traps
 
-#### SNMPTrapGetBuffer -- Drain All Buffered Traps
+#### SNMP_TRAP_GET_BUFFER -- Drain All Buffered Traps
 
 ```iecst
-traps := SNMPTrapGetBuffer('datacenter_traps');
+traps := SNMP_TRAP_GET_BUFFER('datacenter_traps');
 (* Returns: []MAP — array of trap records *)
 (* [{"timestamp": "2026-04-03T14:22:01Z",
       "source": "10.0.1.50",
@@ -408,24 +408,24 @@ traps := SNMPTrapGetBuffer('datacenter_traps');
 | `specific_trap` | INT | Enterprise-specific trap code (v1) |
 | `varbinds` | []MAP | Variable bindings: `{oid, type, value}` |
 
-> **Buffer Behavior:** `SNMPTrapGetBuffer` returns all buffered traps and clears them atomically. Call it once per scan cycle to avoid processing duplicates.
+> **Buffer Behavior:** `SNMP_TRAP_GET_BUFFER` returns all buffered traps and clears them atomically. Call it once per scan cycle to avoid processing duplicates.
 
-#### SNMPTrapGetCount -- Check Buffer Depth
+#### SNMP_TRAP_GET_COUNT -- Check Buffer Depth
 
 ```iecst
-count := SNMPTrapGetCount('datacenter_traps');
+count := SNMP_TRAP_GET_COUNT('datacenter_traps');
 IF count > 0 THEN
-    traps := SNMPTrapGetBuffer('datacenter_traps');
+    traps := SNMP_TRAP_GET_BUFFER('datacenter_traps');
     (* Process traps *)
 END_IF;
 ```
 
 **Returns:** `INT` -- Number of traps currently buffered.
 
-#### SNMPTrapClearBuffer -- Discard All Buffered Traps
+#### SNMP_TRAP_CLEAR_BUFFER -- Discard All Buffered Traps
 
 ```iecst
-SNMPTrapClearBuffer('datacenter_traps');
+SNMP_TRAP_CLEAR_BUFFER('datacenter_traps');
 ```
 
 Discards all buffered traps without processing. Useful after reconnection or during initialization when stale traps are not relevant.
@@ -438,15 +438,15 @@ The SNMP agent exposes GoPLC data as an OID tree that any NMS or monitoring tool
 
 ### 4.1 Agent Lifecycle
 
-#### SNMPAgentCreate -- Create Agent
+#### SNMP_AGENT_CREATE -- Create Agent
 
 ```iecst
 (* Minimal — defaults to community "public" *)
-ok := SNMPAgentCreate('plc_agent', 1161);
+ok := SNMP_AGENT_CREATE('plc_agent', 1161);
 
 (* Full configuration *)
-ok := SNMPAgentCreate('plc_agent', 1161, 'monitoring-ro',
-    'GoPLC v1.0.520 SNMP Agent',   (* sysDescr *)
+ok := SNMP_AGENT_CREATE('plc_agent', 1161, 'monitoring-ro',
+    'GoPLC v1.0.533 SNMP Agent',   (* sysDescr *)
     'PLC-RACK1');                    (* sysName *)
 ```
 
@@ -460,28 +460,28 @@ ok := SNMPAgentCreate('plc_agent', 1161, 'monitoring-ro',
 
 **Returns:** `BOOL` -- TRUE on success.
 
-#### SNMPAgentStart -- Begin Serving
+#### SNMP_AGENT_START -- Begin Serving
 
 ```iecst
-ok := SNMPAgentStart('plc_agent');
+ok := SNMP_AGENT_START('plc_agent');
 ```
 
 Starts the UDP listener. The agent responds to SNMP GET, GETNEXT, and GETBULK requests for any OID you have registered.
 
 **Returns:** `BOOL` -- TRUE on success.
 
-#### SNMPAgentStop -- Stop Serving
+#### SNMP_AGENT_STOP -- Stop Serving
 
 ```iecst
-ok := SNMPAgentStop('plc_agent');
+ok := SNMP_AGENT_STOP('plc_agent');
 ```
 
 **Returns:** `BOOL` -- TRUE on success.
 
-#### SNMPAgentIsRunning -- Check Status
+#### SNMP_AGENT_IS_RUNNING -- Check Status
 
 ```iecst
-IF SNMPAgentIsRunning('plc_agent') THEN
+IF SNMP_AGENT_IS_RUNNING('plc_agent') THEN
     (* Agent is serving requests *)
 END_IF;
 ```
@@ -494,11 +494,11 @@ END_IF;
 
 Register OIDs and update their values from your ST program. The agent serves these values to any NMS that polls them.
 
-#### SNMPAgentSetInt -- Set Integer OID
+#### SNMP_AGENT_SET_INT -- Set Integer OID
 
 ```iecst
 (* Expose production count as a standard integer *)
-ok := SNMPAgentSetInt('plc_agent', '1.3.6.1.4.1.99999.1.1.0', production_count);
+ok := SNMP_AGENT_SET_INT('plc_agent', '1.3.6.1.4.1.99999.1.1.0', production_count);
 ```
 
 | Param | Type | Description |
@@ -509,36 +509,36 @@ ok := SNMPAgentSetInt('plc_agent', '1.3.6.1.4.1.99999.1.1.0', production_count);
 
 **Returns:** `BOOL` -- TRUE on success.
 
-#### SNMPAgentSetGauge -- Set Gauge32 OID
+#### SNMP_AGENT_SET_GAUGE -- Set Gauge32 OID
 
 ```iecst
 (* Expose temperature — Gauge32 never wraps, suitable for measurements *)
-ok := SNMPAgentSetGauge('plc_agent', '1.3.6.1.4.1.99999.1.2.0', tank_temp_x10);
+ok := SNMP_AGENT_SET_GAUGE('plc_agent', '1.3.6.1.4.1.99999.1.2.0', tank_temp_x10);
 ```
 
 Gauge32 values represent a current measurement that can increase or decrease (temperature, pressure, level). Unlike Counter32, they do not wrap.
 
 **Returns:** `BOOL` -- TRUE on success.
 
-#### SNMPAgentSetCounter -- Set Counter32 OID
+#### SNMP_AGENT_SET_COUNTER -- Set Counter32 OID
 
 ```iecst
 (* Expose total parts — Counter32 monotonically increases and wraps at 2^32 *)
-ok := SNMPAgentSetCounter('plc_agent', '1.3.6.1.4.1.99999.1.3.0', total_parts);
+ok := SNMP_AGENT_SET_COUNTER('plc_agent', '1.3.6.1.4.1.99999.1.3.0', total_parts);
 ```
 
 Counter32 values represent monotonically increasing counts (packets, parts, errors). NMS tools calculate rates from counter deltas.
 
 **Returns:** `BOOL` -- TRUE on success.
 
-#### SNMPAgentSetStr -- Set OctetString OID
+#### SNMP_AGENT_SET_STR -- Set OctetString OID
 
 ```iecst
 (* Expose machine state as a human-readable string *)
-ok := SNMPAgentSetStr('plc_agent', '1.3.6.1.4.1.99999.1.4.0', 'RUNNING');
+ok := SNMP_AGENT_SET_STR('plc_agent', '1.3.6.1.4.1.99999.1.4.0', 'RUNNING');
 
 (* Expose alarm description *)
-ok := SNMPAgentSetStr('plc_agent', '1.3.6.1.4.1.99999.1.5.0', active_alarm_text);
+ok := SNMP_AGENT_SET_STR('plc_agent', '1.3.6.1.4.1.99999.1.5.0', active_alarm_text);
 ```
 
 **Returns:** `BOOL` -- TRUE on success.
@@ -547,10 +547,10 @@ ok := SNMPAgentSetStr('plc_agent', '1.3.6.1.4.1.99999.1.5.0', active_alarm_text)
 
 ### 4.3 Reading OID Values
 
-#### SNMPAgentGetInt -- Read Back an Integer OID
+#### SNMP_AGENT_GET_INT -- Read Back an Integer OID
 
 ```iecst
-current := SNMPAgentGetInt('plc_agent', '1.3.6.1.4.1.99999.1.1.0');
+current := SNMP_AGENT_GET_INT('plc_agent', '1.3.6.1.4.1.99999.1.1.0');
 ```
 
 **Returns:** `INT` -- Current value of the registered OID. Returns 0 if the OID is not registered.
@@ -559,20 +559,20 @@ current := SNMPAgentGetInt('plc_agent', '1.3.6.1.4.1.99999.1.1.0');
 
 ### 4.4 Agent Management
 
-#### SNMPAgentDelete -- Remove Agent
+#### SNMP_AGENT_DELETE -- Remove Agent
 
 ```iecst
-ok := SNMPAgentDelete('plc_agent');
+ok := SNMP_AGENT_DELETE('plc_agent');
 ```
 
 Stops (if running) and removes the agent instance.
 
 **Returns:** `BOOL` -- TRUE on success.
 
-#### SNMPAgentList -- List All Agents
+#### SNMP_AGENT_LIST -- List All Agents
 
 ```iecst
-agents := SNMPAgentList();
+agents := SNMP_AGENT_LIST();
 (* Returns: ['plc_agent'] *)
 ```
 
@@ -629,22 +629,22 @@ VAR
 END_VAR
 
 IF NOT initialized THEN
-    ok := SNMPClientCreate('ups1', '10.0.1.50', 161, 'datacenter-ro', 'v2c');
-    ok := SNMPClientConnect('ups1');
+    ok := SNMP_CLIENT_CREATE('ups1', '10.0.1.50', 161, 'datacenter-ro', 'v2c');
+    ok := SNMP_CLIENT_CONNECT('ups1');
     initialized := TRUE;
     RETURN;
 END_IF;
 
-IF NOT SNMPClientIsConnected('ups1') THEN
-    ok := SNMPClientConnect('ups1');
+IF NOT SNMP_CLIENT_IS_CONNECTED('ups1') THEN
+    ok := SNMP_CLIENT_CONNECT('ups1');
     RETURN;
 END_IF;
 
 (* Read UPS values from poll cache — non-blocking *)
-battery_status := SNMPGet('ups1', SNMPOID_UPSBatteryStatus);
-input_voltage  := SNMPGet('ups1', SNMPOID_UPSInputVoltage);
-output_load    := SNMPGet('ups1', SNMPOID_UPSOutputLoad);
-ups_name       := SNMPGetSysName('ups1');
+battery_status := SNMP_GET('ups1', SNMP_OID_UPS_BATTERY_STATUS);
+input_voltage  := SNMP_GET('ups1', SNMP_OID_UPS_INPUT_VOLTAGE);
+output_load    := SNMP_GET('ups1', SNMP_OID_UPS_OUTPUT_LOAD);
+ups_name       := SNMP_GET_SYS_NAME('ups1');
 
 (* Battery status: 1=unknown, 2=normal, 3=low, 4=depleted *)
 IF battery_status <> 2 THEN
@@ -683,19 +683,19 @@ CONST
 END_CONST
 
 IF NOT initialized THEN
-    ok := SNMPClientCreate('pdu1', '10.0.1.51', 161, 'datacenter-rw', 'v2c');
-    ok := SNMPClientConnect('pdu1');
+    ok := SNMP_CLIENT_CREATE('pdu1', '10.0.1.51', 161, 'datacenter-rw', 'v2c');
+    ok := SNMP_CLIENT_CONNECT('pdu1');
     initialized := TRUE;
     RETURN;
 END_IF;
 
 (* Read outlet status *)
-outlet_state := SNMPGet('pdu1', CONCAT(APC_OUTLET_STATUS, INT_TO_STRING(target_outlet)));
+outlet_state := SNMP_GET('pdu1', CONCAT(APC_OUTLET_STATUS, INT_TO_STRING(target_outlet)));
 (* 1=on, 2=off *)
 
 (* HMI-triggered reboot *)
 IF reboot_request THEN
-    ok := SNMPSet('pdu1',
+    ok := SNMP_SET('pdu1',
         CONCAT(APC_OUTLET_CMD, INT_TO_STRING(target_outlet)),
         'Integer', 3);    (* 3 = immediateReboot *)
     reboot_request := FALSE;
@@ -725,8 +725,8 @@ CONST
 END_CONST
 
 IF NOT initialized THEN
-    ok := SNMPClientCreate('switch1', '10.0.1.1', 161, 'monitoring-ro', 'v2c');
-    ok := SNMPClientConnect('switch1');
+    ok := SNMP_CLIENT_CREATE('switch1', '10.0.1.1', 161, 'monitoring-ro', 'v2c');
+    ok := SNMP_CLIENT_CONNECT('switch1');
     initialized := TRUE;
 END_IF;
 
@@ -735,7 +735,7 @@ walk_timer(IN := TRUE, PT := T#30s);
 IF walk_timer.Q THEN
     walk_timer(IN := FALSE);
 
-    walk_result := SNMPWalk('switch1', IF_OPER_STATUS);
+    walk_result := SNMP_WALK('switch1', IF_OPER_STATUS);
 
     link_down_count := 0;
     FOR i := 0 TO UPPER_BOUND(walk_result, 1) DO
@@ -764,22 +764,22 @@ END_VAR
 
 IF NOT initialized THEN
     (* Create v3 client with SHA auth + AES privacy *)
-    ok := SNMPClientCreateV3('core_switch', '10.0.1.1',
+    ok := SNMP_CLIENT_CREATE_V3('core_switch', '10.0.1.1',
         'goplc_monitor',     (* USM user — must exist on the switch *)
         'SHA',               (* auth protocol *)
         'MyAuthPhrase99!',   (* auth passphrase *)
         'AES',               (* privacy protocol *)
         'MyPrivPhrase88!');  (* privacy passphrase *)
 
-    ok := SNMPClientConnect('core_switch');
+    ok := SNMP_CLIENT_CONNECT('core_switch');
     initialized := TRUE;
     RETURN;
 END_IF;
 
 (* Same read functions work regardless of SNMP version *)
-sys_descr  := SNMPGetSysDescr('core_switch');
-sys_uptime := SNMPGetSysUptime('core_switch');
-if_count   := SNMPGet('core_switch', SNMPOID_IfNumber);
+sys_descr  := SNMP_GET_SYS_DESCR('core_switch');
+sys_uptime := SNMP_GET_SYS_UPTIME('core_switch');
+if_count   := SNMP_GET('core_switch', SNMP_OID_IF_NUMBER);
 
 END_PROGRAM
 ```
@@ -815,19 +815,19 @@ CONST
 END_CONST
 
 IF NOT initialized THEN
-    ok := SNMPTrapStart('dc_traps', 1162, 'datacenter-ro,monitoring-rw');
+    ok := SNMP_TRAP_START('dc_traps', 1162, 'datacenter-ro,monitoring-rw');
     initialized := TRUE;
     RETURN;
 END_IF;
 
 (* Check for new traps every scan *)
-trap_count := SNMPTrapGetCount('dc_traps');
+trap_count := SNMP_TRAP_GET_COUNT('dc_traps');
 IF trap_count = 0 THEN
     RETURN;
 END_IF;
 
 (* Drain the buffer *)
-traps := SNMPTrapGetBuffer('dc_traps');
+traps := SNMP_TRAP_GET_BUFFER('dc_traps');
 
 FOR i := 0 TO trap_count - 1 DO
     (* Classify by generic trap type *)
@@ -878,20 +878,20 @@ CONST
 END_CONST
 
 IF NOT initialized THEN
-    ok := SNMPAgentCreate('plc_agent', 1161, 'monitoring-ro',
+    ok := SNMP_AGENT_CREATE('plc_agent', 1161, 'monitoring-ro',
         'GoPLC SNMP Agent - Plant Floor PLC', 'PLC-LINE1');
-    ok := SNMPAgentStart('plc_agent');
+    ok := SNMP_AGENT_START('plc_agent');
     initialized := TRUE;
 END_IF;
 
 (* Update OIDs every scan — agent serves latest values *)
-SNMPAgentSetInt('plc_agent',     CONCAT(PEN, '.1.1.0'), machine_state);
-SNMPAgentSetStr('plc_agent',     CONCAT(PEN, '.1.2.0'), 'v1.0.520');
-SNMPAgentSetGauge('plc_agent',   CONCAT(PEN, '.2.1.0'), REAL_TO_INT(tank_temp * 10.0));
-SNMPAgentSetGauge('plc_agent',   CONCAT(PEN, '.2.2.0'), REAL_TO_INT(tank_level * 10.0));
-SNMPAgentSetCounter('plc_agent', CONCAT(PEN, '.3.1.0'), production_count);
-SNMPAgentSetCounter('plc_agent', CONCAT(PEN, '.3.2.0'), reject_count);
-SNMPAgentSetStr('plc_agent',     CONCAT(PEN, '.4.1.0'), alarm_text);
+SNMP_AGENT_SET_INT('plc_agent',     CONCAT(PEN, '.1.1.0'), machine_state);
+SNMP_AGENT_SET_STR('plc_agent',     CONCAT(PEN, '.1.2.0'), 'v1.0.533');
+SNMP_AGENT_SET_GAUGE('plc_agent',   CONCAT(PEN, '.2.1.0'), REAL_TO_INT(tank_temp * 10.0));
+SNMP_AGENT_SET_GAUGE('plc_agent',   CONCAT(PEN, '.2.2.0'), REAL_TO_INT(tank_level * 10.0));
+SNMP_AGENT_SET_COUNTER('plc_agent', CONCAT(PEN, '.3.1.0'), production_count);
+SNMP_AGENT_SET_COUNTER('plc_agent', CONCAT(PEN, '.3.2.0'), reject_count);
+SNMP_AGENT_SET_STR('plc_agent',     CONCAT(PEN, '.4.1.0'), alarm_text);
 
 END_PROGRAM
 ```
@@ -930,35 +930,35 @@ END_VAR
 
 IF NOT initialized THEN
     (* Client: poll UPS and PDU *)
-    ok := SNMPClientCreate('ups1', '10.0.1.50', 161, 'datacenter-ro', 'v2c');
-    ok := SNMPClientConnect('ups1');
-    ok := SNMPClientCreate('pdu1', '10.0.1.51', 161, 'datacenter-ro', 'v2c');
-    ok := SNMPClientConnect('pdu1');
+    ok := SNMP_CLIENT_CREATE('ups1', '10.0.1.50', 161, 'datacenter-ro', 'v2c');
+    ok := SNMP_CLIENT_CONNECT('ups1');
+    ok := SNMP_CLIENT_CREATE('pdu1', '10.0.1.51', 161, 'datacenter-ro', 'v2c');
+    ok := SNMP_CLIENT_CONNECT('pdu1');
 
     (* Trap receiver: catch async alerts *)
-    ok := SNMPTrapStart('dc_traps', 1162);
+    ok := SNMP_TRAP_START('dc_traps', 1162);
 
     (* Agent: serve aggregated status to NMS *)
-    ok := SNMPAgentCreate('dc_agent', 1161, 'monitoring-ro',
+    ok := SNMP_AGENT_CREATE('dc_agent', 1161, 'monitoring-ro',
         'GoPLC DC Monitor', 'DC-MONITOR-1');
-    ok := SNMPAgentStart('dc_agent');
+    ok := SNMP_AGENT_START('dc_agent');
 
     initialized := TRUE;
     RETURN;
 END_IF;
 
 (* ---- Read UPS ---- *)
-ups_battery := SNMPGet('ups1', SNMPOID_UPSBatteryStatus);
-ups_voltage := SNMPGet('ups1', SNMPOID_UPSInputVoltage);
-ups_load    := SNMPGet('ups1', SNMPOID_UPSOutputLoad);
+ups_battery := SNMP_GET('ups1', SNMP_OID_UPS_BATTERY_STATUS);
+ups_voltage := SNMP_GET('ups1', SNMP_OID_UPS_INPUT_VOLTAGE);
+ups_load    := SNMP_GET('ups1', SNMP_OID_UPS_OUTPUT_LOAD);
 
 (* ---- Read PDU ---- *)
-pdu_total_amps := SNMPGet('pdu1', '1.3.6.1.4.1.318.1.1.12.2.3.1.1.2.1');
+pdu_total_amps := SNMP_GET('pdu1', '1.3.6.1.4.1.318.1.1.12.2.3.1.1.2.1');
 
 (* ---- Process traps ---- *)
-trap_count := SNMPTrapGetCount('dc_traps');
+trap_count := SNMP_TRAP_GET_COUNT('dc_traps');
 IF trap_count > 0 THEN
-    traps := SNMPTrapGetBuffer('dc_traps');
+    traps := SNMP_TRAP_GET_BUFFER('dc_traps');
     (* Classify and escalate — see Example 6.5 *)
 END_IF;
 
@@ -983,12 +983,12 @@ ELSIF ups_load > 80 THEN
 END_IF;
 
 (* ---- Expose to NMS ---- *)
-SNMPAgentSetInt('dc_agent',     '1.3.6.1.4.1.99999.1.1.0', dc_health);
-SNMPAgentSetStr('dc_agent',     '1.3.6.1.4.1.99999.1.2.0', alarm_msg);
-SNMPAgentSetGauge('dc_agent',   '1.3.6.1.4.1.99999.2.1.0', ups_voltage);
-SNMPAgentSetGauge('dc_agent',   '1.3.6.1.4.1.99999.2.2.0', ups_load);
-SNMPAgentSetGauge('dc_agent',   '1.3.6.1.4.1.99999.2.3.0', pdu_total_amps);
-SNMPAgentSetCounter('dc_agent', '1.3.6.1.4.1.99999.3.1.0', trap_count);
+SNMP_AGENT_SET_INT('dc_agent',     '1.3.6.1.4.1.99999.1.1.0', dc_health);
+SNMP_AGENT_SET_STR('dc_agent',     '1.3.6.1.4.1.99999.1.2.0', alarm_msg);
+SNMP_AGENT_SET_GAUGE('dc_agent',   '1.3.6.1.4.1.99999.2.1.0', ups_voltage);
+SNMP_AGENT_SET_GAUGE('dc_agent',   '1.3.6.1.4.1.99999.2.2.0', ups_load);
+SNMP_AGENT_SET_GAUGE('dc_agent',   '1.3.6.1.4.1.99999.2.3.0', pdu_total_amps);
+SNMP_AGENT_SET_COUNTER('dc_agent', '1.3.6.1.4.1.99999.3.1.0', trap_count);
 
 END_PROGRAM
 ```
@@ -1001,72 +1001,72 @@ END_PROGRAM
 
 | Function | Signature | Returns |
 |----------|-----------|---------|
-| `SNMPClientCreate` | `(name, host [, port] [, community] [, version])` | BOOL |
-| `SNMPClientCreateV3` | `(name, host, user, authProto, authPass, privProto, privPass)` | BOOL |
-| `SNMPClientConnect` | `(name)` | BOOL |
-| `SNMPClientDisconnect` | `(name)` | BOOL |
-| `SNMPClientIsConnected` | `(name)` | BOOL |
-| `SNMPGet` | `(name, oidStr)` | ANY |
-| `SNMPGetMultiple` | `(name, oidStrs)` | MAP |
-| `SNMPGetNext` | `(name, oidStr)` | MAP |
-| `SNMPSet` | `(name, oidStr, valueType, value)` | BOOL |
-| `SNMPWalk` | `(name, rootOidStr)` | []MAP |
-| `SNMPGetSysDescr` | `(name)` | STRING |
-| `SNMPGetSysName` | `(name)` | STRING |
-| `SNMPGetSysUptime` | `(name)` | DINT |
-| `SNMPGetSysLocation` | `(name)` | STRING |
-| `SNMPGetSysContact` | `(name)` | STRING |
-| `SNMPClientGetStats` | `(name)` | MAP |
-| `SNMPClientDelete` | `(name)` | BOOL |
-| `SNMPClientList` | `()` | LIST |
+| `SNMP_CLIENT_CREATE` | `(name, host [, port] [, community] [, version])` | BOOL |
+| `SNMP_CLIENT_CREATE_V3` | `(name, host, user, authProto, authPass, privProto, privPass)` | BOOL |
+| `SNMP_CLIENT_CONNECT` | `(name)` | BOOL |
+| `SNMP_CLIENT_DISCONNECT` | `(name)` | BOOL |
+| `SNMP_CLIENT_IS_CONNECTED` | `(name)` | BOOL |
+| `SNMP_GET` | `(name, oidStr)` | ANY |
+| `SNMP_GET_MULTIPLE` | `(name, oidStrs)` | MAP |
+| `SNMP_GET_NEXT` | `(name, oidStr)` | MAP |
+| `SNMP_SET` | `(name, oidStr, valueType, value)` | BOOL |
+| `SNMP_WALK` | `(name, rootOidStr)` | []MAP |
+| `SNMP_GET_SYS_DESCR` | `(name)` | STRING |
+| `SNMP_GET_SYS_NAME` | `(name)` | STRING |
+| `SNMP_GET_SYS_UPTIME` | `(name)` | DINT |
+| `SNMP_GET_SYS_LOCATION` | `(name)` | STRING |
+| `SNMP_GET_SYS_CONTACT` | `(name)` | STRING |
+| `SNMP_CLIENT_GET_STATS` | `(name)` | MAP |
+| `SNMP_CLIENT_DELETE` | `(name)` | BOOL |
+| `SNMP_CLIENT_LIST` | `()` | LIST |
 
 ### Trap Receiver Functions
 
 | Function | Signature | Returns |
 |----------|-----------|---------|
-| `SNMPTrapStart` | `(name, port [, communities])` | BOOL |
-| `SNMPTrapStop` | `(name)` | BOOL |
-| `SNMPTrapIsRunning` | `(name)` | BOOL |
-| `SNMPTrapGetStats` | `(name)` | MAP |
-| `SNMPTrapGetBuffer` | `(name)` | []MAP |
-| `SNMPTrapGetCount` | `(name)` | INT |
-| `SNMPTrapClearBuffer` | `(name)` | — |
+| `SNMP_TRAP_START` | `(name, port [, communities])` | BOOL |
+| `SNMP_TRAP_STOP` | `(name)` | BOOL |
+| `SNMP_TRAP_IS_RUNNING` | `(name)` | BOOL |
+| `SNMP_TRAP_GET_STATS` | `(name)` | MAP |
+| `SNMP_TRAP_GET_BUFFER` | `(name)` | []MAP |
+| `SNMP_TRAP_GET_COUNT` | `(name)` | INT |
+| `SNMP_TRAP_CLEAR_BUFFER` | `(name)` | — |
 
 ### Agent Functions
 
 | Function | Signature | Returns |
 |----------|-----------|---------|
-| `SNMPAgentCreate` | `(name, port [, community] [, sysDescr] [, sysName])` | BOOL |
-| `SNMPAgentStart` | `(name)` | BOOL |
-| `SNMPAgentStop` | `(name)` | BOOL |
-| `SNMPAgentIsRunning` | `(name)` | BOOL |
-| `SNMPAgentSetInt` | `(name, oidStr, value)` | BOOL |
-| `SNMPAgentSetGauge` | `(name, oidStr, value)` | BOOL |
-| `SNMPAgentSetCounter` | `(name, oidStr, value)` | BOOL |
-| `SNMPAgentSetStr` | `(name, oidStr, value)` | BOOL |
-| `SNMPAgentGetInt` | `(name, oidStr)` | INT |
-| `SNMPAgentDelete` | `(name)` | BOOL |
-| `SNMPAgentList` | `()` | LIST |
+| `SNMP_AGENT_CREATE` | `(name, port [, community] [, sysDescr] [, sysName])` | BOOL |
+| `SNMP_AGENT_START` | `(name)` | BOOL |
+| `SNMP_AGENT_STOP` | `(name)` | BOOL |
+| `SNMP_AGENT_IS_RUNNING` | `(name)` | BOOL |
+| `SNMP_AGENT_SET_INT` | `(name, oidStr, value)` | BOOL |
+| `SNMP_AGENT_SET_GAUGE` | `(name, oidStr, value)` | BOOL |
+| `SNMP_AGENT_SET_COUNTER` | `(name, oidStr, value)` | BOOL |
+| `SNMP_AGENT_SET_STR` | `(name, oidStr, value)` | BOOL |
+| `SNMP_AGENT_GET_INT` | `(name, oidStr)` | INT |
+| `SNMP_AGENT_DELETE` | `(name)` | BOOL |
+| `SNMP_AGENT_LIST` | `()` | LIST |
 
 ### OID Constants
 
 | Constant | OID |
 |----------|-----|
-| `SNMPOID_SysDescr` | 1.3.6.1.2.1.1.1.0 |
-| `SNMPOID_SysObjectID` | 1.3.6.1.2.1.1.2.0 |
-| `SNMPOID_SysUpTime` | 1.3.6.1.2.1.1.3.0 |
-| `SNMPOID_SysContact` | 1.3.6.1.2.1.1.4.0 |
-| `SNMPOID_SysName` | 1.3.6.1.2.1.1.5.0 |
-| `SNMPOID_SysLocation` | 1.3.6.1.2.1.1.6.0 |
-| `SNMPOID_IfNumber` | 1.3.6.1.2.1.2.1.0 |
-| `SNMPOID_IfTable` | 1.3.6.1.2.1.2.2 |
-| `SNMPOID_UPSBatteryStatus` | 1.3.6.1.2.1.33.1.2.1.0 |
-| `SNMPOID_UPSInputVoltage` | 1.3.6.1.2.1.33.1.3.3.1.3.1 |
-| `SNMPOID_UPSOutputLoad` | 1.3.6.1.2.1.33.1.4.4.1.5.1 |
+| `SNMP_OID_SYS_DESCR` | 1.3.6.1.2.1.1.1.0 |
+| `SNMP_OID_SYS_OBJECT_ID` | 1.3.6.1.2.1.1.2.0 |
+| `SNMP_OID_SYS_UPTIME` | 1.3.6.1.2.1.1.3.0 |
+| `SNMP_OID_SYS_CONTACT` | 1.3.6.1.2.1.1.4.0 |
+| `SNMP_OID_SYS_NAME` | 1.3.6.1.2.1.1.5.0 |
+| `SNMP_OID_SYS_LOCATION` | 1.3.6.1.2.1.1.6.0 |
+| `SNMP_OID_IF_NUMBER` | 1.3.6.1.2.1.2.1.0 |
+| `SNMP_OID_IF_TABLE` | 1.3.6.1.2.1.2.2 |
+| `SNMP_OID_UPS_BATTERY_STATUS` | 1.3.6.1.2.1.33.1.2.1.0 |
+| `SNMP_OID_UPS_INPUT_VOLTAGE` | 1.3.6.1.2.1.33.1.3.3.1.3.1 |
+| `SNMP_OID_UPS_OUTPUT_LOAD` | 1.3.6.1.2.1.33.1.4.4.1.5.1 |
 
 ---
 
-*GoPLC v1.0.520 | SNMP v1/v2c/v3 Client, Trap Receiver, Agent*
+*GoPLC v1.0.533 | SNMP v1/v2c/v3 Client, Trap Receiver, Agent*
 *Client: ~18 functions | Trap Receiver: 7 functions | Agent: ~11 functions*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*

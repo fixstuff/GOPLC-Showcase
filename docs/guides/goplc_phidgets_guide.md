@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -521,7 +521,7 @@ END_PROGRAM
 
 ---
 
-*GoPLC v1.0.520 | Phidgets USB Sensor/Actuator Interface*
+*GoPLC v1.0.533 | Phidgets USB Sensor/Actuator Interface*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
 *[Back to White Papers](https://jmbtechnical.com/whitepapers/)*

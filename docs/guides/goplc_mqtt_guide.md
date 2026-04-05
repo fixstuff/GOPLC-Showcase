@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -972,7 +972,7 @@ END_IF;
 
 ---
 
-*GoPLC v1.0.520 | MQTT 3.1.1 | Built-in Paho client + Mochi broker*
+*GoPLC v1.0.533 | MQTT 3.1.1 | Built-in Paho client + Mochi broker*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
 *[Back to White Papers](https://jmbtechnical.com/whitepapers/)*

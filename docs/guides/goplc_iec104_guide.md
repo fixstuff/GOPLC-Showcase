@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -12,8 +12,8 @@ GoPLC implements a complete **IEC 60870-5-104** stack — both controlling stati
 
 | Role | Functions | Use Case |
 |------|-----------|----------|
-| **Client (Controlling Station)** | `IEC104ClientCreate` / `IEC104ClientRead*` / `IEC104ClientWrite*` | Poll remote RTUs, protection relays, bay controllers, IEDs |
-| **Server (Controlled Station)** | `IEC104ServerCreate` / `IEC104ServerSet*` / `IEC104ServerGet*` | Expose GoPLC data to SCADA masters, control centers, energy management systems |
+| **Client (Controlling Station)** | `IEC104_CLIENT_CREATE` / `IEC104_CLIENT_READ_*` / `IEC104_CLIENT_WRITE_*` | Poll remote RTUs, protection relays, bay controllers, IEDs |
+| **Server (Controlled Station)** | `IEC104_SERVER_CREATE` / `IEC104_SERVER_SET_*` / `IEC104_SERVER_GET_*` | Expose GoPLC data to SCADA masters, control centers, energy management systems |
 
 Both roles can run simultaneously. A single GoPLC instance can poll substation IEDs as a client while serving aggregated data to a utility control center as a server — all from the same ST program.
 
@@ -26,12 +26,12 @@ Both roles can run simultaneously. A single GoPLC instance can poll substation I
 │  ┌──────────────────────────┐  ┌────────────────────────────┐ │
 │  │ ST Program (Client)      │  │ ST Program (Server)        │ │
 │  │                          │  │                            │ │
-│  │ IEC104ClientCreate()     │  │ IEC104ServerCreate()       │ │
-│  │ IEC104ClientConnect()    │  │ IEC104ServerStart()        │ │
-│  │ IEC104ClientReadSP()     │  │ IEC104ServerSetSP()        │ │
-│  │ IEC104ClientReadFloat()  │  │ IEC104ServerSetFloat()     │ │
-│  │ IEC104ClientWriteSC()    │  │ IEC104ServerGetSC()        │ │
-│  │ IEC104ClientWriteSetpoint│  │ IEC104ServerGetSetpoint()  │ │
+│  │ IEC104_CLIENT_CREATE()     │  │ IEC104_SERVER_CREATE()       │ │
+│  │ IEC104_CLIENT_CONNECT()    │  │ IEC104_SERVER_START()        │ │
+│  │ IEC104_CLIENT_READ_SP()     │  │ IEC104_SERVER_SET_SP()        │ │
+│  │ IEC104_CLIENT_READ_FLOAT()  │  │ IEC104_SERVER_SET_FLOAT()     │ │
+│  │ IEC104_CLIENT_WRITE_SC()    │  │ IEC104_SERVER_GET_SC()        │ │
+│  │ IEC104_CLIENT_WRITE_SETPOINT│  │ IEC104_SERVER_GET_SETPOINT()  │ │
 │  └──────────┬───────────────┘  └──────────┬─────────────────┘ │
 │             │                             │                   │
 │             │  TCP Client                 │  TCP Server        │
@@ -133,7 +133,7 @@ The IEC 104 client connects to remote controlled stations (RTUs, IEDs, bay contr
 
 ### 2.1 Connection Management
 
-#### IEC104ClientCreate — Create Named Client Connection
+#### IEC104_CLIENT_CREATE — Create Named Client Connection
 
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -146,31 +146,31 @@ Returns: `BOOL` — TRUE if the client connection was created successfully.
 
 ```iecst
 (* Connect to a substation RTU at 10.0.0.100, default common address *)
-ok := IEC104ClientCreate('sub1', '10.0.0.100', 2404);
+ok := IEC104_CLIENT_CREATE('sub1', '10.0.0.100', 2404);
 
 (* Connect with explicit common address *)
-ok := IEC104ClientCreate('sub1', '10.0.0.100', 2404, 47);
+ok := IEC104_CLIENT_CREATE('sub1', '10.0.0.100', 2404, 47);
 
 (* Multiple substations *)
-ok := IEC104ClientCreate('sub_north', '10.0.1.50', 2404, 1);
-ok := IEC104ClientCreate('sub_south', '10.0.1.51', 2404, 2);
+ok := IEC104_CLIENT_CREATE('sub_north', '10.0.1.50', 2404, 1);
+ok := IEC104_CLIENT_CREATE('sub_south', '10.0.1.51', 2404, 2);
 ```
 
 > **Named connections:** Every client connection has a unique string name. This name is used in all subsequent calls. Create one connection per controlled station — the typical pattern for SCADA polling.
 
-#### IEC104ClientConnect — Establish TCP Connection
+#### IEC104_CLIENT_CONNECT — Establish TCP Connection
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `name` | STRING | Connection name from IEC104ClientCreate |
+| `name` | STRING | Connection name from IEC104_CLIENT_CREATE |
 
 Returns: `BOOL` — TRUE if connected successfully. The runtime automatically sends a STARTDT (Start Data Transfer) activation and issues a general interrogation (C_IC_NA_1) to populate the initial point table.
 
 ```iecst
-ok := IEC104ClientConnect('sub1');
+ok := IEC104_CLIENT_CONNECT('sub1');
 ```
 
-#### IEC104ClientDisconnect — Close TCP Connection
+#### IEC104_CLIENT_DISCONNECT — Close TCP Connection
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -179,10 +179,10 @@ ok := IEC104ClientConnect('sub1');
 Returns: `BOOL` — TRUE if disconnected successfully. Sends a STOPDT (Stop Data Transfer) before closing the TCP connection.
 
 ```iecst
-ok := IEC104ClientDisconnect('sub1');
+ok := IEC104_CLIENT_DISCONNECT('sub1');
 ```
 
-#### IEC104ClientIsConnected — Check Connection State
+#### IEC104_CLIENT_IS_CONNECTED — Check Connection State
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -191,8 +191,8 @@ ok := IEC104ClientDisconnect('sub1');
 Returns: `BOOL` — TRUE if the TCP connection is active and data transfer is active (STARTDT confirmed).
 
 ```iecst
-IF NOT IEC104ClientIsConnected('sub1') THEN
-    IEC104ClientConnect('sub1');
+IF NOT IEC104_CLIENT_IS_CONNECTED('sub1') THEN
+    IEC104_CLIENT_CONNECT('sub1');
 END_IF;
 ```
 
@@ -207,19 +207,19 @@ END_VAR
 
 CASE state OF
     0: (* Create client connection *)
-        ok := IEC104ClientCreate('sub1', '10.0.0.100', 2404, 1);
+        ok := IEC104_CLIENT_CREATE('sub1', '10.0.0.100', 2404, 1);
         IF ok THEN
             state := 1;
         END_IF;
 
     1: (* Connect — triggers STARTDT + general interrogation *)
-        ok := IEC104ClientConnect('sub1');
+        ok := IEC104_CLIENT_CONNECT('sub1');
         IF ok THEN
             state := 10;
         END_IF;
 
     10: (* Running — read/write in other programs *)
-        IF NOT IEC104ClientIsConnected('sub1') THEN
+        IF NOT IEC104_CLIENT_IS_CONNECTED('sub1') THEN
             state := 1;  (* Reconnect *)
         END_IF;
 END_CASE;
@@ -232,7 +232,7 @@ END_PROGRAM
 
 All read functions return the **most recent cached value** from the controlled station. GoPLC receives spontaneous data updates and general interrogation responses automatically in the background. Reads never block.
 
-#### IEC104ClientReadSP — Read Single Point
+#### IEC104_CLIENT_READ_SP — Read Single Point
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -243,15 +243,15 @@ Returns: `BOOL` — The current single point value at the specified IOA.
 
 ```iecst
 (* Read breaker status — IOA 1 *)
-breaker_closed := IEC104ClientReadSP('sub1', 1);
+breaker_closed := IEC104_CLIENT_READ_SP('sub1', 1);
 
 (* Read alarm contact — IOA 10 *)
-overtemp_alarm := IEC104ClientReadSP('sub1', 10);
+overtemp_alarm := IEC104_CLIENT_READ_SP('sub1', 10);
 ```
 
 > **ASDU types:** The runtime accepts both M_SP_NA_1 (1) and M_SP_TB_1 (30) — with and without time tags. Time-tagged variants are preferred by the controlled station for spontaneous updates; your read call returns the value regardless of which variant was received.
 
-#### IEC104ClientReadDP — Read Double Point
+#### IEC104_CLIENT_READ_DP — Read Double Point
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -269,7 +269,7 @@ Returns: `INT` — The current double point value (0-3).
 
 ```iecst
 (* Read breaker position — IOA 1000 *)
-breaker_pos := IEC104ClientReadDP('sub1', 1000);
+breaker_pos := IEC104_CLIENT_READ_DP('sub1', 1000);
 
 IF breaker_pos = 2 THEN
     (* Breaker is closed *)
@@ -282,7 +282,7 @@ END_IF;
 
 > **Double point vs single point:** Use double point for equipment that has distinct open and closed feedback contacts (breakers, disconnectors). The 2-bit encoding detects mid-travel and contact disagreement — critical for protection coordination.
 
-#### IEC104ClientReadFloat — Read Measured Value (Floating Point)
+#### IEC104_CLIENT_READ_FLOAT — Read Measured Value (Floating Point)
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -293,15 +293,15 @@ Returns: `REAL` — The current measured value in engineering units.
 
 ```iecst
 (* Read substation measurements *)
-bus_voltage := IEC104ClientReadFloat('sub1', 2000);    (* kV *)
-line_current := IEC104ClientReadFloat('sub1', 2001);   (* A *)
-active_power := IEC104ClientReadFloat('sub1', 2002);   (* MW *)
-frequency := IEC104ClientReadFloat('sub1', 2003);      (* Hz *)
+bus_voltage := IEC104_CLIENT_READ_FLOAT('sub1', 2000);    (* kV *)
+line_current := IEC104_CLIENT_READ_FLOAT('sub1', 2001);   (* A *)
+active_power := IEC104_CLIENT_READ_FLOAT('sub1', 2002);   (* MW *)
+frequency := IEC104_CLIENT_READ_FLOAT('sub1', 2003);      (* Hz *)
 ```
 
 > **ASDU types:** Maps to M_ME_NC_1 (13) and M_ME_TF_1 (36) — short floating point with and without time tag. These carry IEEE 754 single-precision values directly, with no scaling required.
 
-#### IEC104ClientReadScaled — Read Measured Value (Scaled)
+#### IEC104_CLIENT_READ_SCALED — Read Measured Value (Scaled)
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -312,15 +312,15 @@ Returns: `INT` — The raw scaled value (-32768 to 32767).
 
 ```iecst
 (* Read transformer tap position — IOA 3000 *)
-tap_pos := IEC104ClientReadScaled('sub1', 3000);
+tap_pos := IEC104_CLIENT_READ_SCALED('sub1', 3000);
 
 (* Read percentage value — IOA 3010 *)
-load_pct := IEC104ClientReadScaled('sub1', 3010);
+load_pct := IEC104_CLIENT_READ_SCALED('sub1', 3010);
 ```
 
 > **Scaling:** Scaled values (M_ME_NB_1 / M_ME_TE_1) are 16-bit signed integers. The engineering unit conversion depends on the point configuration at the controlled station. A tap changer might report position 1-33 directly; a load percentage might use 0-10000 to represent 0.00-100.00%. Consult the station's IOA map for scaling factors.
 
-#### IEC104ClientReadCounter — Read Integrated Total
+#### IEC104_CLIENT_READ_COUNTER — Read Integrated Total
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -331,9 +331,9 @@ Returns: `INT` — The current counter value.
 
 ```iecst
 (* Read energy counters *)
-kwh_import := IEC104ClientReadCounter('sub1', 4000);
-kwh_export := IEC104ClientReadCounter('sub1', 4001);
-mvarh := IEC104ClientReadCounter('sub1', 4002);
+kwh_import := IEC104_CLIENT_READ_COUNTER('sub1', 4000);
+kwh_export := IEC104_CLIENT_READ_COUNTER('sub1', 4001);
+mvarh := IEC104_CLIENT_READ_COUNTER('sub1', 4002);
 ```
 
 > **Counter interrogation:** The runtime can issue counter interrogation commands (C_CI_NA_1) to freeze and read counters atomically. Integrated totals use ASDU types M_IT_NA_1 (15) and M_IT_TB_1 (37).
@@ -344,7 +344,7 @@ mvarh := IEC104ClientReadCounter('sub1', 4002);
 
 Write functions send commands from the controlling station to the controlled station. IEC 104 commands follow a **select-before-operate (SBO)** or **direct execution** model, depending on station configuration. GoPLC uses direct execution by default.
 
-#### IEC104ClientWriteSC — Write Single Command
+#### IEC104_CLIENT_WRITE_SC — Write Single Command
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -356,18 +356,18 @@ Returns: `BOOL` — TRUE if the command was acknowledged by the controlled stati
 
 ```iecst
 (* Trip breaker — IOA 5000 *)
-ok := IEC104ClientWriteSC('sub1', 5000, FALSE);
+ok := IEC104_CLIENT_WRITE_SC('sub1', 5000, FALSE);
 
 (* Close breaker — IOA 5000 *)
-ok := IEC104ClientWriteSC('sub1', 5000, TRUE);
+ok := IEC104_CLIENT_WRITE_SC('sub1', 5000, TRUE);
 
 (* Enable capacitor bank — IOA 5010 *)
-ok := IEC104ClientWriteSC('sub1', 5010, TRUE);
+ok := IEC104_CLIENT_WRITE_SC('sub1', 5010, TRUE);
 ```
 
 > **ASDU type:** Sends C_SC_NA_1 (45) — single command. The controlled station validates the command and responds with an activation confirmation or negative acknowledgment. The return value reflects whether the command was accepted.
 
-#### IEC104ClientWriteSetpoint — Write Setpoint Command
+#### IEC104_CLIENT_WRITE_SETPOINT — Write Setpoint Command
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -379,13 +379,13 @@ Returns: `BOOL` — TRUE if the setpoint was acknowledged.
 
 ```iecst
 (* Set voltage reference — IOA 6000 *)
-ok := IEC104ClientWriteSetpoint('sub1', 6000, 110.5);
+ok := IEC104_CLIENT_WRITE_SETPOINT('sub1', 6000, 110.5);
 
 (* Set active power setpoint for wind farm curtailment — IOA 6010 *)
-ok := IEC104ClientWriteSetpoint('sub1', 6010, 45.0);
+ok := IEC104_CLIENT_WRITE_SETPOINT('sub1', 6010, 45.0);
 
 (* Set transformer tap target — IOA 6020 *)
-ok := IEC104ClientWriteSetpoint('sub1', 6020, 15.0);
+ok := IEC104_CLIENT_WRITE_SETPOINT('sub1', 6020, 15.0);
 ```
 
 > **ASDU type:** Sends C_SE_NC_1 (50) — setpoint command, short floating point. For scaled setpoints, the runtime converts the REAL value to a scaled integer internally when communicating with stations that expect M_ME_NB_1-style values.
@@ -394,7 +394,7 @@ ok := IEC104ClientWriteSetpoint('sub1', 6020, 15.0);
 
 ### 2.4 Lifecycle Management
 
-#### IEC104ClientDelete — Remove Client Connection
+#### IEC104_CLIENT_DELETE — Remove Client Connection
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -403,15 +403,15 @@ ok := IEC104ClientWriteSetpoint('sub1', 6020, 15.0);
 Returns: `BOOL` — TRUE if the connection was removed. Disconnects first if still connected.
 
 ```iecst
-ok := IEC104ClientDelete('sub1');
+ok := IEC104_CLIENT_DELETE('sub1');
 ```
 
-#### IEC104ClientList — List All Client Connections
+#### IEC104_CLIENT_LIST — List All Client Connections
 
 Returns: `[]STRING` — Array of all active client connection names.
 
 ```iecst
-clients := IEC104ClientList();
+clients := IEC104_CLIENT_LIST();
 (* Returns: ['sub_north', 'sub_south'] *)
 ```
 
@@ -423,7 +423,7 @@ The IEC 104 server listens for incoming connections from controlling stations (S
 
 ### 3.1 Connection Management
 
-#### IEC104ServerCreate — Create Named Server
+#### IEC104_SERVER_CREATE — Create Named Server
 
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -435,19 +435,19 @@ Returns: `BOOL` — TRUE if the server was created successfully.
 
 ```iecst
 (* Create server on default IEC 104 port *)
-ok := IEC104ServerCreate('station1', 2404);
+ok := IEC104_SERVER_CREATE('station1', 2404);
 
 (* Create server with explicit common address *)
-ok := IEC104ServerCreate('station1', 2404, 47);
+ok := IEC104_SERVER_CREATE('station1', 2404, 47);
 
 (* Multiple servers for different logical devices *)
-ok := IEC104ServerCreate('bay1', 2404, 1);
-ok := IEC104ServerCreate('bay2', 2405, 2);
+ok := IEC104_SERVER_CREATE('bay1', 2404, 1);
+ok := IEC104_SERVER_CREATE('bay2', 2405, 2);
 ```
 
 > **Common address:** The CASDU identifies this controlled station to connecting clients. In a substation with multiple bay controllers, each bay typically has its own common address. Clients filter incoming ASDUs by common address.
 
-#### IEC104ServerStart — Begin Listening
+#### IEC104_SERVER_START — Begin Listening
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -456,10 +456,10 @@ ok := IEC104ServerCreate('bay2', 2405, 2);
 Returns: `BOOL` — TRUE if the server began listening. Accepts incoming TCP connections and responds to STARTDT, general interrogation, and TESTFR automatically.
 
 ```iecst
-ok := IEC104ServerStart('station1');
+ok := IEC104_SERVER_START('station1');
 ```
 
-#### IEC104ServerStop — Stop Listening
+#### IEC104_SERVER_STOP — Stop Listening
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -468,10 +468,10 @@ ok := IEC104ServerStart('station1');
 Returns: `BOOL` — TRUE if stopped. Disconnects all connected controlling stations.
 
 ```iecst
-ok := IEC104ServerStop('station1');
+ok := IEC104_SERVER_STOP('station1');
 ```
 
-#### IEC104ServerIsConnected — Check If Any Client Is Connected
+#### IEC104_SERVER_IS_CONNECTED — Check If Any Client Is Connected
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -480,7 +480,7 @@ ok := IEC104ServerStop('station1');
 Returns: `BOOL` — TRUE if at least one controlling station is connected and data transfer is active.
 
 ```iecst
-IF IEC104ServerIsConnected('station1') THEN
+IF IEC104_SERVER_IS_CONNECTED('station1') THEN
     (* At least one SCADA master is connected *)
 END_IF;
 ```
@@ -496,13 +496,13 @@ END_VAR
 
 CASE state OF
     0: (* Create server *)
-        ok := IEC104ServerCreate('station1', 2404, 1);
+        ok := IEC104_SERVER_CREATE('station1', 2404, 1);
         IF ok THEN
             state := 1;
         END_IF;
 
     1: (* Start listening *)
-        ok := IEC104ServerStart('station1');
+        ok := IEC104_SERVER_START('station1');
         IF ok THEN
             state := 10;
         END_IF;
@@ -519,7 +519,7 @@ END_PROGRAM
 
 Set functions update the server's data point table. When a controlling station sends a general interrogation or the server sends spontaneous data, the client receives these values. Call these from your ST program to publish field data.
 
-#### IEC104ServerSetSP — Set Single Point
+#### IEC104_SERVER_SET_SP — Set Single Point
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -531,15 +531,15 @@ Returns: `BOOL` — TRUE if the point was updated.
 
 ```iecst
 (* Report equipment status to SCADA *)
-IEC104ServerSetSP('station1', 1, breaker_closed);
-IEC104ServerSetSP('station1', 2, transformer_alarm);
-IEC104ServerSetSP('station1', 3, door_open);
-IEC104ServerSetSP('station1', 10, protection_trip);
+IEC104_SERVER_SET_SP('station1', 1, breaker_closed);
+IEC104_SERVER_SET_SP('station1', 2, transformer_alarm);
+IEC104_SERVER_SET_SP('station1', 3, door_open);
+IEC104_SERVER_SET_SP('station1', 10, protection_trip);
 ```
 
 > **Spontaneous transmission:** When a single point changes state, the server automatically generates a spontaneous ASDU (cause of transmission = 3) with a CP56Time2a timestamp. The controlling station receives the change without polling — ensuring no state transitions are missed between general interrogations.
 
-#### IEC104ServerSetDP — Set Double Point
+#### IEC104_SERVER_SET_DP — Set Double Point
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -551,14 +551,14 @@ Returns: `BOOL` — TRUE if the point was updated.
 
 ```iecst
 (* Report breaker position: 1=OFF/open, 2=ON/closed *)
-IEC104ServerSetDP('station1', 1000, 2);   (* Breaker closed *)
-IEC104ServerSetDP('station1', 1001, 1);   (* Disconnect open *)
+IEC104_SERVER_SET_DP('station1', 1000, 2);   (* Breaker closed *)
+IEC104_SERVER_SET_DP('station1', 1001, 1);   (* Disconnect open *)
 
 (* Report transient state during switching *)
-IEC104ServerSetDP('station1', 1000, 0);   (* In transit *)
+IEC104_SERVER_SET_DP('station1', 1000, 0);   (* In transit *)
 ```
 
-#### IEC104ServerSetFloat — Set Measured Value (Floating Point)
+#### IEC104_SERVER_SET_FLOAT — Set Measured Value (Floating Point)
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -570,17 +570,17 @@ Returns: `BOOL` — TRUE if the point was updated.
 
 ```iecst
 (* Report substation measurements to SCADA *)
-IEC104ServerSetFloat('station1', 2000, bus_voltage);     (* 110.2 kV *)
-IEC104ServerSetFloat('station1', 2001, line_current);    (* 245.6 A *)
-IEC104ServerSetFloat('station1', 2002, active_power);    (* 27.1 MW *)
-IEC104ServerSetFloat('station1', 2003, reactive_power);  (* 8.4 MVAr *)
-IEC104ServerSetFloat('station1', 2004, frequency);       (* 50.01 Hz *)
-IEC104ServerSetFloat('station1', 2005, ambient_temp);    (* 35.2 C *)
+IEC104_SERVER_SET_FLOAT('station1', 2000, bus_voltage);     (* 110.2 kV *)
+IEC104_SERVER_SET_FLOAT('station1', 2001, line_current);    (* 245.6 A *)
+IEC104_SERVER_SET_FLOAT('station1', 2002, active_power);    (* 27.1 MW *)
+IEC104_SERVER_SET_FLOAT('station1', 2003, reactive_power);  (* 8.4 MVAr *)
+IEC104_SERVER_SET_FLOAT('station1', 2004, frequency);       (* 50.01 Hz *)
+IEC104_SERVER_SET_FLOAT('station1', 2005, ambient_temp);    (* 35.2 C *)
 ```
 
 > **Deadband:** Analog spontaneous events are generated when the value changes by more than the configured deadband. The runtime applies a default deadband appropriate for the point's scale, preventing the event buffer from flooding with noise on fluctuating measurements.
 
-#### IEC104ServerSetScaled — Set Measured Value (Scaled)
+#### IEC104_SERVER_SET_SCALED — Set Measured Value (Scaled)
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -592,13 +592,13 @@ Returns: `BOOL` — TRUE if the point was updated.
 
 ```iecst
 (* Report tap changer position *)
-IEC104ServerSetScaled('station1', 3000, tap_position);   (* e.g. 17 *)
+IEC104_SERVER_SET_SCALED('station1', 3000, tap_position);   (* e.g. 17 *)
 
 (* Report load as percentage x100 *)
-IEC104ServerSetScaled('station1', 3001, load_pct_x100);  (* 8750 = 87.50% *)
+IEC104_SERVER_SET_SCALED('station1', 3001, load_pct_x100);  (* 8750 = 87.50% *)
 ```
 
-#### IEC104ServerSetCounter — Set Integrated Total
+#### IEC104_SERVER_SET_COUNTER — Set Integrated Total
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -610,9 +610,9 @@ Returns: `BOOL` — TRUE if the point was updated.
 
 ```iecst
 (* Report energy counters *)
-IEC104ServerSetCounter('station1', 4000, kwh_import);
-IEC104ServerSetCounter('station1', 4001, kwh_export);
-IEC104ServerSetCounter('station1', 4002, mvarh_total);
+IEC104_SERVER_SET_COUNTER('station1', 4000, kwh_import);
+IEC104_SERVER_SET_COUNTER('station1', 4001, kwh_export);
+IEC104_SERVER_SET_COUNTER('station1', 4002, mvarh_total);
 ```
 
 ---
@@ -621,7 +621,7 @@ IEC104ServerSetCounter('station1', 4002, mvarh_total);
 
 Get functions read command values that a controlling station has written to the server. Use these to receive control commands and setpoints from the SCADA system.
 
-#### IEC104ServerGetSC — Get Single Command
+#### IEC104_SERVER_GET_SC — Get Single Command
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -632,16 +632,16 @@ Returns: `BOOL` — The last commanded value from the controlling station.
 
 ```iecst
 (* Check if SCADA commanded breaker close *)
-close_cmd := IEC104ServerGetSC('station1', 5000);
+close_cmd := IEC104_SERVER_GET_SC('station1', 5000);
 IF close_cmd THEN
     (* Execute close sequence on local equipment *)
 END_IF;
 
 (* Check capacitor bank command *)
-cap_enable := IEC104ServerGetSC('station1', 5010);
+cap_enable := IEC104_SERVER_GET_SC('station1', 5010);
 ```
 
-#### IEC104ServerGetSetpoint — Get Setpoint Command
+#### IEC104_SERVER_GET_SETPOINT — Get Setpoint Command
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -652,20 +652,20 @@ Returns: `REAL` — The last setpoint value from the controlling station.
 
 ```iecst
 (* Read voltage setpoint from EMS *)
-voltage_sp := IEC104ServerGetSetpoint('station1', 6000);
+voltage_sp := IEC104_SERVER_GET_SETPOINT('station1', 6000);
 
 (* Read active power curtailment setpoint *)
-power_limit := IEC104ServerGetSetpoint('station1', 6010);
+power_limit := IEC104_SERVER_GET_SETPOINT('station1', 6010);
 
 (* Read tap position target *)
-tap_target := IEC104ServerGetSetpoint('station1', 6020);
+tap_target := IEC104_SERVER_GET_SETPOINT('station1', 6020);
 ```
 
 ---
 
 ### 3.4 Diagnostics and Lifecycle
 
-#### IEC104ServerGetStats — Server Statistics
+#### IEC104_SERVER_GET_STATS — Server Statistics
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -674,13 +674,13 @@ tap_target := IEC104ServerGetSetpoint('station1', 6020);
 Returns: `STRING` — JSON-formatted connection and protocol statistics.
 
 ```iecst
-stats := IEC104ServerGetStats('station1');
+stats := IEC104_SERVER_GET_STATS('station1');
 (* Returns: {"connected_clients": 2, "interrogations": 156,
              "spontaneous_sent": 12847, "commands_received": 42,
              "testfr_sent": 3210, "testfr_recv": 3208} *)
 ```
 
-#### IEC104ServerDelete — Remove Server
+#### IEC104_SERVER_DELETE — Remove Server
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -689,15 +689,15 @@ stats := IEC104ServerGetStats('station1');
 Returns: `BOOL` — TRUE if the server was removed. Stops listening and disconnects all clients first.
 
 ```iecst
-ok := IEC104ServerDelete('station1');
+ok := IEC104_SERVER_DELETE('station1');
 ```
 
-#### IEC104ServerList — List All Servers
+#### IEC104_SERVER_LIST — List All Servers
 
 Returns: `[]STRING` — Array of all active server names.
 
 ```iecst
-servers := IEC104ServerList();
+servers := IEC104_SERVER_LIST();
 (* Returns: ['station1', 'bay2'] *)
 ```
 
@@ -734,49 +734,49 @@ END_VAR
 
 IF NOT init_done THEN
     (* Create client connections to bay IEDs *)
-    ok := IEC104ClientCreate('bay1_ied', '10.0.10.1', 2404, 1);
-    ok := IEC104ClientCreate('bay2_ied', '10.0.10.2', 2404, 2);
-    ok := IEC104ClientConnect('bay1_ied');
-    ok := IEC104ClientConnect('bay2_ied');
+    ok := IEC104_CLIENT_CREATE('bay1_ied', '10.0.10.1', 2404, 1);
+    ok := IEC104_CLIENT_CREATE('bay2_ied', '10.0.10.2', 2404, 2);
+    ok := IEC104_CLIENT_CONNECT('bay1_ied');
+    ok := IEC104_CLIENT_CONNECT('bay2_ied');
 
     (* Create server for SCADA uplink *)
-    ok := IEC104ServerCreate('scada_uplink', 2404, 47);
-    ok := IEC104ServerStart('scada_uplink');
+    ok := IEC104_SERVER_CREATE('scada_uplink', 2404, 47);
+    ok := IEC104_SERVER_START('scada_uplink');
 
     init_done := TRUE;
 END_IF;
 
 (* === Read from bay IEDs === *)
-bay1_breaker := IEC104ClientReadDP('bay1_ied', 1000);
-bay1_voltage := IEC104ClientReadFloat('bay1_ied', 2000);
-bay1_current := IEC104ClientReadFloat('bay1_ied', 2001);
-bay1_power := IEC104ClientReadFloat('bay1_ied', 2002);
+bay1_breaker := IEC104_CLIENT_READ_DP('bay1_ied', 1000);
+bay1_voltage := IEC104_CLIENT_READ_FLOAT('bay1_ied', 2000);
+bay1_current := IEC104_CLIENT_READ_FLOAT('bay1_ied', 2001);
+bay1_power := IEC104_CLIENT_READ_FLOAT('bay1_ied', 2002);
 
-bay2_breaker := IEC104ClientReadDP('bay2_ied', 1000);
-bay2_voltage := IEC104ClientReadFloat('bay2_ied', 2000);
-bay2_current := IEC104ClientReadFloat('bay2_ied', 2001);
-bay2_power := IEC104ClientReadFloat('bay2_ied', 2002);
+bay2_breaker := IEC104_CLIENT_READ_DP('bay2_ied', 1000);
+bay2_voltage := IEC104_CLIENT_READ_FLOAT('bay2_ied', 2000);
+bay2_current := IEC104_CLIENT_READ_FLOAT('bay2_ied', 2001);
+bay2_power := IEC104_CLIENT_READ_FLOAT('bay2_ied', 2002);
 
 (* === Publish aggregated data to SCADA === *)
-IEC104ServerSetDP('scada_uplink', 1000, bay1_breaker);
-IEC104ServerSetFloat('scada_uplink', 2000, bay1_voltage);
-IEC104ServerSetFloat('scada_uplink', 2001, bay1_current);
-IEC104ServerSetFloat('scada_uplink', 2002, bay1_power);
+IEC104_SERVER_SET_DP('scada_uplink', 1000, bay1_breaker);
+IEC104_SERVER_SET_FLOAT('scada_uplink', 2000, bay1_voltage);
+IEC104_SERVER_SET_FLOAT('scada_uplink', 2001, bay1_current);
+IEC104_SERVER_SET_FLOAT('scada_uplink', 2002, bay1_power);
 
-IEC104ServerSetDP('scada_uplink', 1100, bay2_breaker);
-IEC104ServerSetFloat('scada_uplink', 2100, bay2_voltage);
-IEC104ServerSetFloat('scada_uplink', 2101, bay2_current);
-IEC104ServerSetFloat('scada_uplink', 2102, bay2_power);
+IEC104_SERVER_SET_DP('scada_uplink', 1100, bay2_breaker);
+IEC104_SERVER_SET_FLOAT('scada_uplink', 2100, bay2_voltage);
+IEC104_SERVER_SET_FLOAT('scada_uplink', 2101, bay2_current);
+IEC104_SERVER_SET_FLOAT('scada_uplink', 2102, bay2_power);
 
 (* === Forward SCADA commands to bay IED === *)
-bay1_close_cmd := IEC104ServerGetSC('scada_uplink', 5000);
+bay1_close_cmd := IEC104_SERVER_GET_SC('scada_uplink', 5000);
 IF bay1_close_cmd THEN
-    IEC104ClientWriteSC('bay1_ied', 5000, TRUE);
+    IEC104_CLIENT_WRITE_SC('bay1_ied', 5000, TRUE);
 END_IF;
 
-bay1_voltage_sp := IEC104ServerGetSetpoint('scada_uplink', 6000);
+bay1_voltage_sp := IEC104_SERVER_GET_SETPOINT('scada_uplink', 6000);
 IF bay1_voltage_sp > 0.0 THEN
-    IEC104ClientWriteSetpoint('bay1_ied', 6000, bay1_voltage_sp);
+    IEC104_CLIENT_WRITE_SETPOINT('bay1_ied', 6000, bay1_voltage_sp);
 END_IF;
 END_PROGRAM
 ```
@@ -805,8 +805,8 @@ VAR
 END_VAR
 
 IF NOT init_done THEN
-    ok := IEC104ServerCreate('grid_ems', 2404, 100);
-    ok := IEC104ServerStart('grid_ems');
+    ok := IEC104_SERVER_CREATE('grid_ems', 2404, 100);
+    ok := IEC104_SERVER_START('grid_ems');
     init_done := TRUE;
 END_IF;
 
@@ -814,13 +814,13 @@ END_IF;
 total_power := 0.0;
 FOR i := 1 TO 20 DO
     (* Per-turbine status: IOA 1..20 *)
-    IEC104ServerSetSP('grid_ems', i, turbine_active[i]);
+    IEC104_SERVER_SET_SP('grid_ems', i, turbine_active[i]);
 
     (* Per-turbine power: IOA 2000..2019 *)
-    IEC104ServerSetFloat('grid_ems', 1999 + i, turbine_power[i]);
+    IEC104_SERVER_SET_FLOAT('grid_ems', 1999 + i, turbine_power[i]);
 
     (* Per-turbine wind speed: IOA 2100..2119 *)
-    IEC104ServerSetFloat('grid_ems', 2099 + i, turbine_wind[i]);
+    IEC104_SERVER_SET_FLOAT('grid_ems', 2099 + i, turbine_wind[i]);
 
     IF turbine_active[i] THEN
         total_power := total_power + turbine_power[i];
@@ -828,14 +828,14 @@ FOR i := 1 TO 20 DO
 END_FOR;
 
 (* Farm total power: IOA 2500 *)
-IEC104ServerSetFloat('grid_ems', 2500, total_power);
+IEC104_SERVER_SET_FLOAT('grid_ems', 2500, total_power);
 
 (* Cumulative energy: IOA 4000 *)
-IEC104ServerSetCounter('grid_ems', 4000, total_energy);
+IEC104_SERVER_SET_COUNTER('grid_ems', 4000, total_energy);
 
 (* === Receive grid operator commands === *)
-curtail_cmd := IEC104ServerGetSC('grid_ems', 5000);
-power_limit := IEC104ServerGetSetpoint('grid_ems', 6000);
+curtail_cmd := IEC104_SERVER_GET_SC('grid_ems', 5000);
+power_limit := IEC104_SERVER_GET_SETPOINT('grid_ems', 6000);
 
 IF curtail_cmd AND power_limit > 0.0 THEN
     (* Apply curtailment to turbine controllers *)
@@ -861,19 +861,19 @@ VAR
 END_VAR
 
 IF NOT init_done THEN
-    ok := IEC104ClientCreate('sub1', '10.0.0.100', 2404, 1);
-    ok := IEC104ClientConnect('sub1');
+    ok := IEC104_CLIENT_CREATE('sub1', '10.0.0.100', 2404, 1);
+    ok := IEC104_CLIENT_CONNECT('sub1');
     init_done := TRUE;
 END_IF;
 
-IF NOT IEC104ClientIsConnected('sub1') THEN
-    IEC104ClientConnect('sub1');
+IF NOT IEC104_CLIENT_IS_CONNECTED('sub1') THEN
+    IEC104_CLIENT_CONNECT('sub1');
 END_IF;
 
 (* Read — both primary and secondary receive data *)
-breaker_status := IEC104ClientReadDP('sub1', 1000);
-bus_voltage := IEC104ClientReadFloat('sub1', 2000);
-line_current := IEC104ClientReadFloat('sub1', 2001);
+breaker_status := IEC104_CLIENT_READ_DP('sub1', 1000);
+bus_voltage := IEC104_CLIENT_READ_FLOAT('sub1', 2000);
+line_current := IEC104_CLIENT_READ_FLOAT('sub1', 2001);
 
 (* Write — only primary sends commands *)
 IF is_primary THEN
@@ -905,25 +905,25 @@ END_VAR
 
 IF NOT init_done THEN
     (* Modbus client to field device — see Modbus TCP guide *)
-    ok := ModbusTCPClientCreate('flowmeter', '10.0.0.50', 502);
-    ok := ModbusTCPClientConnect('flowmeter');
+    ok := MB_CLIENT_CREATE('flowmeter', '10.0.0.50', 502);
+    ok := MB_CLIENT_CONNECT('flowmeter');
 
     (* IEC 104 server for SCADA *)
-    ok := IEC104ServerCreate('water_scada', 2404, 10);
-    ok := IEC104ServerStart('water_scada');
+    ok := IEC104_SERVER_CREATE('water_scada', 2404, 10);
+    ok := IEC104_SERVER_START('water_scada');
 
     init_done := TRUE;
 END_IF;
 
 (* === Read Modbus, publish IEC 104 === *)
-IEC104ServerSetSP('water_scada', 1, pump_running);
-IEC104ServerSetFloat('water_scada', 2000, flow_rate);
-IEC104ServerSetFloat('water_scada', 2001, tank_level);
-IEC104ServerSetCounter('water_scada', 4000, total_volume);
+IEC104_SERVER_SET_SP('water_scada', 1, pump_running);
+IEC104_SERVER_SET_FLOAT('water_scada', 2000, flow_rate);
+IEC104_SERVER_SET_FLOAT('water_scada', 2001, tank_level);
+IEC104_SERVER_SET_COUNTER('water_scada', 4000, total_volume);
 
 (* === Receive SCADA commands, write Modbus === *)
-pump_cmd := IEC104ServerGetSC('water_scada', 5000);
-flow_sp := IEC104ServerGetSetpoint('water_scada', 6000);
+pump_cmd := IEC104_SERVER_GET_SC('water_scada', 5000);
+flow_sp := IEC104_SERVER_GET_SETPOINT('water_scada', 6000);
 END_PROGRAM
 ```
 
@@ -1008,7 +1008,7 @@ Every ASDU carries a reason code. The runtime handles these internally, but unde
 
 ### Spontaneous data not arriving
 
-- Ensure STARTDT was confirmed. Check `IEC104ClientIsConnected` returns TRUE.
+- Ensure STARTDT was confirmed. Check `IEC104_CLIENT_IS_CONNECTED` returns TRUE.
 - The controlled station may have spontaneous transmission disabled for some points — verify station configuration.
 - Check that t3 keepalives are working — a firewall may be dropping idle TCP connections.
 
@@ -1025,38 +1025,38 @@ Every ASDU carries a reason code. The runtime handles these internally, but unde
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `IEC104ClientCreate(name, host, port [, commonAddr])` | BOOL | Create named client connection |
-| `IEC104ClientConnect(name)` | BOOL | Establish TCP + STARTDT + GI |
-| `IEC104ClientDisconnect(name)` | BOOL | STOPDT + close TCP |
-| `IEC104ClientIsConnected(name)` | BOOL | Check connection and data transfer state |
-| `IEC104ClientReadSP(name, ioa)` | BOOL | Read single point |
-| `IEC104ClientReadDP(name, ioa)` | INT | Read double point (0-3) |
-| `IEC104ClientReadFloat(name, ioa)` | REAL | Read measured float |
-| `IEC104ClientReadScaled(name, ioa)` | INT | Read measured scaled |
-| `IEC104ClientReadCounter(name, ioa)` | INT | Read integrated total |
-| `IEC104ClientWriteSC(name, ioa, value)` | BOOL | Send single command |
-| `IEC104ClientWriteSetpoint(name, ioa, value)` | BOOL | Send setpoint command |
-| `IEC104ClientDelete(name)` | BOOL | Remove client connection |
-| `IEC104ClientList()` | []STRING | List all client connections |
+| `IEC104_CLIENT_CREATE(name, host, port [, commonAddr])` | BOOL | Create named client connection |
+| `IEC104_CLIENT_CONNECT(name)` | BOOL | Establish TCP + STARTDT + GI |
+| `IEC104_CLIENT_DISCONNECT(name)` | BOOL | STOPDT + close TCP |
+| `IEC104_CLIENT_IS_CONNECTED(name)` | BOOL | Check connection and data transfer state |
+| `IEC104_CLIENT_READ_SP(name, ioa)` | BOOL | Read single point |
+| `IEC104_CLIENT_READ_DP(name, ioa)` | INT | Read double point (0-3) |
+| `IEC104_CLIENT_READ_FLOAT(name, ioa)` | REAL | Read measured float |
+| `IEC104_CLIENT_READ_SCALED(name, ioa)` | INT | Read measured scaled |
+| `IEC104_CLIENT_READ_COUNTER(name, ioa)` | INT | Read integrated total |
+| `IEC104_CLIENT_WRITE_SC(name, ioa, value)` | BOOL | Send single command |
+| `IEC104_CLIENT_WRITE_SETPOINT(name, ioa, value)` | BOOL | Send setpoint command |
+| `IEC104_CLIENT_DELETE(name)` | BOOL | Remove client connection |
+| `IEC104_CLIENT_LIST()` | []STRING | List all client connections |
 
 ### Server Functions (14)
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `IEC104ServerCreate(name, port [, commonAddr])` | BOOL | Create named server |
-| `IEC104ServerStart(name)` | BOOL | Begin listening for clients |
-| `IEC104ServerStop(name)` | BOOL | Stop listening |
-| `IEC104ServerIsConnected(name)` | BOOL | Check if any client is connected |
-| `IEC104ServerSetSP(name, ioa, value)` | BOOL | Set single point |
-| `IEC104ServerSetDP(name, ioa, value)` | BOOL | Set double point (0-3) |
-| `IEC104ServerSetFloat(name, ioa, value)` | BOOL | Set measured float |
-| `IEC104ServerSetScaled(name, ioa, value)` | BOOL | Set measured scaled |
-| `IEC104ServerSetCounter(name, ioa, value)` | BOOL | Set integrated total |
-| `IEC104ServerGetSC(name, ioa)` | BOOL | Get single command from client |
-| `IEC104ServerGetSetpoint(name, ioa)` | REAL | Get setpoint from client |
-| `IEC104ServerGetStats(name)` | STRING | Connection/protocol statistics (JSON) |
-| `IEC104ServerDelete(name)` | BOOL | Remove server |
-| `IEC104ServerList()` | []STRING | List all servers |
+| `IEC104_SERVER_CREATE(name, port [, commonAddr])` | BOOL | Create named server |
+| `IEC104_SERVER_START(name)` | BOOL | Begin listening for clients |
+| `IEC104_SERVER_STOP(name)` | BOOL | Stop listening |
+| `IEC104_SERVER_IS_CONNECTED(name)` | BOOL | Check if any client is connected |
+| `IEC104_SERVER_SET_SP(name, ioa, value)` | BOOL | Set single point |
+| `IEC104_SERVER_SET_DP(name, ioa, value)` | BOOL | Set double point (0-3) |
+| `IEC104_SERVER_SET_FLOAT(name, ioa, value)` | BOOL | Set measured float |
+| `IEC104_SERVER_SET_SCALED(name, ioa, value)` | BOOL | Set measured scaled |
+| `IEC104_SERVER_SET_COUNTER(name, ioa, value)` | BOOL | Set integrated total |
+| `IEC104_SERVER_GET_SC(name, ioa)` | BOOL | Get single command from client |
+| `IEC104_SERVER_GET_SETPOINT(name, ioa)` | REAL | Get setpoint from client |
+| `IEC104_SERVER_GET_STATS(name)` | STRING | Connection/protocol statistics (JSON) |
+| `IEC104_SERVER_DELETE(name)` | BOOL | Remove server |
+| `IEC104_SERVER_LIST()` | []STRING | List all servers |
 
 ---
 
@@ -1084,6 +1084,6 @@ Every ASDU carries a reason code. The runtime handles these internally, but unde
 
 ---
 
-*GoPLC v1.0.520 | IEC 60870-5-104 Client + Server | IEC 61131-3 Structured Text*
+*GoPLC v1.0.533 | IEC 60870-5-104 Client + Server | IEC 61131-3 Structured Text*
 
 *(c) 2026 JMB Technical Services LLC. All rights reserved.*

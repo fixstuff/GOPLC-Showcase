@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -12,8 +12,8 @@ GoPLC provides a full Modbus RTU implementation covering both **client** (master
 
 | Role | Functions | Use Case |
 |------|-----------|----------|
-| **Client (Master)** | `MBRtuConnect` / `MBRtuRead*` / `MBRtuWrite*` | Poll field devices — VFDs, power meters, sensors |
-| **Server (Slave)** | `MBRtuServerCreate` / `MBRtuServerSet*` / `MBRtuServerGet*` | Expose GoPLC data to SCADA, HMI, or other masters |
+| **Client (Master)** | `MB_RTU_CONNECT` / `MB_RTU_READ_*` / `MB_RTU_WRITE_*` | Poll field devices — VFDs, power meters, sensors |
+| **Server (Slave)** | `MB_RTU_SERVER_CREATE` / `MB_RTU_SERVER_SET_*` / `MB_RTU_SERVER_GET_*` | Expose GoPLC data to SCADA, HMI, or other masters |
 
 Both roles support **RTU-over-TCP** for long-distance serial tunneling (serial device servers, Moxa gateways, etc.).
 
@@ -26,10 +26,10 @@ Both roles support **RTU-over-TCP** for long-distance serial tunneling (serial d
 │  ┌──────────────────────┐   ┌────────────────────────────┐  │
 │  │ ST Program (Client)  │   │ ST Program (Server)        │  │
 │  │                      │   │                            │  │
-│  │ MBRtuConnect()       │   │ MBRtuServerCreate()        │  │
-│  │ MBRtuReadHolding()   │   │ MBRtuServerStartSerial()   │  │
-│  │ MBRtuWriteRegister() │   │ MBRtuServerSetHolding()    │  │
-│  │ MBRtuScanBus()       │   │ MBRtuServerStartTCP()      │  │
+│  │ MB_RTU_CONNECT()       │   │ MB_RTU_SERVER_CREATE()        │  │
+│  │ MB_RTU_READ_HOLDING()   │   │ MB_RTU_SERVER_START_SERIAL()   │  │
+│  │ MB_RTU_WRITE_REGISTER() │   │ MB_RTU_SERVER_SET_HOLDING()    │  │
+│  │ MB_RTU_SCAN_BUS()       │   │ MB_RTU_SERVER_START_TCP()      │  │
 │  └──────────┬───────────┘   └──────────┬─────────────────┘  │
 │             │                          │                    │
 │             │  RS-485 / USB-Serial     │  RS-485 / TCP      │
@@ -66,12 +66,12 @@ GoPLC uses standard RS-485 half-duplex wiring via USB-to-RS485 adapters (FTDI, C
 
 ### 2.1 Connection Management
 
-#### MBRtuConnect — Open Serial Connection
+#### MB_RTU_CONNECT — Open Serial Connection
 
 ```iecst
-ok := MBRtuConnect(name, device, baud);
-ok := MBRtuConnect(name, device, baud, slave_id);
-ok := MBRtuConnect(name, device, baud, slave_id, parity);
+ok := MB_RTU_CONNECT(name, device, baud);
+ok := MB_RTU_CONNECT(name, device, baud, slave_id);
+ok := MB_RTU_CONNECT(name, device, baud, slave_id, parity);
 ```
 
 | Param | Type | Description |
@@ -86,34 +86,34 @@ Returns `TRUE` on success.
 
 ```iecst
 (* Connect to a VFD on /dev/ttyUSB0 at 9600 baud, slave 1, even parity *)
-ok := MBRtuConnect('vfd', '/dev/ttyUSB0', 9600, 1, 'E');
+ok := MB_RTU_CONNECT('vfd', '/dev/ttyUSB0', 9600, 1, 'E');
 
 (* Minimal form — defaults to slave 1, even parity *)
-ok := MBRtuConnect('meter', '/dev/ttyUSB1', 19200);
+ok := MB_RTU_CONNECT('meter', '/dev/ttyUSB1', 19200);
 ```
 
 > **Parity convention:** Most Modbus RTU devices default to 8E1 (8 data bits, even parity, 1 stop bit). If the device uses 8N2 (no parity, 2 stop bits), pass `'N'`. Both formats produce 11-bit character frames per the Modbus specification.
 
-#### MBRtuClose — Close Connection
+#### MB_RTU_CLOSE — Close Connection
 
 ```iecst
-ok := MBRtuClose('vfd');
+ok := MB_RTU_CLOSE('vfd');
 ```
 
 Releases the serial port. Returns `TRUE` on success.
 
-#### MBRtuIsConnected — Check Connection
+#### MB_RTU_CONNECTED — Check Connection
 
 ```iecst
-connected := MBRtuIsConnected('vfd');
+connected := MB_RTU_CONNECTED('vfd');
 ```
 
 Returns `TRUE` if the named connection is open and the serial port is accessible.
 
-#### MBRtuSetSlave — Change Target Slave
+#### MB_RTU_SET_SLAVE — Change Target Slave
 
 ```iecst
-ok := MBRtuSetSlave('bus', 3);
+ok := MB_RTU_SET_SLAVE('bus', 3);
 ```
 
 Changes the target slave address for subsequent read/write calls on the named connection. Use this when polling multiple devices on the same RS-485 bus through a single serial port.
@@ -123,10 +123,10 @@ Changes the target slave address for subsequent read/write calls on the named co
 | `name` | STRING | Connection name |
 | `slaveID` | INT | New target slave address 1-247 |
 
-#### MBRtuList — List Active Connections
+#### MB_RTU_LIST — List Active Connections
 
 ```iecst
-names := MBRtuList();
+names := MB_RTU_LIST();
 (* Returns: ['vfd', 'meter'] *)
 ```
 
@@ -138,10 +138,10 @@ Returns an array of all active client connection names.
 
 All read functions take a connection name, a starting register address, and a count. They return typed arrays.
 
-#### MBRtuReadHolding — FC03 Read Holding Registers
+#### MB_RTU_READ_HOLDING — FC03 Read Holding Registers
 
 ```iecst
-values := MBRtuReadHolding(name, address, count);
+values := MB_RTU_READ_HOLDING(name, address, count);
 ```
 
 | Param | Type | Description |
@@ -154,29 +154,29 @@ Returns `[]INT` — array of 16-bit unsigned register values.
 
 ```iecst
 (* Read 10 holding registers starting at address 0 *)
-regs := MBRtuReadHolding('vfd', 0, 10);
+regs := MB_RTU_READ_HOLDING('vfd', 0, 10);
 
 (* Read single register *)
-speed := MBRtuReadHolding('vfd', 8451, 1);
+speed := MB_RTU_READ_HOLDING('vfd', 8451, 1);
 ```
 
-#### MBRtuReadInput — FC04 Read Input Registers
+#### MB_RTU_READ_INPUT — FC04 Read Input Registers
 
 ```iecst
-values := MBRtuReadInput(name, address, count);
+values := MB_RTU_READ_INPUT(name, address, count);
 ```
 
-Same signature as `MBRtuReadHolding`. Input registers are read-only sensor/status values maintained by the device.
+Same signature as `MB_RTU_READ_HOLDING`. Input registers are read-only sensor/status values maintained by the device.
 
 ```iecst
 (* Read motor current from input register 0 *)
-current := MBRtuReadInput('vfd', 0, 1);
+current := MB_RTU_READ_INPUT('vfd', 0, 1);
 ```
 
-#### MBRtuReadCoils — FC01 Read Coils
+#### MB_RTU_READ_COILS — FC01 Read Coils
 
 ```iecst
-coils := MBRtuReadCoils(name, address, count);
+coils := MB_RTU_READ_COILS(name, address, count);
 ```
 
 | Param | Type | Description |
@@ -189,32 +189,32 @@ Returns `[]BOOL` — array of coil states.
 
 ```iecst
 (* Read 8 coils starting at address 0 *)
-coils := MBRtuReadCoils('plc', 0, 8);
+coils := MB_RTU_READ_COILS('plc', 0, 8);
 running := coils[0];
 fault := coils[1];
 ```
 
-#### MBRtuReadDiscrete — FC02 Read Discrete Inputs
+#### MB_RTU_READ_DISCRETE — FC02 Read Discrete Inputs
 
 ```iecst
-inputs := MBRtuReadDiscrete(name, address, count);
+inputs := MB_RTU_READ_DISCRETE(name, address, count);
 ```
 
-Same signature as `MBRtuReadCoils`. Discrete inputs are read-only digital status bits maintained by the device.
+Same signature as `MB_RTU_READ_COILS`. Discrete inputs are read-only digital status bits maintained by the device.
 
 ```iecst
 (* Read 16 discrete inputs *)
-inputs := MBRtuReadDiscrete('io_module', 0, 16);
+inputs := MB_RTU_READ_DISCRETE('io_module', 0, 16);
 ```
 
 ---
 
 ### 2.3 Write Functions
 
-#### MBRtuWriteRegister — FC06 Write Single Register
+#### MB_RTU_WRITE_REGISTER — FC06 Write Single Register
 
 ```iecst
-ok := MBRtuWriteRegister(name, address, value);
+ok := MB_RTU_WRITE_REGISTER(name, address, value);
 ```
 
 | Param | Type | Description |
@@ -225,13 +225,13 @@ ok := MBRtuWriteRegister(name, address, value);
 
 ```iecst
 (* Set VFD frequency setpoint to 3000 = 30.00 Hz *)
-ok := MBRtuWriteRegister('vfd', 8451, 3000);
+ok := MB_RTU_WRITE_REGISTER('vfd', 8451, 3000);
 ```
 
-#### MBRtuWriteCoil — FC05 Write Single Coil
+#### MB_RTU_WRITE_COIL — FC05 Write Single Coil
 
 ```iecst
-ok := MBRtuWriteCoil(name, address, value);
+ok := MB_RTU_WRITE_COIL(name, address, value);
 ```
 
 | Param | Type | Description |
@@ -242,13 +242,13 @@ ok := MBRtuWriteCoil(name, address, value);
 
 ```iecst
 (* Start VFD — write coil 0 ON *)
-ok := MBRtuWriteCoil('vfd', 0, TRUE);
+ok := MB_RTU_WRITE_COIL('vfd', 0, TRUE);
 ```
 
-#### MBRtuWriteRegisters — FC16 Write Multiple Registers
+#### MB_RTU_WRITE_REGISTERS — FC16 Write Multiple Registers
 
 ```iecst
-ok := MBRtuWriteRegisters(name, address, values);
+ok := MB_RTU_WRITE_REGISTERS(name, address, values);
 ```
 
 | Param | Type | Description |
@@ -259,13 +259,13 @@ ok := MBRtuWriteRegisters(name, address, values);
 
 ```iecst
 (* Write PID parameters: Kp=100, Ki=50, Kd=25 *)
-ok := MBRtuWriteRegisters('controller', 100, [100, 50, 25]);
+ok := MB_RTU_WRITE_REGISTERS('controller', 100, [100, 50, 25]);
 ```
 
-#### MBRtuWriteCoils — FC15 Write Multiple Coils
+#### MB_RTU_WRITE_COILS — FC15 Write Multiple Coils
 
 ```iecst
-ok := MBRtuWriteCoils(name, address, values);
+ok := MB_RTU_WRITE_COILS(name, address, values);
 ```
 
 | Param | Type | Description |
@@ -276,17 +276,17 @@ ok := MBRtuWriteCoils(name, address, values);
 
 ```iecst
 (* Set outputs 0-3: ON, OFF, ON, ON *)
-ok := MBRtuWriteCoils('io_module', 0, [TRUE, FALSE, TRUE, TRUE]);
+ok := MB_RTU_WRITE_COILS('io_module', 0, [TRUE, FALSE, TRUE, TRUE]);
 ```
 
 ---
 
 ### 2.4 Diagnostics
 
-#### MBRtuGetStats — Connection Statistics
+#### MB_RTU_STATS — Connection Statistics
 
 ```iecst
-stats := MBRtuGetStats('vfd');
+stats := MB_RTU_STATS('vfd');
 ```
 
 Returns a MAP with:
@@ -302,14 +302,14 @@ Returns a MAP with:
 | `avg_response_ms` | REAL | Average round-trip time |
 
 ```iecst
-stats := MBRtuGetStats('vfd');
+stats := MB_RTU_STATS('vfd');
 (* stats['errors'] = 3, stats['avg_response_ms'] = 12.4 *)
 ```
 
-#### MBRtuScanBus — Discover Devices
+#### MB_RTU_SCAN_BUS — Discover Devices
 
 ```iecst
-devices := MBRtuScanBus(name, startID, endID);
+devices := MB_RTU_SCAN_BUS(name, startID, endID);
 ```
 
 | Param | Type | Description |
@@ -322,7 +322,7 @@ Returns `[]INT` — array of slave IDs that responded. Sends a read request to e
 
 ```iecst
 (* Scan entire bus *)
-devices := MBRtuScanBus('bus', 1, 247);
+devices := MB_RTU_SCAN_BUS('bus', 1, 247);
 (* Returns: [1, 3, 17] — three devices found *)
 ```
 
@@ -336,11 +336,11 @@ The server role turns GoPLC into a Modbus slave device. External masters (SCADA,
 
 ### 3.1 Server Lifecycle
 
-#### MBRtuServerCreate — Create Server Instance
+#### MB_RTU_SERVER_CREATE — Create Server Instance
 
 ```iecst
-ok := MBRtuServerCreate(name, slave_id);
-ok := MBRtuServerCreate(name, slave_id, baud);
+ok := MB_RTU_SERVER_CREATE(name, slave_id);
+ok := MB_RTU_SERVER_CREATE(name, slave_id, baud);
 ```
 
 | Param | Type | Description |
@@ -350,13 +350,13 @@ ok := MBRtuServerCreate(name, slave_id, baud);
 | `baud` | INT | Baud rate for serial mode (optional, default 9600) |
 
 ```iecst
-ok := MBRtuServerCreate('srv', 1, 19200);
+ok := MB_RTU_SERVER_CREATE('srv', 1, 19200);
 ```
 
-#### MBRtuServerStartSerial — Listen on Serial Port
+#### MB_RTU_SERVER_START_SERIAL — Listen on Serial Port
 
 ```iecst
-ok := MBRtuServerStartSerial(name, device);
+ok := MB_RTU_SERVER_START_SERIAL(name, device);
 ```
 
 | Param | Type | Description |
@@ -367,13 +367,13 @@ ok := MBRtuServerStartSerial(name, device);
 Starts listening for master requests on the specified serial port.
 
 ```iecst
-ok := MBRtuServerStartSerial('srv', '/dev/ttyUSB0');
+ok := MB_RTU_SERVER_START_SERIAL('srv', '/dev/ttyUSB0');
 ```
 
-#### MBRtuServerStartTCP — Listen on TCP (RTU-over-TCP)
+#### MB_RTU_SERVER_START_TCP — Listen on TCP (RTU-over-TCP)
 
 ```iecst
-ok := MBRtuServerStartTCP(name, addr);
+ok := MB_RTU_SERVER_START_TCP(name, addr);
 ```
 
 | Param | Type | Description |
@@ -385,50 +385,50 @@ Starts a TCP listener that accepts RTU-framed connections. This is standard RTU 
 
 ```iecst
 (* Listen on all interfaces, port 5020 *)
-ok := MBRtuServerStartTCP('srv', ':5020');
+ok := MB_RTU_SERVER_START_TCP('srv', ':5020');
 ```
 
-#### MBRtuServerConnectTCP — RTU-over-TCP Client
+#### MB_RTU_SERVER_CONNECT_TCP — RTU-over-TCP Client
 
 ```iecst
-ok := MBRtuServerConnectTCP(name, addr);
+ok := MB_RTU_SERVER_CONNECT_TCP(name, addr);
 ```
 
 Connects as a client to a remote RTU-over-TCP endpoint. The server responds to requests received over this TCP connection as if it were on a serial bus.
 
 ```iecst
 (* Connect to remote serial device server *)
-ok := MBRtuServerConnectTCP('srv', '10.0.0.50:8502');
+ok := MB_RTU_SERVER_CONNECT_TCP('srv', '10.0.0.50:8502');
 ```
 
-#### MBRtuServerStop — Stop Server
+#### MB_RTU_SERVER_STOP — Stop Server
 
 ```iecst
-ok := MBRtuServerStop('srv');
+ok := MB_RTU_SERVER_STOP('srv');
 ```
 
 Stops the server. Closes the serial port or TCP listener/connection.
 
-#### MBRtuServerIsRunning — Check Server Status
+#### MB_RTU_SERVER_IS_RUNNING — Check Server Status
 
 ```iecst
-running := MBRtuServerIsRunning('srv');
+running := MB_RTU_SERVER_IS_RUNNING('srv');
 ```
 
 Returns `TRUE` if the server is actively listening for requests.
 
-#### MBRtuServerDelete — Delete Server Instance
+#### MB_RTU_SERVER_DELETE — Delete Server Instance
 
 ```iecst
-ok := MBRtuServerDelete('srv');
+ok := MB_RTU_SERVER_DELETE('srv');
 ```
 
 Stops (if running) and removes the server instance. Frees all associated register memory.
 
-#### MBRtuServerList — List Active Servers
+#### MB_RTU_SERVER_LIST — List Active Servers
 
 ```iecst
-servers := MBRtuServerList();
+servers := MB_RTU_SERVER_LIST();
 (* Returns: ['srv', 'bridge'] *)
 ```
 
@@ -447,11 +447,11 @@ The server maintains four register tables per the Modbus specification:
 
 > **Addressing:** All GoPLC functions use 0-based addressing. Register 40001 in Modbus documentation = address 0 in GoPLC. The driver handles the offset translation.
 
-#### MBRtuServerSetHolding / GetHolding — Holding Registers
+#### MB_RTU_SERVER_SET_HOLDING / GetHolding — Holding Registers
 
 ```iecst
-ok := MBRtuServerSetHolding(name, address, value);
-val := MBRtuServerGetHolding(name, address);
+ok := MB_RTU_SERVER_SET_HOLDING(name, address, value);
+val := MB_RTU_SERVER_GET_HOLDING(name, address);
 ```
 
 | Param | Type | Description |
@@ -462,31 +462,31 @@ val := MBRtuServerGetHolding(name, address);
 
 ```iecst
 (* Expose motor speed to SCADA *)
-MBRtuServerSetHolding('srv', 0, motor_rpm);
+MB_RTU_SERVER_SET_HOLDING('srv', 0, motor_rpm);
 
 (* Read setpoint written by SCADA *)
-target_rpm := MBRtuServerGetHolding('srv', 1);
+target_rpm := MB_RTU_SERVER_GET_HOLDING('srv', 1);
 ```
 
-#### MBRtuServerSetInput — Input Registers
+#### MB_RTU_SERVER_SET_INPUT — Input Registers
 
 ```iecst
-ok := MBRtuServerSetInput(name, address, value);
+ok := MB_RTU_SERVER_SET_INPUT(name, address, value);
 ```
 
 Input registers are read-only from the master's perspective. Your ST code populates them; the master reads them via FC04.
 
 ```iecst
 (* Expose temperature reading *)
-MBRtuServerSetInput('srv', 0, temp_raw);
-MBRtuServerSetInput('srv', 1, pressure_raw);
+MB_RTU_SERVER_SET_INPUT('srv', 0, temp_raw);
+MB_RTU_SERVER_SET_INPUT('srv', 1, pressure_raw);
 ```
 
-#### MBRtuServerSetCoil / GetCoil — Coils
+#### MB_RTU_SERVER_SET_COIL / GetCoil — Coils
 
 ```iecst
-ok := MBRtuServerSetCoil(name, address, value);
-state := MBRtuServerGetCoil(name, address);
+ok := MB_RTU_SERVER_SET_COIL(name, address, value);
+state := MB_RTU_SERVER_GET_COIL(name, address);
 ```
 
 | Param | Type | Description |
@@ -497,34 +497,34 @@ state := MBRtuServerGetCoil(name, address);
 
 ```iecst
 (* Expose pump running status *)
-MBRtuServerSetCoil('srv', 0, pump_running);
+MB_RTU_SERVER_SET_COIL('srv', 0, pump_running);
 
 (* Check if SCADA wrote a start command *)
-start_cmd := MBRtuServerGetCoil('srv', 10);
+start_cmd := MB_RTU_SERVER_GET_COIL('srv', 10);
 ```
 
-#### MBRtuServerSetDiscrete — Discrete Inputs
+#### MB_RTU_SERVER_SET_DISCRETE — Discrete Inputs
 
 ```iecst
-ok := MBRtuServerSetDiscrete(name, address, value);
+ok := MB_RTU_SERVER_SET_DISCRETE(name, address, value);
 ```
 
 Discrete inputs are read-only from the master's perspective (FC02). Your ST code updates them.
 
 ```iecst
 (* Expose digital input states *)
-MBRtuServerSetDiscrete('srv', 0, limit_switch_1);
-MBRtuServerSetDiscrete('srv', 1, limit_switch_2);
+MB_RTU_SERVER_SET_DISCRETE('srv', 0, limit_switch_1);
+MB_RTU_SERVER_SET_DISCRETE('srv', 1, limit_switch_2);
 ```
 
 ---
 
 ### 3.3 Server Diagnostics
 
-#### MBRtuServerGetStats — Server Statistics
+#### MB_RTU_SERVER_STATS — Server Statistics
 
 ```iecst
-stats := MBRtuServerGetStats('srv');
+stats := MB_RTU_SERVER_STATS('srv');
 ```
 
 Returns a MAP with:
@@ -558,13 +558,13 @@ END_VAR
 
 CASE state OF
     0: (* Open connection on the RS-485 port *)
-        ok := MBRtuConnect('scan', '/dev/ttyUSB0', 9600, 1, 'E');
+        ok := MB_RTU_CONNECT('scan', '/dev/ttyUSB0', 9600, 1, 'E');
         IF ok THEN
             state := 1;
         END_IF;
 
     1: (* Scan the bus — probe addresses 1 through 32 *)
-        devices := MBRtuScanBus('scan', 1, 32);
+        devices := MB_RTU_SCAN_BUS('scan', 1, 32);
         state := 2;
 
     2: (* Log results *)
@@ -576,7 +576,7 @@ CASE state OF
         state := 3;
 
     3: (* Done — close or keep connection for polling *)
-        MBRtuClose('scan');
+        MB_RTU_CLOSE('scan');
         state := 99;
 
     99: (* Idle *)
@@ -591,7 +591,7 @@ END_PROGRAM
 
 ### 4.2 Multi-Slave Polling — VFD + Power Meter on One Bus
 
-This example polls two devices on the same RS-485 bus using `MBRtuSetSlave` to switch between them each scan cycle:
+This example polls two devices on the same RS-485 bus using `MB_RTU_SET_SLAVE` to switch between them each scan cycle:
 
 ```iecst
 PROGRAM POU_MultiSlavePoll
@@ -617,7 +617,7 @@ END_VAR
 
 CASE state OF
     0: (* Initialize — open serial port *)
-        ok := MBRtuConnect('bus', '/dev/ttyUSB0', 19200, 1, 'E');
+        ok := MB_RTU_CONNECT('bus', '/dev/ttyUSB0', 19200, 1, 'E');
         IF ok THEN
             state := 10;
         END_IF;
@@ -625,23 +625,23 @@ CASE state OF
     10: (* Alternate between devices each scan *)
         IF poll_target = 0 THEN
             (* ---- Poll VFD (slave 1) ---- *)
-            MBRtuSetSlave('bus', 1);
+            MB_RTU_SET_SLAVE('bus', 1);
 
             (* Read output frequency and current *)
-            regs := MBRtuReadHolding('bus', 8451, 2);
+            regs := MB_RTU_READ_HOLDING('bus', 8451, 2);
             vfd_speed_hz := regs[0];
             vfd_current_a := regs[1];
 
             (* Read fault coil *)
-            vfd_fault := MBRtuReadCoils('bus', 0, 1)[0];
+            vfd_fault := MB_RTU_READ_COILS('bus', 0, 1)[0];
 
             poll_target := 1;
         ELSE
             (* ---- Poll meter (slave 3) ---- *)
-            MBRtuSetSlave('bus', 3);
+            MB_RTU_SET_SLAVE('bus', 3);
 
             (* Read voltage and power *)
-            regs := MBRtuReadInput('bus', 0, 2);
+            regs := MB_RTU_READ_INPUT('bus', 0, 2);
             meter_voltage := regs[0];
             meter_power_w := regs[1];
 
@@ -679,15 +679,15 @@ END_VAR
 
 CASE state OF
     0: (* Initialize client — read from RS-485 bus *)
-        ok := MBRtuConnect('field', '/dev/ttyUSB0', 9600, 1, 'E');
+        ok := MB_RTU_CONNECT('field', '/dev/ttyUSB0', 9600, 1, 'E');
         IF ok THEN
             state := 1;
         END_IF;
 
     1: (* Initialize server — expose data over TCP *)
-        ok := MBRtuServerCreate('bridge', 1, 9600);
+        ok := MB_RTU_SERVER_CREATE('bridge', 1, 9600);
         IF ok THEN
-            ok := MBRtuServerStartTCP('bridge', ':5020');
+            ok := MB_RTU_SERVER_START_TCP('bridge', ':5020');
             IF ok THEN
                 state := 10;
             END_IF;
@@ -695,32 +695,32 @@ CASE state OF
 
     10: (* Running — poll field devices *)
         (* Read temperature sensor at slave 1 *)
-        MBRtuSetSlave('field', 1);
-        sensor_temp := MBRtuReadInput('field', 0, 1)[0];
+        MB_RTU_SET_SLAVE('field', 1);
+        sensor_temp := MB_RTU_READ_INPUT('field', 0, 1)[0];
 
         (* Read pressure sensor at slave 2 *)
-        MBRtuSetSlave('field', 2);
-        sensor_pressure := MBRtuReadInput('field', 0, 1)[0];
+        MB_RTU_SET_SLAVE('field', 2);
+        sensor_pressure := MB_RTU_READ_INPUT('field', 0, 1)[0];
 
         (* Read pump status coil at slave 3 *)
-        MBRtuSetSlave('field', 3);
-        pump_running := MBRtuReadCoils('field', 0, 1)[0];
+        MB_RTU_SET_SLAVE('field', 3);
+        pump_running := MB_RTU_READ_COILS('field', 0, 1)[0];
 
         state := 20;
 
     20: (* Update server registers — SCADA reads these *)
-        MBRtuServerSetInput('bridge', 0, sensor_temp);
-        MBRtuServerSetInput('bridge', 1, sensor_pressure);
-        MBRtuServerSetCoil('bridge', 0, pump_running);
+        MB_RTU_SERVER_SET_INPUT('bridge', 0, sensor_temp);
+        MB_RTU_SERVER_SET_INPUT('bridge', 1, sensor_pressure);
+        MB_RTU_SERVER_SET_COIL('bridge', 0, pump_running);
 
         (* Read commands written by SCADA *)
-        scada_setpoint := MBRtuServerGetHolding('bridge', 0);
-        scada_start_cmd := MBRtuServerGetCoil('bridge', 10);
+        scada_setpoint := MB_RTU_SERVER_GET_HOLDING('bridge', 0);
+        scada_start_cmd := MB_RTU_SERVER_GET_COIL('bridge', 10);
 
         (* Apply SCADA commands to field devices *)
         IF scada_start_cmd THEN
-            MBRtuSetSlave('field', 3);
-            MBRtuWriteCoil('field', 0, TRUE);
+            MB_RTU_SET_SLAVE('field', 3);
+            MB_RTU_WRITE_COIL('field', 0, TRUE);
         END_IF;
 
         state := 10;  (* loop *)
@@ -754,9 +754,9 @@ END_VAR
 
 CASE state OF
     0: (* Create and start server *)
-        ok := MBRtuServerCreate('hmi', 1, 19200);
+        ok := MB_RTU_SERVER_CREATE('hmi', 1, 19200);
         IF ok THEN
-            ok := MBRtuServerStartSerial('hmi', '/dev/ttyUSB1');
+            ok := MB_RTU_SERVER_START_SERIAL('hmi', '/dev/ttyUSB1');
             IF ok THEN
                 state := 10;
             END_IF;
@@ -764,16 +764,16 @@ CASE state OF
 
     10: (* Update server registers every scan *)
         (* Input registers — HMI reads these (FC04) *)
-        MBRtuServerSetInput('hmi', 0, tank_level);
-        MBRtuServerSetInput('hmi', 1, flow_rate);
-        MBRtuServerSetInput('hmi', 2, valve_pos);
+        MB_RTU_SERVER_SET_INPUT('hmi', 0, tank_level);
+        MB_RTU_SERVER_SET_INPUT('hmi', 1, flow_rate);
+        MB_RTU_SERVER_SET_INPUT('hmi', 2, valve_pos);
 
         (* Discrete inputs — HMI reads alarm states (FC02) *)
-        MBRtuServerSetDiscrete('hmi', 0, alarm_high);
-        MBRtuServerSetDiscrete('hmi', 1, alarm_low);
+        MB_RTU_SERVER_SET_DISCRETE('hmi', 0, alarm_high);
+        MB_RTU_SERVER_SET_DISCRETE('hmi', 1, alarm_low);
 
         (* Coils — HMI can read and write pump enable (FC01/FC05) *)
-        pump_enable := MBRtuServerGetCoil('hmi', 0);
+        pump_enable := MB_RTU_SERVER_GET_COIL('hmi', 0);
 
         state := 10;  (* loop *)
 
@@ -805,14 +805,14 @@ Every Modbus RTU frame on the wire:
 
 | FC | Name | Client Function | Direction |
 |----|------|----------------|-----------|
-| 01 | Read Coils | `MBRtuReadCoils` | Master reads slave coils |
-| 02 | Read Discrete Inputs | `MBRtuReadDiscrete` | Master reads slave inputs |
-| 03 | Read Holding Registers | `MBRtuReadHolding` | Master reads slave registers |
-| 04 | Read Input Registers | `MBRtuReadInput` | Master reads slave registers |
-| 05 | Write Single Coil | `MBRtuWriteCoil` | Master writes slave coil |
-| 06 | Write Single Register | `MBRtuWriteRegister` | Master writes slave register |
-| 15 | Write Multiple Coils | `MBRtuWriteCoils` | Master writes slave coils |
-| 16 | Write Multiple Registers | `MBRtuWriteRegisters` | Master writes slave registers |
+| 01 | Read Coils | `MB_RTU_READ_COILS` | Master reads slave coils |
+| 02 | Read Discrete Inputs | `MB_RTU_READ_DISCRETE` | Master reads slave inputs |
+| 03 | Read Holding Registers | `MB_RTU_READ_HOLDING` | Master reads slave registers |
+| 04 | Read Input Registers | `MB_RTU_READ_INPUT` | Master reads slave registers |
+| 05 | Write Single Coil | `MB_RTU_WRITE_COIL` | Master writes slave coil |
+| 06 | Write Single Register | `MB_RTU_WRITE_REGISTER` | Master writes slave register |
+| 15 | Write Multiple Coils | `MB_RTU_WRITE_COILS` | Master writes slave coils |
+| 16 | Write Multiple Registers | `MB_RTU_WRITE_REGISTERS` | Master writes slave registers |
 
 ### 5.3 Exception Responses
 
@@ -826,7 +826,7 @@ When a slave cannot fulfill a request, it returns an exception response (functio
 | 0x04 | Slave Device Failure | Unrecoverable error on the device |
 | 0x06 | Slave Device Busy | Device is processing a long-running command |
 
-GoPLC logs exception responses and increments the `errors` counter in `MBRtuGetStats`. The `last_error` field contains the decoded exception name.
+GoPLC logs exception responses and increments the `errors` counter in `MB_RTU_STATS`. The `last_error` field contains the decoded exception name.
 
 ### 5.4 Addressing Conventions
 
@@ -834,10 +834,10 @@ Modbus documentation uses 1-based register numbers with a leading digit indicati
 
 | Documentation | Table | GoPLC Address | Function |
 |---------------|-------|---------------|----------|
-| 00001-09999 | Coils | 0-9998 | `MBRtuReadCoils` / `MBRtuWriteCoil` |
-| 10001-19999 | Discrete Inputs | 0-9998 | `MBRtuReadDiscrete` |
-| 30001-39999 | Input Registers | 0-9998 | `MBRtuReadInput` |
-| 40001-49999 | Holding Registers | 0-9998 | `MBRtuReadHolding` / `MBRtuWriteRegister` |
+| 00001-09999 | Coils | 0-9998 | `MB_RTU_READ_COILS` / `MB_RTU_WRITE_COIL` |
+| 10001-19999 | Discrete Inputs | 0-9998 | `MB_RTU_READ_DISCRETE` |
+| 30001-39999 | Input Registers | 0-9998 | `MB_RTU_READ_INPUT` |
+| 40001-49999 | Holding Registers | 0-9998 | `MB_RTU_READ_HOLDING` / `MB_RTU_WRITE_REGISTER` |
 
 > **Always subtract the table prefix and 1.** Documentation register 40001 = GoPLC address 0. Register 40100 = address 99. This is the most common source of off-by-one errors.
 
@@ -847,11 +847,11 @@ Modbus registers are 16 bits. 32-bit values (IEEE 754 float, DINT) occupy two co
 
 ```iecst
 (* Big-endian word order (most common): high word first *)
-regs := MBRtuReadHolding('meter', 0, 2);
+regs := MB_RTU_READ_HOLDING('meter', 0, 2);
 value_32 := regs[0] * 65536 + regs[1];
 
 (* Little-endian word order (some devices): low word first *)
-regs := MBRtuReadHolding('meter', 0, 2);
+regs := MB_RTU_READ_HOLDING('meter', 0, 2);
 value_32 := regs[1] * 65536 + regs[0];
 ```
 
@@ -865,7 +865,7 @@ value_32 := regs[1] * 65536 + regs[0];
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| All reads timeout | Wrong baud rate or parity | Match device settings exactly — check with `MBRtuScanBus` |
+| All reads timeout | Wrong baud rate or parity | Match device settings exactly — check with `MB_RTU_SCAN_BUS` |
 | CRC errors in stats | Electrical noise, wrong parity | Add termination resistors, verify wiring, check parity setting |
 | Intermittent timeouts | Bus contention, slow device | Increase timeout, reduce poll frequency |
 | Wrong register values | Address offset error | Subtract table prefix and 1 from documentation address |
@@ -876,12 +876,12 @@ value_32 := regs[1] * 65536 + regs[0];
 
 ```iecst
 (* Step 1: Check if connected *)
-IF NOT MBRtuIsConnected('dev') THEN
+IF NOT MB_RTU_CONNECTED('dev') THEN
     LOG('Serial port not open');
 END_IF;
 
 (* Step 2: Check error stats *)
-stats := MBRtuGetStats('dev');
+stats := MB_RTU_STATS('dev');
 LOG('Requests: ' + INT_TO_STRING(stats['requests']));
 LOG('Errors: ' + INT_TO_STRING(stats['errors']));
 LOG('CRC Errors: ' + INT_TO_STRING(stats['crc_errors']));
@@ -890,13 +890,13 @@ LOG('Last Error: ' + stats['last_error']);
 LOG('Avg Response: ' + REAL_TO_STRING(stats['avg_response_ms']) + ' ms');
 
 (* Step 3: Scan bus to verify device is responding *)
-devices := MBRtuScanBus('dev', 1, 10);
+devices := MB_RTU_SCAN_BUS('dev', 1, 10);
 LOG('Devices found: ' + INT_TO_STRING(LEN(devices)));
 ```
 
 ### Linux Serial Port Permissions
 
-If `MBRtuConnect` fails on Linux, the GoPLC process needs access to the serial device:
+If `MB_RTU_CONNECT` fails on Linux, the GoPLC process needs access to the serial device:
 
 ```bash
 # Add user to dialout group (persistent)
@@ -914,45 +914,45 @@ sudo chmod 666 /dev/ttyUSB0
 
 | Function | Returns | FC | Description |
 |----------|---------|-----|-------------|
-| `MBRtuConnect(name, device, baud [, slave_id] [, parity])` | BOOL | — | Open serial connection |
-| `MBRtuClose(name)` | BOOL | — | Close connection |
-| `MBRtuIsConnected(name)` | BOOL | — | Check connection status |
-| `MBRtuSetSlave(name, slaveID)` | BOOL | — | Change target slave address |
-| `MBRtuReadCoils(name, addr, count)` | []BOOL | 01 | Read coil outputs |
-| `MBRtuReadDiscrete(name, addr, count)` | []BOOL | 02 | Read discrete inputs |
-| `MBRtuReadHolding(name, addr, count)` | []INT | 03 | Read holding registers |
-| `MBRtuReadInput(name, addr, count)` | []INT | 04 | Read input registers |
-| `MBRtuWriteCoil(name, addr, value)` | BOOL | 05 | Write single coil |
-| `MBRtuWriteRegister(name, addr, value)` | BOOL | 06 | Write single register |
-| `MBRtuWriteCoils(name, addr, values)` | BOOL | 15 | Write multiple coils |
-| `MBRtuWriteRegisters(name, addr, values)` | BOOL | 16 | Write multiple registers |
-| `MBRtuGetStats(name)` | MAP | — | Connection statistics |
-| `MBRtuScanBus(name, startID, endID)` | []INT | — | Discover devices on bus |
-| `MBRtuList()` | []STRING | — | List active connections |
+| `MB_RTU_CONNECT(name, device, baud [, slave_id] [, parity])` | BOOL | — | Open serial connection |
+| `MB_RTU_CLOSE(name)` | BOOL | — | Close connection |
+| `MB_RTU_CONNECTED(name)` | BOOL | — | Check connection status |
+| `MB_RTU_SET_SLAVE(name, slaveID)` | BOOL | — | Change target slave address |
+| `MB_RTU_READ_COILS(name, addr, count)` | []BOOL | 01 | Read coil outputs |
+| `MB_RTU_READ_DISCRETE(name, addr, count)` | []BOOL | 02 | Read discrete inputs |
+| `MB_RTU_READ_HOLDING(name, addr, count)` | []INT | 03 | Read holding registers |
+| `MB_RTU_READ_INPUT(name, addr, count)` | []INT | 04 | Read input registers |
+| `MB_RTU_WRITE_COIL(name, addr, value)` | BOOL | 05 | Write single coil |
+| `MB_RTU_WRITE_REGISTER(name, addr, value)` | BOOL | 06 | Write single register |
+| `MB_RTU_WRITE_COILS(name, addr, values)` | BOOL | 15 | Write multiple coils |
+| `MB_RTU_WRITE_REGISTERS(name, addr, values)` | BOOL | 16 | Write multiple registers |
+| `MB_RTU_STATS(name)` | MAP | — | Connection statistics |
+| `MB_RTU_SCAN_BUS(name, startID, endID)` | []INT | — | Discover devices on bus |
+| `MB_RTU_LIST()` | []STRING | — | List active connections |
 
 ## Appendix B: Server Function Quick Reference
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `MBRtuServerCreate(name, slave_id [, baud])` | BOOL | Create server instance |
-| `MBRtuServerStartSerial(name, device)` | BOOL | Listen on serial port |
-| `MBRtuServerStartTCP(name, addr)` | BOOL | Listen on TCP (RTU-over-TCP) |
-| `MBRtuServerConnectTCP(name, addr)` | BOOL | Connect as RTU-over-TCP client |
-| `MBRtuServerStop(name)` | BOOL | Stop server |
-| `MBRtuServerIsRunning(name)` | BOOL | Check server status |
-| `MBRtuServerSetHolding(name, addr, value)` | BOOL | Write holding register |
-| `MBRtuServerGetHolding(name, addr)` | INT | Read holding register |
-| `MBRtuServerSetInput(name, addr, value)` | BOOL | Write input register |
-| `MBRtuServerSetCoil(name, addr, value)` | BOOL | Write coil |
-| `MBRtuServerGetCoil(name, addr)` | BOOL | Read coil |
-| `MBRtuServerSetDiscrete(name, addr, value)` | BOOL | Write discrete input |
-| `MBRtuServerGetStats(name)` | MAP | Server statistics |
-| `MBRtuServerDelete(name)` | BOOL | Delete server instance |
-| `MBRtuServerList()` | []STRING | List active servers |
+| `MB_RTU_SERVER_CREATE(name, slave_id [, baud])` | BOOL | Create server instance |
+| `MB_RTU_SERVER_START_SERIAL(name, device)` | BOOL | Listen on serial port |
+| `MB_RTU_SERVER_START_TCP(name, addr)` | BOOL | Listen on TCP (RTU-over-TCP) |
+| `MB_RTU_SERVER_CONNECT_TCP(name, addr)` | BOOL | Connect as RTU-over-TCP client |
+| `MB_RTU_SERVER_STOP(name)` | BOOL | Stop server |
+| `MB_RTU_SERVER_IS_RUNNING(name)` | BOOL | Check server status |
+| `MB_RTU_SERVER_SET_HOLDING(name, addr, value)` | BOOL | Write holding register |
+| `MB_RTU_SERVER_GET_HOLDING(name, addr)` | INT | Read holding register |
+| `MB_RTU_SERVER_SET_INPUT(name, addr, value)` | BOOL | Write input register |
+| `MB_RTU_SERVER_SET_COIL(name, addr, value)` | BOOL | Write coil |
+| `MB_RTU_SERVER_GET_COIL(name, addr)` | BOOL | Read coil |
+| `MB_RTU_SERVER_SET_DISCRETE(name, addr, value)` | BOOL | Write discrete input |
+| `MB_RTU_SERVER_STATS(name)` | MAP | Server statistics |
+| `MB_RTU_SERVER_DELETE(name)` | BOOL | Delete server instance |
+| `MB_RTU_SERVER_LIST()` | []STRING | List active servers |
 
 ---
 
-*GoPLC v1.0.520 | Modbus RTU: Client (15 functions) + Server (15 functions)*
+*GoPLC v1.0.533 | Modbus RTU: Client (15 functions) + Server (15 functions)*
 *Supports: RS-485 serial, USB-serial adapters, RTU-over-TCP*
 
 *(c) 2026 JMB Technical Services LLC. All rights reserved.*

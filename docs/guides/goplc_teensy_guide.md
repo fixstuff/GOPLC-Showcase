@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -1185,7 +1185,7 @@ The key insight: **time-critical operations run in the Teensy firmware or hardwa
 
 ---
 
-*GoPLC v1.0.520 | Firmware: Rust (USB RawHID) | Teensy 4.0 (i.MX RT1062) @ 600 MHz*
+*GoPLC v1.0.533 | Firmware: Rust (USB RawHID) | Teensy 4.0 (i.MX RT1062) @ 600 MHz*
 *47 ST functions | Command opcodes 0xC0-0xFF*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*

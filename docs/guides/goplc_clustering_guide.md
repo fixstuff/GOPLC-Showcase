@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -88,13 +88,13 @@ Each minion runs as a separate process. Inter-process communication uses Unix do
 
 **Best for:** Production deployments with well-defined, version-controlled configurations.
 
-### 2.2 Auto-Generated (--cluster-mode N)
+### 2.2 Auto-Generated (--cluster --minions N)
 
-A single command-line flag spawns N lightweight minions in-process. All minions share the boss process and use the in-process DataLayer (direct transport).
+Two command-line flags enable cluster mode and spawn N lightweight minions in-process. All minions share the boss process and use the in-process DataLayer (direct transport).
 
 ```bash
 # Spawn a boss with 50 lightweight minions
-goplc --cluster-mode 50
+goplc --cluster --minions 50
 ```
 
 Minions are named `minion-001` through `minion-050` by default. Each gets its own variable space and scan engine, but they share the process address space — no IPC overhead.
@@ -300,7 +300,7 @@ The DataLayer is GoPLC's mechanism for sharing variables between cluster nodes. 
 | **shm** | ~ 100 us | Separate processes on the same host (static cluster) |
 | **tcp** | ~ 100-500 us | Nodes on different machines (fleet/networked clusters) |
 
-Transport is selected automatically based on topology, but can be overridden in `config.yaml`.
+The transport type is selected automatically based on topology, but can be overridden via the `type` field in `config.yaml`.
 
 ### 4.2 Variable Naming Convention
 
@@ -346,7 +346,7 @@ Returns the timestamp of the last update to a remote variable, in **microseconds
 
 ```iecst
 ts := DL_GET_TS('pump-ctrl', 'DL_pressure');
-now_us := TIME_US();
+now_us := TICK_US();
 age_us := now_us - ts;
 IF age_us > 1000000 THEN
     (* Data is older than 1 second — stale *)
@@ -369,8 +369,9 @@ Variables are published based on **prefix matching**. Any variable whose name st
 
 ```yaml
 datalayer:
+  enabled: true
   node_id: "pump-ctrl"
-  transport: "direct"
+  type: "direct"
   publish_prefixes:
     - "DL_"
     - "MB_"
@@ -381,8 +382,9 @@ datalayer:
 
 | Field | Description |
 |-------|-------------|
+| `enabled` | Enable or disable DataLayer integration |
 | `node_id` | Unique identifier for this node in the DataLayer |
-| `transport` | Transport type: `direct`, `memory`, `shm`, `tcp` |
+| `type` | Transport type: `direct`, `memory`, `shm`, `tcp` |
 | `publish_prefixes` | List of variable name prefixes to publish (e.g. `DL_`, `MB_`) |
 | `subscribe_paths` | List of node IDs to subscribe to |
 
@@ -574,21 +576,21 @@ curl http://localhost:8300/api/cluster/pump-ctrl/api/runtime/status
 
 ### 5.6 Cluster Bundles
 
-#### POST /api/cluster/export
+#### POST /api/cluster-ops/export
 
-Downloads the entire cluster configuration as a `.goplc-cluster` bundle (zip archive containing all configs, programs, and DataLayer mappings).
+Downloads the entire cluster configuration as a `.goplc-cluster` bundle (JSON document containing all node projects, programs, and Node-RED flows).
 
 ```bash
-curl -X POST http://localhost:8300/api/cluster/export \
+curl -X POST http://localhost:8300/api/cluster-ops/export \
   -o my-cluster.goplc-cluster
 ```
 
-#### POST /api/cluster/import
+#### POST /api/cluster-ops/import
 
 Uploads a `.goplc-cluster` bundle and deploys it to all nodes.
 
 ```bash
-curl -X POST http://localhost:8300/api/cluster/import \
+curl -X POST http://localhost:8300/api/cluster-ops/import \
   -F "bundle=@my-cluster.goplc-cluster"
 ```
 
@@ -618,14 +620,14 @@ curl http://localhost:8300/api/fleet/discover
     {
       "id": "goplc-edge-01",
       "address": "10.0.0.50:8300",
-      "version": "1.0.520",
+      "version": "1.0.533",
       "role": "standalone",
       "uptime": "4d 12h 30m"
     },
     {
       "id": "goplc-edge-02",
       "address": "10.0.0.51:8300",
-      "version": "1.0.520",
+      "version": "1.0.533",
       "role": "boss",
       "minions": 5,
       "uptime": "2d 8h 15m"
@@ -741,7 +743,7 @@ p99 spikes correlate with Go garbage collection pauses. For hard real-time requi
 # config.yaml — DataLayer section
 datalayer:
   node_id: "pump-ctrl"
-  transport: "direct"
+  type: "direct"
 
   # Variables matching these prefixes are published automatically
   publish_prefixes:
@@ -754,11 +756,6 @@ datalayer:
     - "valve-ctrl"
     - "monitor"
 
-  # Optional: override transport per subscription
-  subscriptions:
-    - node_id: "remote-plc"
-      transport: "tcp"
-      address: "10.0.0.51:8300"
 ```
 
 ### 8.2 Static Cluster Config
@@ -768,23 +765,19 @@ Each minion directory contains its own `config.yaml`:
 ```yaml
 # my-cluster/pump-controller/config.yaml
 runtime:
-  name: "pump-ctrl"
-  scan_interval: "1ms"
-  web_port: 0              # 0 = no HTTP server (boss proxies)
-
-programs:
-  - name: "PumpLogic"
-    file: "programs/pump_logic.st"
-    task: "Main"
-
-tasks:
-  - name: "Main"
-    interval: "1ms"
-    priority: 1
+  log_level: info
+  st_files:
+    - "programs/pump_logic.st"
+  tasks:
+    - name: "Main"
+      scan_time_ms: 1
+      priority: 1
+      programs: ["PumpLogic"]
 
 datalayer:
+  enabled: true
   node_id: "pump-ctrl"
-  transport: "shm"         # Unix shared memory for static clusters
+  type: "shm"         # Unix shared memory for static clusters
   publish_prefixes:
     - "DL_"
   subscribe_paths:
@@ -797,17 +790,21 @@ Boss `config.yaml`:
 ```yaml
 # my-cluster/boss/config.yaml
 runtime:
-  name: "boss"
-  scan_interval: "1ms"
-  web_port: 8300
+  log_level: info
 
 cluster:
-  mode: "static"
-  directory: "/opt/goplc/my-cluster"
+  members:
+    - name: "pump-ctrl"
+      socket: "/tmp/goplc-pump-ctrl.sock"
+    - name: "valve-ctrl"
+      socket: "/tmp/goplc-valve-ctrl.sock"
+    - name: "hmi-bridge"
+      socket: "/tmp/goplc-hmi-bridge.sock"
 
 datalayer:
+  enabled: true
   node_id: "boss"
-  transport: "shm"
+  type: "shm"
   publish_prefixes:
     - "DL_"
   subscribe_paths:
@@ -816,26 +813,15 @@ datalayer:
     - "hmi-bridge"
 ```
 
-### 8.3 Auto-Generated Cluster Config
+### 8.3 Auto-Generated Cluster
 
-```yaml
-# config.yaml — auto-generated mode
-runtime:
-  name: "boss"
-  scan_interval: "1ms"
-  web_port: 8300
+Auto-generated clusters are configured via command-line flags, not YAML:
 
-cluster:
-  mode: "auto"
-  count: 50                 # Spawn 50 minions
-  minion_prefix: "node"     # Names: node-001 through node-050
-
-datalayer:
-  node_id: "boss"
-  transport: "direct"       # In-process, sub-microsecond
-  publish_prefixes:
-    - "DL_"
+```bash
+goplc --cluster --minions 50 --api-port 8300
 ```
+
+The boss automatically creates in-process minions with direct transport. No cluster or DataLayer YAML configuration is needed — the boss handles all wiring internally.
 
 ---
 
@@ -994,7 +980,7 @@ END_PROGRAM
 
 ---
 
-*GoPLC v1.0.520 | Clustering + DataLayer | Boss/Minion Architecture*
+*GoPLC v1.0.533 | Clustering + DataLayer | Boss/Minion Architecture*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
 *[Back to White Papers](https://jmbtechnical.com/whitepapers/)*

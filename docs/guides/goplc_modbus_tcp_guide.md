@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -12,8 +12,8 @@ GoPLC implements a complete **Modbus TCP** stack — both client and server — 
 
 | Role | Functions | Use Case |
 |------|-----------|----------|
-| **Client** | `MBClientCreate` / `MBClientRead*` / `MBClientWrite*` | Poll remote devices: VFDs, power meters, remote I/O, other PLCs |
-| **Server** | `MBServerCreate` / `MBServerSet*` / `MBServerGet*` | Expose GoPLC data to SCADA, HMI, or other Modbus masters |
+| **Client** | `MB_CLIENT_CREATE` / `MB_READ_*` / `MB_WRITE_*` | Poll remote devices: VFDs, power meters, remote I/O, other PLCs |
+| **Server** | `MB_SERVER_CREATE` / `MB_SERVER_SET_*` / `MB_SERVER_GET_*` | Expose GoPLC data to SCADA, HMI, or other Modbus masters |
 
 Both roles can run simultaneously. A single GoPLC instance can poll five VFDs as a client while serving register data to a SCADA system — all from the same ST program.
 
@@ -26,11 +26,11 @@ Both roles can run simultaneously. A single GoPLC instance can poll five VFDs as
 │  ┌──────────────────────┐  ┌──────────────────────────┐  │
 │  │ ST Program (Client)  │  │ ST Program (Server)      │  │
 │  │                      │  │                          │  │
-│  │ MBClientCreate()     │  │ MBServerCreate()         │  │
-│  │ MBClientConnect()    │  │ MBServerStart()          │  │
-│  │ MBClientReadHolding  │  │ MBServerSetHoldingReg()  │  │
-│  │   Registers()        │  │ MBServerGetCoil()        │  │
-│  │ MBClientWriteCoil()  │  │ MBServerGetConnections() │  │
+│  │ MB_CLIENT_CREATE()     │  │ MB_SERVER_CREATE()         │  │
+│  │ MB_CLIENT_CONNECT()    │  │ MB_SERVER_START()          │  │
+│  │ MB_READ_HOLDING()    │  │ MB_SERVER_SET_HOLDING()  │  │
+│  │ MB_READ_COILS()      │  │ MB_SERVER_GET_COIL()     │  │
+│  │ MB_WRITE_COIL()  │  │ MB_SERVER_CONNECTIONS() │  │
 │  └──────────┬───────────┘  └──────────┬───────────────┘  │
 │             │                         │                  │
 │             │  TCP Client             │  TCP Server      │
@@ -59,7 +59,7 @@ All Modbus devices share the same four data areas:
 | **Holding Registers** | 0-65535 | Read/Write | INT (16-bit) | Analog outputs |
 | **Input Registers** | 0-65535 | Read-Only | INT (16-bit) | Analog inputs |
 
-> **Addressing Note:** GoPLC uses zero-based addressing. Modbus address 0 in GoPLC corresponds to register 1 (40001) in traditional Modbus documentation. If a VFD manual says "register 40100," use address 99 in your `MBClientReadHoldingRegisters` call.
+> **Addressing Note:** GoPLC uses zero-based addressing. Modbus address 0 in GoPLC corresponds to register 1 (40001) in traditional Modbus documentation. If a VFD manual says "register 40100," use address 99 in your `MB_READ_HOLDING` call.
 
 ---
 
@@ -69,7 +69,7 @@ The Modbus TCP client connects to remote servers (VFDs, meters, remote I/O) and 
 
 ### 2.1 Connection Management
 
-#### MBClientCreate — Create Named Connection
+#### MB_CLIENT_CREATE — Create Named Connection
 
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -82,27 +82,27 @@ Returns: `BOOL` — TRUE if the connection was created successfully.
 
 ```iecst
 (* Create a connection to a VFD at 10.0.0.50 *)
-ok := MBClientCreate('vfd1', '10.0.0.50', 502);
+ok := MB_CLIENT_CREATE('vfd1', '10.0.0.50', 502);
 
 (* Create with explicit slave ID for multi-drop gateways *)
-ok := MBClientCreate('meter3', '10.0.0.60', 502, 3);
+ok := MB_CLIENT_CREATE('meter3', '10.0.0.60', 502, 3);
 ```
 
 > **Named connections:** Every Modbus client connection has a unique string name. This name is used in all subsequent calls. You can create as many connections as you need — one per device is the typical pattern.
 
-#### MBClientConnect — Establish TCP Connection
+#### MB_CLIENT_CONNECT — Establish TCP Connection
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `name` | STRING | Connection name from MBClientCreate |
+| `name` | STRING | Connection name from MB_CLIENT_CREATE |
 
 Returns: `BOOL` — TRUE if connected successfully.
 
 ```iecst
-ok := MBClientConnect('vfd1');
+ok := MB_CLIENT_CONNECT('vfd1');
 ```
 
-#### MBClientDisconnect — Close TCP Connection
+#### MB_CLIENT_DISCONNECT — Close TCP Connection
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -111,10 +111,10 @@ ok := MBClientConnect('vfd1');
 Returns: `BOOL` — TRUE if disconnected successfully.
 
 ```iecst
-ok := MBClientDisconnect('vfd1');
+ok := MB_CLIENT_DISCONNECT('vfd1');
 ```
 
-#### MBClientIsConnected — Check Connection State
+#### MB_CLIENT_CONNECTED — Check Connection State
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -123,8 +123,8 @@ ok := MBClientDisconnect('vfd1');
 Returns: `BOOL` — TRUE if the TCP connection is active.
 
 ```iecst
-IF NOT MBClientIsConnected('vfd1') THEN
-    MBClientConnect('vfd1');
+IF NOT MB_CLIENT_CONNECTED('vfd1') THEN
+    MB_CLIENT_CONNECT('vfd1');
 END_IF;
 ```
 
@@ -139,19 +139,19 @@ END_VAR
 
 CASE state OF
     0: (* Create connection *)
-        ok := MBClientCreate('vfd1', '10.0.0.50', 502);
+        ok := MB_CLIENT_CREATE('vfd1', '10.0.0.50', 502);
         IF ok THEN
             state := 1;
         END_IF;
 
     1: (* Connect *)
-        ok := MBClientConnect('vfd1');
+        ok := MB_CLIENT_CONNECT('vfd1');
         IF ok THEN
             state := 10;
         END_IF;
 
     10: (* Running — read/write in other programs *)
-        IF NOT MBClientIsConnected('vfd1') THEN
+        IF NOT MB_CLIENT_CONNECTED('vfd1') THEN
             state := 1;  (* Reconnect *)
         END_IF;
 END_CASE;
@@ -162,7 +162,7 @@ END_PROGRAM
 
 ### 2.2 Read Functions
 
-#### MBClientReadCoils — FC01: Read Coils
+#### MB_READ_COILS — FC01: Read Coils
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -174,11 +174,11 @@ Returns: `[]BOOL` — Array of coil states.
 
 ```iecst
 (* Read 8 coils starting at address 0 *)
-coils := MBClientReadCoils('vfd1', 0, 8);
+coils := MB_READ_COILS('vfd1', 0, 8);
 (* coils[0] = TRUE/FALSE, coils[1] = TRUE/FALSE, ... *)
 ```
 
-#### MBClientReadDiscreteInputs — FC02: Read Discrete Inputs
+#### MB_READ_DISCRETE — FC02: Read Discrete Inputs
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -190,10 +190,10 @@ Returns: `[]BOOL` — Array of input states.
 
 ```iecst
 (* Read 16 discrete inputs starting at address 0 *)
-inputs := MBClientReadDiscreteInputs('vfd1', 0, 16);
+inputs := MB_READ_DISCRETE('vfd1', 0, 16);
 ```
 
-#### MBClientReadHoldingRegisters — FC03: Read Holding Registers
+#### MB_READ_HOLDING — FC03: Read Holding Registers
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -205,16 +205,16 @@ Returns: `[]INT` — Array of 16-bit register values.
 
 ```iecst
 (* Read 10 holding registers starting at address 0 *)
-regs := MBClientReadHoldingRegisters('vfd1', 0, 10);
+regs := MB_READ_HOLDING('vfd1', 0, 10);
 (* regs[0] = first register value, regs[1] = second, ... *)
 
 (* Read VFD output frequency — typically at a specific register *)
-freq_regs := MBClientReadHoldingRegisters('vfd1', 8451, 1);
+freq_regs := MB_READ_HOLDING('vfd1', 8451, 1);
 ```
 
 > **Register limit:** The Modbus spec allows a maximum of 125 holding registers per read request. If you need more, split into multiple reads.
 
-#### MBClientReadInputRegisters — FC04: Read Input Registers
+#### MB_READ_INPUT — FC04: Read Input Registers
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -226,7 +226,7 @@ Returns: `[]INT` — Array of 16-bit register values.
 
 ```iecst
 (* Read 4 input registers — process values from a meter *)
-measurements := MBClientReadInputRegisters('meter3', 0, 4);
+measurements := MB_READ_INPUT('meter3', 0, 4);
 ```
 
 #### Example: Periodic Register Poll
@@ -241,7 +241,7 @@ VAR
 END_VAR
 
 (* Read VFD status registers every scan *)
-regs := MBClientReadHoldingRegisters('vfd1', 8451, 3);
+regs := MB_READ_HOLDING('vfd1', 8451, 3);
 
 speed_hz := regs[0];       (* Output frequency x10 *)
 current_amps := regs[1];   (* Output current x10 *)
@@ -253,7 +253,7 @@ END_PROGRAM
 
 ### 2.3 Write Functions
 
-#### MBClientWriteCoil — FC05: Write Single Coil
+#### MB_WRITE_COIL — FC05: Write Single Coil
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -265,13 +265,13 @@ Returns: `BOOL` — TRUE if write succeeded.
 
 ```iecst
 (* Turn on coil at address 0 *)
-ok := MBClientWriteCoil('vfd1', 0, TRUE);
+ok := MB_WRITE_COIL('vfd1', 0, TRUE);
 
 (* Turn off coil at address 0 *)
-ok := MBClientWriteCoil('vfd1', 0, FALSE);
+ok := MB_WRITE_COIL('vfd1', 0, FALSE);
 ```
 
-#### MBClientWriteRegister — FC06: Write Single Register
+#### MB_WRITE_REGISTER — FC06: Write Single Register
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -283,13 +283,13 @@ Returns: `BOOL` — TRUE if write succeeded.
 
 ```iecst
 (* Write speed setpoint to VFD — 3000 = 30.00 Hz *)
-ok := MBClientWriteRegister('vfd1', 8192, 3000);
+ok := MB_WRITE_REGISTER('vfd1', 8192, 3000);
 
 (* Write run command *)
-ok := MBClientWriteRegister('vfd1', 8448, 1);
+ok := MB_WRITE_REGISTER('vfd1', 8448, 1);
 ```
 
-#### MBClientWriteCoils — FC15: Write Multiple Coils
+#### MB_WRITE_COILS — FC15: Write Multiple Coils
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -302,10 +302,10 @@ Returns: `BOOL` — TRUE if write succeeded.
 ```iecst
 (* Write 4 coils starting at address 0 *)
 coil_values : ARRAY[0..3] OF BOOL := [TRUE, FALSE, TRUE, TRUE];
-ok := MBClientWriteCoils('vfd1', 0, coil_values);
+ok := MB_WRITE_COILS('vfd1', 0, coil_values);
 ```
 
-#### MBClientWriteRegisters — FC16: Write Multiple Registers
+#### MB_WRITE_REGISTERS — FC16: Write Multiple Registers
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -318,7 +318,7 @@ Returns: `BOOL` — TRUE if write succeeded.
 ```iecst
 (* Write 3 registers starting at address 100 *)
 reg_values : ARRAY[0..2] OF INT := [1500, 3000, 6000];
-ok := MBClientWriteRegisters('vfd1', 100, reg_values);
+ok := MB_WRITE_REGISTERS('vfd1', 100, reg_values);
 ```
 
 #### Example: VFD Speed Command
@@ -332,13 +332,13 @@ VAR
 END_VAR
 
 (* Write frequency setpoint *)
-ok := MBClientWriteRegister('vfd1', 8192, target_speed);
+ok := MB_WRITE_REGISTER('vfd1', 8192, target_speed);
 
 (* Write run/stop command *)
 IF run_cmd THEN
-    ok := MBClientWriteRegister('vfd1', 8448, 1);   (* Run forward *)
+    ok := MB_WRITE_REGISTER('vfd1', 8448, 1);   (* Run forward *)
 ELSE
-    ok := MBClientWriteRegister('vfd1', 8448, 0);   (* Stop *)
+    ok := MB_WRITE_REGISTER('vfd1', 8448, 0);   (* Stop *)
 END_IF;
 END_PROGRAM
 ```
@@ -347,7 +347,7 @@ END_PROGRAM
 
 ### 2.4 Diagnostics and Management
 
-#### MBClientGetStats — Connection Statistics
+#### MB_CLIENT_STATS — Connection Statistics
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -356,13 +356,13 @@ END_PROGRAM
 Returns: `MAP` — Statistics including request count, response count, and error count.
 
 ```iecst
-stats := MBClientGetStats('vfd1');
+stats := MB_CLIENT_STATS('vfd1');
 (* Returns: {"requests": 1542, "responses": 1540, "errors": 2} *)
 ```
 
 > **Error tracking:** Compare requests vs. responses to detect communication problems. A growing error count may indicate cabling issues, device overload, or network congestion.
 
-#### MBClientDelete — Remove Connection
+#### MB_CLIENT_DELETE — Remove Connection
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -372,16 +372,16 @@ Returns: `BOOL` — TRUE if the connection was deleted.
 
 ```iecst
 (* Disconnect and remove *)
-MBClientDisconnect('vfd1');
-ok := MBClientDelete('vfd1');
+MB_CLIENT_DISCONNECT('vfd1');
+ok := MB_CLIENT_DELETE('vfd1');
 ```
 
-#### MBClientList — List All Connections
+#### MB_CLIENT_LIST — List All Connections
 
 Returns: `[]STRING` — Array of all client connection names.
 
 ```iecst
-clients := MBClientList();
+clients := MB_CLIENT_LIST();
 (* Returns: ['vfd1', 'meter3', 'remote_io'] *)
 ```
 
@@ -393,7 +393,7 @@ The Modbus TCP server listens for incoming connections and exposes four standard
 
 ### 3.1 Server Management
 
-#### MBServerCreate — Create Named Server
+#### MB_SERVER_CREATE — Create Named Server
 
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -405,15 +405,15 @@ Returns: `BOOL` — TRUE if the server was created.
 
 ```iecst
 (* Create a server on the standard Modbus port *)
-ok := MBServerCreate('plc_server', 502);
+ok := MB_SERVER_CREATE('plc_server', 502);
 
 (* Create on a non-standard port with explicit slave ID *)
-ok := MBServerCreate('line2_server', 5020, 2);
+ok := MB_SERVER_CREATE('line2_server', 5020, 2);
 ```
 
 > **Port selection:** Port 502 is the standard Modbus TCP port and may require root/admin privileges on some systems. Using a port above 1024 (e.g., 5020) avoids permission issues during development.
 
-#### MBServerStart — Begin Listening
+#### MB_SERVER_START — Begin Listening
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -422,10 +422,10 @@ ok := MBServerCreate('line2_server', 5020, 2);
 Returns: `BOOL` — TRUE if the server started listening.
 
 ```iecst
-ok := MBServerStart('plc_server');
+ok := MB_SERVER_START('plc_server');
 ```
 
-#### MBServerStop — Stop Listening
+#### MB_SERVER_STOP — Stop Listening
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -434,10 +434,10 @@ ok := MBServerStart('plc_server');
 Returns: `BOOL` — TRUE if the server stopped.
 
 ```iecst
-ok := MBServerStop('plc_server');
+ok := MB_SERVER_STOP('plc_server');
 ```
 
-#### MBServerIsRunning — Check Server State
+#### MB_SERVER_IS_RUNNING — Check Server State
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -446,8 +446,8 @@ ok := MBServerStop('plc_server');
 Returns: `BOOL` — TRUE if the server is actively listening.
 
 ```iecst
-IF NOT MBServerIsRunning('plc_server') THEN
-    MBServerStart('plc_server');
+IF NOT MB_SERVER_IS_RUNNING('plc_server') THEN
+    MB_SERVER_START('plc_server');
 END_IF;
 ```
 
@@ -462,19 +462,19 @@ END_VAR
 
 CASE state OF
     0: (* Create server *)
-        ok := MBServerCreate('plc_server', 502);
+        ok := MB_SERVER_CREATE('plc_server', 502);
         IF ok THEN
             state := 1;
         END_IF;
 
     1: (* Start listening *)
-        ok := MBServerStart('plc_server');
+        ok := MB_SERVER_START('plc_server');
         IF ok THEN
             state := 10;
         END_IF;
 
     10: (* Running — update registers in other programs *)
-        IF NOT MBServerIsRunning('plc_server') THEN
+        IF NOT MB_SERVER_IS_RUNNING('plc_server') THEN
             state := 1;  (* Restart *)
         END_IF;
 END_CASE;
@@ -485,7 +485,7 @@ END_PROGRAM
 
 ### 3.2 Coil Access (Read/Write Booleans)
 
-#### MBServerSetCoil — Write a Coil Value
+#### MB_SERVER_SET_COIL — Write a Coil Value
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -497,10 +497,10 @@ Returns: `BOOL` — TRUE if the value was set.
 
 ```iecst
 (* Set coil 0 to ON — visible to any connected Modbus client *)
-ok := MBServerSetCoil('plc_server', 0, TRUE);
+ok := MB_SERVER_SET_COIL('plc_server', 0, TRUE);
 ```
 
-#### MBServerGetCoil — Read a Coil Value
+#### MB_SERVER_GET_COIL — Read a Coil Value
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -511,10 +511,10 @@ Returns: `BOOL` — Current coil state.
 
 ```iecst
 (* Read coil 0 — may have been written by a remote SCADA master *)
-run_cmd := MBServerGetCoil('plc_server', 0);
+run_cmd := MB_SERVER_GET_COIL('plc_server', 0);
 ```
 
-> **Bidirectional data flow:** Remote Modbus clients can write coils (FC05/FC15) and holding registers (FC06/FC16) on your server. Use `MBServerGetCoil` and `MBServerGetHoldingRegister` to read values that remote masters have written. This is how SCADA systems send commands to GoPLC.
+> **Bidirectional data flow:** Remote Modbus clients can write coils (FC05/FC15) and holding registers (FC06/FC16) on your server. Use `MB_SERVER_GET_COIL` and `MB_SERVER_GET_HOLDING` to read values that remote masters have written. This is how SCADA systems send commands to GoPLC.
 
 #### Example: Coil-Based Remote Control
 
@@ -527,8 +527,8 @@ VAR
 END_VAR
 
 (* Read commands from SCADA via coils *)
-remote_run := MBServerGetCoil('plc_server', 0);
-remote_reset := MBServerGetCoil('plc_server', 1);
+remote_run := MB_SERVER_GET_COIL('plc_server', 0);
+remote_reset := MB_SERVER_GET_COIL('plc_server', 1);
 
 (* Execute commands *)
 IF remote_run AND NOT motor_running THEN
@@ -537,11 +537,11 @@ END_IF;
 
 IF remote_reset THEN
     motor_running := FALSE;
-    MBServerSetCoil('plc_server', 1, FALSE);  (* Auto-clear reset *)
+    MB_SERVER_SET_COIL('plc_server', 1, FALSE);  (* Auto-clear reset *)
 END_IF;
 
 (* Report status back *)
-MBServerSetCoil('plc_server', 10, motor_running);
+MB_SERVER_SET_COIL('plc_server', 10, motor_running);
 END_PROGRAM
 ```
 
@@ -549,7 +549,7 @@ END_PROGRAM
 
 ### 3.3 Discrete Input Access (Read-Only Booleans)
 
-#### MBServerSetDiscreteInput — Set a Discrete Input Value
+#### MB_SERVER_SET_DISCRETE — Set a Discrete Input Value
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -561,9 +561,22 @@ Returns: `BOOL` — TRUE if the value was set.
 
 ```iecst
 (* Expose sensor states as discrete inputs *)
-ok := MBServerSetDiscreteInput('plc_server', 0, limit_switch_1);
-ok := MBServerSetDiscreteInput('plc_server', 1, limit_switch_2);
-ok := MBServerSetDiscreteInput('plc_server', 2, e_stop_ok);
+ok := MB_SERVER_SET_DISCRETE('plc_server', 0, limit_switch_1);
+ok := MB_SERVER_SET_DISCRETE('plc_server', 1, limit_switch_2);
+ok := MB_SERVER_SET_DISCRETE('plc_server', 2, e_stop_ok);
+```
+
+#### MB_SERVER_GET_DISCRETE — Read a Discrete Input Value
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `name` | STRING | Server name |
+| `address` | INT | Input address (0-based) |
+
+Returns: `BOOL` — Current discrete input state.
+
+```iecst
+value := MB_SERVER_GET_DISCRETE('plc_server', 0);
 ```
 
 > **Read-only to clients:** Remote Modbus masters can only read discrete inputs (FC02). They cannot write them. Use this area for status and sensor data that should not be overwritten remotely.
@@ -572,7 +585,7 @@ ok := MBServerSetDiscreteInput('plc_server', 2, e_stop_ok);
 
 ### 3.4 Holding Register Access (Read/Write Integers)
 
-#### MBServerSetHoldingRegister — Write a Holding Register
+#### MB_SERVER_SET_HOLDING — Write a Holding Register
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -584,12 +597,12 @@ Returns: `BOOL` — TRUE if the value was set.
 
 ```iecst
 (* Expose process values as holding registers *)
-ok := MBServerSetHoldingRegister('plc_server', 0, motor_speed);
-ok := MBServerSetHoldingRegister('plc_server', 1, motor_current);
-ok := MBServerSetHoldingRegister('plc_server', 2, temperature);
+ok := MB_SERVER_SET_HOLDING('plc_server', 0, motor_speed);
+ok := MB_SERVER_SET_HOLDING('plc_server', 1, motor_current);
+ok := MB_SERVER_SET_HOLDING('plc_server', 2, temperature);
 ```
 
-#### MBServerGetHoldingRegister — Read a Holding Register
+#### MB_SERVER_GET_HOLDING — Read a Holding Register
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -600,7 +613,7 @@ Returns: `INT` — Current register value.
 
 ```iecst
 (* Read setpoint written by remote SCADA *)
-speed_setpoint := MBServerGetHoldingRegister('plc_server', 100);
+speed_setpoint := MB_SERVER_GET_HOLDING('plc_server', 100);
 ```
 
 #### Example: Bidirectional Holding Registers
@@ -614,11 +627,11 @@ VAR
 END_VAR
 
 (* SCADA writes setpoint to register 100 *)
-speed_setpoint := MBServerGetHoldingRegister('plc_server', 100);
+speed_setpoint := MB_SERVER_GET_HOLDING('plc_server', 100);
 
 (* GoPLC publishes actual speed to register 0 *)
 actual_speed := 2950;  (* From VFD feedback *)
-ok := MBServerSetHoldingRegister('plc_server', 0, actual_speed);
+ok := MB_SERVER_SET_HOLDING('plc_server', 0, actual_speed);
 END_PROGRAM
 ```
 
@@ -626,7 +639,7 @@ END_PROGRAM
 
 ### 3.5 Input Register Access (Read-Only Integers)
 
-#### MBServerSetInputRegister — Set an Input Register
+#### MB_SERVER_SET_INPUT — Set an Input Register
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -638,12 +651,12 @@ Returns: `BOOL` — TRUE if the value was set.
 
 ```iecst
 (* Expose analog measurements as input registers *)
-ok := MBServerSetInputRegister('plc_server', 0, pressure_psi);
-ok := MBServerSetInputRegister('plc_server', 1, flow_gpm);
-ok := MBServerSetInputRegister('plc_server', 2, level_percent);
+ok := MB_SERVER_SET_INPUT('plc_server', 0, pressure_psi);
+ok := MB_SERVER_SET_INPUT('plc_server', 1, flow_gpm);
+ok := MB_SERVER_SET_INPUT('plc_server', 2, level_percent);
 ```
 
-#### MBServerGetInputRegister — Read an Input Register
+#### MB_SERVER_GET_INPUT — Read an Input Register
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -653,7 +666,7 @@ ok := MBServerSetInputRegister('plc_server', 2, level_percent);
 Returns: `INT` — Current register value.
 
 ```iecst
-value := MBServerGetInputRegister('plc_server', 0);
+value := MB_SERVER_GET_INPUT('plc_server', 0);
 ```
 
 > **Input registers vs. holding registers:** Use input registers (FC04) for sensor data and measured values. Use holding registers (FC03/FC06) for setpoints and bidirectional data. This follows the Modbus convention and makes your register map intuitive to integrators.
@@ -662,7 +675,7 @@ value := MBServerGetInputRegister('plc_server', 0);
 
 ### 3.6 Server Diagnostics and Management
 
-#### MBServerGetStats — Server Statistics
+#### MB_SERVER_STATS — Server Statistics
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -671,11 +684,11 @@ value := MBServerGetInputRegister('plc_server', 0);
 Returns: `MAP` — Statistics including request count, response count, and error count.
 
 ```iecst
-stats := MBServerGetStats('plc_server');
+stats := MB_SERVER_STATS('plc_server');
 (* Returns: {"requests": 8420, "responses": 8420, "errors": 0} *)
 ```
 
-#### MBServerGetConnections — List Connected Clients
+#### MB_SERVER_CONNECTIONS — List Connected Clients
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -684,14 +697,14 @@ stats := MBServerGetStats('plc_server');
 Returns: `[]MAP` — Array of connected client information.
 
 ```iecst
-connections := MBServerGetConnections('plc_server');
+connections := MB_SERVER_CONNECTIONS('plc_server');
 (* Returns: [{"remote_addr": "10.0.0.100:49832", "connected_at": "2026-04-03T10:15:00Z"},
              {"remote_addr": "10.0.0.101:52100", "connected_at": "2026-04-03T10:16:30Z"}] *)
 ```
 
-> **Security awareness:** Any device on the network can connect to your Modbus server. Use `MBServerGetConnections` to audit who is connected. For production systems, consider placing the Modbus server on a dedicated VLAN or using firewall rules.
+> **Security awareness:** Any device on the network can connect to your Modbus server. Use `MB_SERVER_CONNECTIONS` to audit who is connected. For production systems, consider placing the Modbus server on a dedicated VLAN or using firewall rules.
 
-#### MBServerDelete — Remove Server
+#### MB_SERVER_DELETE — Remove Server
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -700,16 +713,16 @@ connections := MBServerGetConnections('plc_server');
 Returns: `BOOL` — TRUE if the server was deleted.
 
 ```iecst
-MBServerStop('plc_server');
-ok := MBServerDelete('plc_server');
+MB_SERVER_STOP('plc_server');
+ok := MB_SERVER_DELETE('plc_server');
 ```
 
-#### MBServerList — List All Servers
+#### MB_SERVER_LIST — List All Servers
 
 Returns: `[]STRING` — Array of all server names.
 
 ```iecst
-servers := MBServerList();
+servers := MB_SERVER_LIST();
 (* Returns: ['plc_server', 'line2_server'] *)
 ```
 
@@ -744,13 +757,13 @@ END_VAR
 
 CASE state OF
     0: (* Create connection to VFD *)
-        ok := MBClientCreate('acs355', '10.0.0.50', 502, 1);
+        ok := MB_CLIENT_CREATE('acs355', '10.0.0.50', 502, 1);
         IF ok THEN
             state := 1;
         END_IF;
 
     1: (* Connect *)
-        ok := MBClientConnect('acs355');
+        ok := MB_CLIENT_CONNECT('acs355');
         IF ok THEN
             retry_count := 0;
             state := 10;
@@ -762,12 +775,12 @@ CASE state OF
         END_IF;
 
     10: (* Running — read status registers *)
-        IF NOT MBClientIsConnected('acs355') THEN
+        IF NOT MB_CLIENT_CONNECTED('acs355') THEN
             state := 1;   (* Reconnect *)
         END_IF;
 
         (* Read 5 status registers starting at address 1 *)
-        status_regs := MBClientReadHoldingRegisters('acs355', 1, 5);
+        status_regs := MB_READ_HOLDING('acs355', 1, 5);
 
         output_freq := INT_TO_REAL(status_regs[0]) / 100.0;
         output_current := INT_TO_REAL(status_regs[1]) / 100.0;
@@ -786,8 +799,8 @@ CASE state OF
             control_word := 2;     (* Run reverse *)
         END_IF;
 
-        ok := MBClientWriteRegister('acs355', 0, control_word);
-        ok := MBClientWriteRegister('acs355', 1, speed_setpoint);
+        ok := MB_WRITE_REGISTER('acs355', 0, control_word);
+        ok := MB_WRITE_REGISTER('acs355', 1, speed_setpoint);
 
         state := 10;   (* Loop back to read *)
 
@@ -857,13 +870,13 @@ END_VAR
 
 CASE state OF
     0: (* Create and start server *)
-        ok := MBServerCreate('scada', 502);
+        ok := MB_SERVER_CREATE('scada', 502);
         IF ok THEN
             state := 1;
         END_IF;
 
     1: (* Start listening *)
-        ok := MBServerStart('scada');
+        ok := MB_SERVER_START('scada');
         IF ok THEN
             state := 10;
         END_IF;
@@ -872,44 +885,44 @@ CASE state OF
         scan_count := scan_count + 1;
 
         (* === Write process values to holding registers === *)
-        MBServerSetHoldingRegister('scada', 0, line_speed);
-        MBServerSetHoldingRegister('scada', 1, motor_current);
-        MBServerSetHoldingRegister('scada', 2, temperature);
-        MBServerSetHoldingRegister('scada', 3, pressure);
-        MBServerSetHoldingRegister('scada', 4, batch_count);
+        MB_SERVER_SET_HOLDING('scada', 0, line_speed);
+        MB_SERVER_SET_HOLDING('scada', 1, motor_current);
+        MB_SERVER_SET_HOLDING('scada', 2, temperature);
+        MB_SERVER_SET_HOLDING('scada', 3, pressure);
+        MB_SERVER_SET_HOLDING('scada', 4, batch_count);
 
         (* === Write input registers === *)
-        MBServerSetInputRegister('scada', 0, DINT_TO_INT(uptime_sec));
-        MBServerSetInputRegister('scada', 1, DINT_TO_INT(scan_count));
+        MB_SERVER_SET_INPUT('scada', 0, DINT_TO_INT(uptime_sec));
+        MB_SERVER_SET_INPUT('scada', 1, DINT_TO_INT(scan_count));
 
-        (* === Write discrete inputs === *)
-        MBServerSetDiscreteInput('scada', 0, e_stop_ok);
-        MBServerSetDiscreteInput('scada', 1, guard_closed);
-        MBServerSetDiscreteInput('scada', 2, system_running);
+        (* === Write discrete inputs (read-only to SCADA) === *)
+        MB_SERVER_SET_DISCRETE('scada', 0, e_stop_ok);
+        MB_SERVER_SET_DISCRETE('scada', 1, guard_closed);
+        MB_SERVER_SET_DISCRETE('scada', 2, system_running);
 
         (* === Write coil status === *)
-        MBServerSetCoil('scada', 10, system_running);
-        MBServerSetCoil('scada', 11, fault_active);
+        MB_SERVER_SET_COIL('scada', 10, system_running);
+        MB_SERVER_SET_COIL('scada', 11, fault_active);
 
         (* === Read commands from SCADA === *)
-        scada_start := MBServerGetCoil('scada', 0);
-        scada_stop := MBServerGetCoil('scada', 1);
-        scada_setpoint := MBServerGetHoldingRegister('scada', 100);
-        scada_mode := MBServerGetHoldingRegister('scada', 101);
+        scada_start := MB_SERVER_GET_COIL('scada', 0);
+        scada_stop := MB_SERVER_GET_COIL('scada', 1);
+        scada_setpoint := MB_SERVER_GET_HOLDING('scada', 100);
+        scada_mode := MB_SERVER_GET_HOLDING('scada', 101);
 
         (* Process commands *)
         IF scada_start AND NOT system_running THEN
             system_running := TRUE;
-            MBServerSetCoil('scada', 0, FALSE);  (* Auto-clear *)
+            MB_SERVER_SET_COIL('scada', 0, FALSE);  (* Auto-clear *)
         END_IF;
 
         IF scada_stop AND system_running THEN
             system_running := FALSE;
-            MBServerSetCoil('scada', 1, FALSE);  (* Auto-clear *)
+            MB_SERVER_SET_COIL('scada', 1, FALSE);  (* Auto-clear *)
         END_IF;
 
         (* Health check *)
-        IF NOT MBServerIsRunning('scada') THEN
+        IF NOT MB_SERVER_IS_RUNNING('scada') THEN
             state := 1;   (* Restart *)
         END_IF;
 END_CASE;
@@ -945,13 +958,13 @@ END_VAR
 
 CASE state OF
     0: (* Initialize Modbus client *)
-        ok := MBClientCreate('meter', '10.0.0.70', 502, 1);
+        ok := MB_CLIENT_CREATE('meter', '10.0.0.70', 502, 1);
         IF ok THEN
             state := 1;
         END_IF;
 
     1: (* Connect Modbus *)
-        ok := MBClientConnect('meter');
+        ok := MB_CLIENT_CONNECT('meter');
         IF ok THEN
             state := 2;
         END_IF;
@@ -966,12 +979,12 @@ CASE state OF
         scan_count := scan_count + 1;
 
         (* Reconnect if needed *)
-        IF NOT MBClientIsConnected('meter') THEN
-            MBClientConnect('meter');
+        IF NOT MB_CLIENT_CONNECTED('meter') THEN
+            MB_CLIENT_CONNECT('meter');
         END_IF;
 
         (* Read 10 registers from power meter *)
-        regs := MBClientReadHoldingRegisters('meter', 0, 10);
+        regs := MB_READ_HOLDING('meter', 0, 10);
 
         (* Scale to engineering units *)
         voltage := INT_TO_REAL(regs[0]) / 10.0;
@@ -992,7 +1005,7 @@ CASE state OF
         (* Publish Modbus stats periodically *)
         IF (scan_count MOD 100) = 0 THEN
             MQTTPublish('mqtt_gw', 'plant/meter1/stats',
-                        MBClientGetStats('meter'));
+                        MB_CLIENT_STATS('meter'));
         END_IF;
 END_CASE;
 END_PROGRAM
@@ -1015,7 +1028,7 @@ VAR
 END_VAR
 
 (* Round-robin: poll one device per scan to distribute bus load *)
-regs := MBClientReadHoldingRegisters(devices[poll_index], 0, 5);
+regs := MB_READ_HOLDING(devices[poll_index], 0, 5);
 
 poll_index := poll_index + 1;
 IF poll_index > 3 THEN
@@ -1039,7 +1052,7 @@ VAR
 END_VAR
 
 (* Read two consecutive registers *)
-regs := MBClientReadHoldingRegisters('meter', 0, 2);
+regs := MB_READ_HOLDING('meter', 0, 2);
 
 (* Big-endian (most common): high word first *)
 dint_val := INT_TO_DINT(regs[0]) * 65536 + INT_TO_DINT(regs[1]);
@@ -1065,28 +1078,28 @@ END_VAR
 
 CASE state OF
     0: (* Initialize both roles *)
-        ok := MBClientCreate('vfd', '10.0.0.50', 502);
-        ok := MBServerCreate('scada', 5020);
+        ok := MB_CLIENT_CREATE('vfd', '10.0.0.50', 502);
+        ok := MB_SERVER_CREATE('scada', 5020);
         IF ok THEN state := 1; END_IF;
 
     1: (* Connect/Start *)
-        MBClientConnect('vfd');
-        MBServerStart('scada');
+        MB_CLIENT_CONNECT('vfd');
+        MB_SERVER_START('scada');
         state := 10;
 
     10: (* Running — bridge VFD data to SCADA *)
         (* Read from VFD (client role) *)
-        regs := MBClientReadHoldingRegisters('vfd', 0, 2);
+        regs := MB_READ_HOLDING('vfd', 0, 2);
         vfd_speed := regs[0];
         vfd_current := regs[1];
 
         (* Expose to SCADA (server role) *)
-        MBServerSetHoldingRegister('scada', 0, vfd_speed);
-        MBServerSetHoldingRegister('scada', 1, vfd_current);
+        MB_SERVER_SET_HOLDING('scada', 0, vfd_speed);
+        MB_SERVER_SET_HOLDING('scada', 1, vfd_current);
 
         (* Read setpoint from SCADA, forward to VFD *)
-        MBClientWriteRegister('vfd', 10,
-            MBServerGetHoldingRegister('scada', 100));
+        MB_WRITE_REGISTER('vfd', 10,
+            MB_SERVER_GET_HOLDING('scada', 100));
 END_CASE;
 END_PROGRAM
 ```
@@ -1097,62 +1110,63 @@ END_PROGRAM
 
 | FC | Name | GoPLC Client Function | Max Items |
 |----|------|-----------------------|-----------|
-| 01 | Read Coils | `MBClientReadCoils` | 2000 |
-| 02 | Read Discrete Inputs | `MBClientReadDiscreteInputs` | 2000 |
-| 03 | Read Holding Registers | `MBClientReadHoldingRegisters` | 125 |
-| 04 | Read Input Registers | `MBClientReadInputRegisters` | 125 |
-| 05 | Write Single Coil | `MBClientWriteCoil` | 1 |
-| 06 | Write Single Register | `MBClientWriteRegister` | 1 |
-| 15 | Write Multiple Coils | `MBClientWriteCoils` | 1968 |
-| 16 | Write Multiple Registers | `MBClientWriteRegisters` | 123 |
+| 01 | Read Coils | `MB_READ_COILS` | 2000 |
+| 02 | Read Discrete Inputs | `MB_READ_DISCRETE` | 2000 |
+| 03 | Read Holding Registers | `MB_READ_HOLDING` | 125 |
+| 04 | Read Input Registers | `MB_READ_INPUT` | 125 |
+| 05 | Write Single Coil | `MB_WRITE_COIL` | 1 |
+| 06 | Write Single Register | `MB_WRITE_REGISTER` | 1 |
+| 15 | Write Multiple Coils | `MB_WRITE_COILS` | 1968 |
+| 16 | Write Multiple Registers | `MB_WRITE_REGISTERS` | 123 |
 
 ---
 
-## Appendix B: Quick Reference — All 30 Functions
+## Appendix B: Quick Reference — All 31 Functions
 
 ### Client Functions (15)
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `MBClientCreate(name, host, port [, slave_id])` | BOOL | Create named connection |
-| `MBClientConnect(name)` | BOOL | Establish TCP connection |
-| `MBClientDisconnect(name)` | BOOL | Close TCP connection |
-| `MBClientIsConnected(name)` | BOOL | Check connection state |
-| `MBClientReadCoils(name, address, count)` | []BOOL | FC01: Read coils |
-| `MBClientReadDiscreteInputs(name, address, count)` | []BOOL | FC02: Read discrete inputs |
-| `MBClientReadHoldingRegisters(name, address, count)` | []INT | FC03: Read holding registers |
-| `MBClientReadInputRegisters(name, address, count)` | []INT | FC04: Read input registers |
-| `MBClientWriteCoil(name, address, value)` | BOOL | FC05: Write single coil |
-| `MBClientWriteRegister(name, address, value)` | BOOL | FC06: Write single register |
-| `MBClientWriteCoils(name, address, values)` | BOOL | FC15: Write multiple coils |
-| `MBClientWriteRegisters(name, address, values)` | BOOL | FC16: Write multiple registers |
-| `MBClientGetStats(name)` | MAP | Request/response/error counts |
-| `MBClientDelete(name)` | BOOL | Remove connection |
-| `MBClientList()` | []STRING | List all connections |
+| `MB_CLIENT_CREATE(name, host, port [, slave_id])` | BOOL | Create named connection |
+| `MB_CLIENT_CONNECT(name)` | BOOL | Establish TCP connection |
+| `MB_CLIENT_DISCONNECT(name)` | BOOL | Close TCP connection |
+| `MB_CLIENT_CONNECTED(name)` | BOOL | Check connection state |
+| `MB_READ_COILS(name, address, count)` | []BOOL | FC01: Read coils |
+| `MB_READ_DISCRETE(name, address, count)` | []BOOL | FC02: Read discrete inputs |
+| `MB_READ_HOLDING(name, address, count)` | []INT | FC03: Read holding registers |
+| `MB_READ_INPUT(name, address, count)` | []INT | FC04: Read input registers |
+| `MB_WRITE_COIL(name, address, value)` | BOOL | FC05: Write single coil |
+| `MB_WRITE_REGISTER(name, address, value)` | BOOL | FC06: Write single register |
+| `MB_WRITE_COILS(name, address, values)` | BOOL | FC15: Write multiple coils |
+| `MB_WRITE_REGISTERS(name, address, values)` | BOOL | FC16: Write multiple registers |
+| `MB_CLIENT_STATS(name)` | MAP | Request/response/error counts |
+| `MB_CLIENT_DELETE(name)` | BOOL | Remove connection |
+| `MB_CLIENT_LIST()` | []STRING | List all connections |
 
-### Server Functions (15)
+### Server Functions (16)
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `MBServerCreate(name, port [, slave_id])` | BOOL | Create named server |
-| `MBServerStart(name)` | BOOL | Begin listening |
-| `MBServerStop(name)` | BOOL | Stop listening |
-| `MBServerIsRunning(name)` | BOOL | Check server state |
-| `MBServerSetCoil(name, address, value)` | BOOL | Write coil value |
-| `MBServerGetCoil(name, address)` | BOOL | Read coil value |
-| `MBServerSetDiscreteInput(name, address, value)` | BOOL | Set discrete input |
-| `MBServerSetHoldingRegister(name, address, value)` | BOOL | Write holding register |
-| `MBServerGetHoldingRegister(name, address)` | INT | Read holding register |
-| `MBServerSetInputRegister(name, address, value)` | BOOL | Set input register |
-| `MBServerGetInputRegister(name, address)` | INT | Read input register |
-| `MBServerGetStats(name)` | MAP | Request/response/error counts |
-| `MBServerGetConnections(name)` | []MAP | List connected clients |
-| `MBServerDelete(name)` | BOOL | Remove server |
-| `MBServerList()` | []STRING | List all servers |
+| `MB_SERVER_CREATE(name, port [, slave_id])` | BOOL | Create named server |
+| `MB_SERVER_START(name)` | BOOL | Begin listening |
+| `MB_SERVER_STOP(name)` | BOOL | Stop listening |
+| `MB_SERVER_IS_RUNNING(name)` | BOOL | Check server state |
+| `MB_SERVER_SET_COIL(name, address, value)` | BOOL | Write coil value |
+| `MB_SERVER_GET_COIL(name, address)` | BOOL | Read coil value |
+| `MB_SERVER_SET_DISCRETE(name, address, value)` | BOOL | Set discrete input |
+| `MB_SERVER_GET_DISCRETE(name, address)` | BOOL | Read discrete input |
+| `MB_SERVER_SET_HOLDING(name, address, value)` | BOOL | Write holding register |
+| `MB_SERVER_GET_HOLDING(name, address)` | INT | Read holding register |
+| `MB_SERVER_SET_INPUT(name, address, value)` | BOOL | Set input register |
+| `MB_SERVER_GET_INPUT(name, address)` | INT | Read input register |
+| `MB_SERVER_STATS(name)` | MAP | Request/response/error counts |
+| `MB_SERVER_CONNECTIONS(name)` | []MAP | List connected clients |
+| `MB_SERVER_DELETE(name)` | BOOL | Remove server |
+| `MB_SERVER_LIST()` | []STRING | List all servers |
 
 ---
 
-*GoPLC v1.0.520 | Modbus TCP Client + Server | IEC 61131-3 Structured Text*
+*GoPLC v1.0.533 | Modbus TCP Client + Server | IEC 61131-3 Structured Text*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
 *[Back to White Papers](https://jmbtechnical.com/whitepapers/)*

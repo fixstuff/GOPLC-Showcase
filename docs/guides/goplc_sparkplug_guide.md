@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -12,10 +12,10 @@ GoPLC implements a complete **Sparkplug B v3.0** edge node callable directly fro
 
 | Role | Functions | Use Case |
 |------|-----------|----------|
-| **Edge Node** | `SparkplugNodeCreate` / `SparkplugNodeBirth` / `SparkplugNodeData` | Publish PLC data to SCADA via Sparkplug-aware infrastructure |
-| **Metrics** | `SparkplugMetricAdd` / `SparkplugMetricSet` / `SparkplugMetricGet` | Register and update named data points with automatic type detection |
-| **Commands** | `SparkplugCmdSubscribe` / `SparkplugCmdGet` / `SparkplugCmdClear` | Receive write-back commands from SCADA (NCMD topic) |
-| **Lifecycle** | `SparkplugNodeBirth` / `SparkplugNodeDeath` / `SparkplugNodeData` | Full NBIRTH/NDEATH/NDATA state management |
+| **Edge Node** | `SPARKPLUG_NODE_CREATE` / `SPARKPLUG_NODE_BIRTH` / `SPARKPLUG_NODE_DATA` | Publish PLC data to SCADA via Sparkplug-aware infrastructure |
+| **Metrics** | `SPARKPLUG_METRIC_ADD` / `SPARKPLUG_METRIC_SET` / `SPARKPLUG_METRIC_GET` | Register and update named data points with automatic type detection |
+| **Commands** | `SPARKPLUG_CMD_SUBSCRIBE` / `SPARKPLUG_CMD_GET` / `SPARKPLUG_CMD_CLEAR` | Receive write-back commands from SCADA (NCMD topic) |
+| **Lifecycle** | `SPARKPLUG_NODE_BIRTH` / `SPARKPLUG_NODE_DEATH` / `SPARKPLUG_NODE_DATA` | Full NBIRTH/NDEATH/NDATA state management |
 
 All functions are controlled entirely from IEC 61131-3 Structured Text in GoPLC's browser-based IDE.
 
@@ -28,13 +28,13 @@ All functions are controlled entirely from IEC 61131-3 Structured Text in GoPLC'
 │  ┌────────────────────────────────────────────────────────┐  │
 │  │ ST Program                                             │  │
 │  │                                                        │  │
-│  │ SparkplugNodeCreate('node1', 'Plant/Line1',            │  │
+│  │ SPARKPLUG_NODE_CREATE('node1', 'Plant/Line1',            │  │
 │  │     'GoPLC-Edge1', 'tcp://broker:1883', 'goplc-sp1')  │  │
-│  │ SparkplugMetricAdd('node1', 'Temperature', 72.5)       │  │
-│  │ SparkplugMetricAdd('node1', 'MotorRunning', TRUE)      │  │
-│  │ SparkplugNodeBirth('node1')   → NBIRTH                 │  │
-│  │ SparkplugMetricSet('node1', 'Temperature', 73.1)       │  │
-│  │ SparkplugNodeData('node1')    → NDATA (changed only)   │  │
+│  │ SPARKPLUG_METRIC_ADD('node1', 'Temperature', 72.5)       │  │
+│  │ SPARKPLUG_METRIC_ADD('node1', 'MotorRunning', TRUE)      │  │
+│  │ SPARKPLUG_NODE_BIRTH('node1')   → NBIRTH                 │  │
+│  │ SPARKPLUG_METRIC_SET('node1', 'Temperature', 73.1)       │  │
+│  │ SPARKPLUG_NODE_DATA('node1')    → NDATA (changed only)   │  │
 │  └───────────────────────┬────────────────────────────────┘  │
 │                          │                                   │
 │                          │  MQTT 3.1.1 + Sparkplug B         │
@@ -97,10 +97,10 @@ Examples:
 
 ## 2. Node Lifecycle
 
-### 2.1 SparkplugNodeCreate -- Create Edge Node
+### 2.1 SPARKPLUG_NODE_CREATE -- Create Edge Node
 
 ```iecst
-ok := SparkplugNodeCreate('node1', 'Plant/Line1', 'GoPLC-Edge1',
+ok := SPARKPLUG_NODE_CREATE('node1', 'Plant/Line1', 'GoPLC-Edge1',
                            'tcp://10.0.0.144:1883', 'goplc-sparkplug-1');
 ```
 
@@ -111,69 +111,69 @@ ok := SparkplugNodeCreate('node1', 'Plant/Line1', 'GoPLC-Edge1',
 | `edgeNodeID` | STRING | Yes | Unique edge node identifier |
 | `brokerURL` | STRING | Yes | MQTT broker URL: `tcp://host:port` or `ssl://host:port` |
 | `clientID` | STRING | Yes | MQTT client ID (must be unique per broker) |
-| `username` | STRING | No | MQTT username for broker authentication |
-| `password` | STRING | No | MQTT password for broker authentication |
 
-Returns `TRUE` on success. The node is created but **not yet connected** -- call `SparkplugNodeConnect` next.
+Returns `TRUE` on success. The node is created but **not yet connected** -- call `SPARKPLUG_NODE_CONNECT` next.
+
+For authenticated connections, use `SPARKPLUG_NODE_CREATE_AUTH`:
 
 ```iecst
 (* No authentication *)
-ok := SparkplugNodeCreate('node1', 'Plant', 'Edge1',
+ok := SPARKPLUG_NODE_CREATE('node1', 'Plant', 'Edge1',
                            'tcp://broker:1883', 'goplc-sp-1');
 
-(* With authentication *)
-ok := SparkplugNodeCreate('node1', 'Plant', 'Edge1',
-                           'tcp://broker:1883', 'goplc-sp-1',
-                           'goplc_user', 's3cretP@ss');
+(* With authentication — use SPARKPLUG_NODE_CREATE_AUTH *)
+ok := SPARKPLUG_NODE_CREATE_AUTH('node1', 'Plant', 'Edge1',
+                                'tcp://broker:1883', 'goplc-sp-1',
+                                'goplc_user', 's3cretP@ss');
 
-(* TLS connection *)
-ok := SparkplugNodeCreate('node1', 'Plant', 'Edge1',
-                           'ssl://broker:8883', 'goplc-sp-1',
-                           'goplc_user', 's3cretP@ss');
+(* TLS + authentication *)
+ok := SPARKPLUG_NODE_CREATE_AUTH('node1', 'Plant', 'Edge1',
+                                'ssl://broker:8883', 'goplc-sp-1',
+                                'goplc_user', 's3cretP@ss');
 ```
 
 > **Client ID uniqueness:** If two nodes connect with the same client ID, the broker disconnects the first one. Use a unique ID per GoPLC instance — hostname or MAC address works well.
 
-### 2.2 SparkplugNodeConnect / Disconnect / IsConnected
+### 2.2 SPARKPLUG_NODE_CONNECT / Disconnect / IsConnected
 
 ```iecst
 (* Connect to broker — registers NDEATH as LWT *)
-ok := SparkplugNodeConnect('node1');
+ok := SPARKPLUG_NODE_CONNECT('node1');
 
 (* Check connection state *)
-IF SparkplugNodeIsConnected('node1') THEN
+IF SPARKPLUG_NODE_IS_CONNECTED('node1') THEN
     (* publish metrics *)
 END_IF;
 
 (* Graceful disconnect — triggers NDEATH from broker LWT *)
-SparkplugNodeDisconnect('node1');
+SPARKPLUG_NODE_DISCONNECT('node1');
 ```
 
-`SparkplugNodeConnect` establishes the MQTT connection and registers the **NDEATH** message as the broker's Last Will and Testament (LWT). If GoPLC crashes or loses network, the broker publishes NDEATH automatically — Ignition and other consumers see the node go offline immediately.
+`SPARKPLUG_NODE_CONNECT` establishes the MQTT connection and registers the **NDEATH** message as the broker's Last Will and Testament (LWT). If GoPLC crashes or loses network, the broker publishes NDEATH automatically — Ignition and other consumers see the node go offline immediately.
 
-### 2.3 SparkplugNodeDelete / SparkplugNodeList
+### 2.3 SPARKPLUG_NODE_DELETE / SPARKPLUG_NODE_LIST
 
 ```iecst
 (* Remove a node *)
-SparkplugNodeDelete('node1');
+SPARKPLUG_NODE_DELETE('node1');
 
 (* List all Sparkplug nodes *)
-names := SparkplugNodeList();
-(* Returns: ['node1', 'node2'] *)
+names := SPARKPLUG_NODE_LIST();
+(* Returns: 'node1,node2' — comma-separated string *)
 ```
 
 ---
 
 ## 3. Metrics
 
-### 3.1 SparkplugMetricAdd -- Register a Metric
+### 3.1 SPARKPLUG_METRIC_ADD -- Register a Metric
 
 ```iecst
 (* Add metrics with initial values — type is auto-detected *)
-ok := SparkplugMetricAdd('node1', 'Temperature', 72.5);       (* Float *)
-ok := SparkplugMetricAdd('node1', 'MotorRunning', TRUE);      (* Boolean *)
-ok := SparkplugMetricAdd('node1', 'BatchCount', 0);           (* Integer *)
-ok := SparkplugMetricAdd('node1', 'RecipeName', 'Default');   (* String *)
+ok := SPARKPLUG_METRIC_ADD('node1', 'Temperature', 72.5);       (* Float *)
+ok := SPARKPLUG_METRIC_ADD('node1', 'MotorRunning', TRUE);      (* Boolean *)
+ok := SPARKPLUG_METRIC_ADD('node1', 'BatchCount', 0);           (* Integer *)
+ok := SPARKPLUG_METRIC_ADD('node1', 'RecipeName', 'Default');   (* String *)
 ```
 
 | Param | Type | Description |
@@ -182,47 +182,60 @@ ok := SparkplugMetricAdd('node1', 'RecipeName', 'Default');   (* String *)
 | `metricName` | STRING | Metric name (appears in Sparkplug birth certificate and SCADA tag browser) |
 | `value` | ANY | Initial value — type is inferred (BOOL, INT, REAL, STRING) |
 
-Returns `TRUE` on success. Metrics must be added **before** calling `SparkplugNodeBirth` — the birth certificate includes the complete metric catalog.
+Returns `TRUE` on success. Metrics must be added **before** calling `SPARKPLUG_NODE_BIRTH` — the birth certificate includes the complete metric catalog.
 
 > **Metric naming:** Use descriptive, hierarchical names. Ignition displays them as-is in the tag browser. `Line1/Motor/Speed` is better than `N7_0`. Sparkplug metric names support `/` separators — Ignition renders them as a folder tree.
 
-### 3.2 SparkplugMetricSet -- Update a Metric Value
+### 3.2 SPARKPLUG_METRIC_SET -- Update a Metric Value
 
 ```iecst
 (* Update metric — marks it as changed for next NDATA *)
-ok := SparkplugMetricSet('node1', 'Temperature', 73.1);
-ok := SparkplugMetricSet('node1', 'MotorRunning', FALSE);
-ok := SparkplugMetricSet('node1', 'BatchCount', 42);
+ok := SPARKPLUG_METRIC_SET('node1', 'Temperature', 73.1);
+ok := SPARKPLUG_METRIC_SET('node1', 'MotorRunning', FALSE);
+ok := SPARKPLUG_METRIC_SET('node1', 'BatchCount', 42);
 ```
 
 | Param | Type | Description |
 |-------|------|-------------|
 | `name` | STRING | Node instance name |
-| `metricName` | STRING | Metric name (must have been added with `SparkplugMetricAdd`) |
+| `metricName` | STRING | Metric name (must have been added with `SPARKPLUG_METRIC_ADD`) |
 | `value` | ANY | New value |
 
-Returns `TRUE` on success. This **does not** immediately publish — it marks the metric as changed. Call `SparkplugNodeData` to publish all changed metrics in a single NDATA message.
+Returns `TRUE` on success. This **does not** immediately publish — it marks the metric as changed. Call `SPARKPLUG_NODE_DATA` to publish all changed metrics in a single NDATA message.
 
-### 3.3 SparkplugMetricGet -- Read Current Value
+### 3.3 SPARKPLUG_METRIC_GET -- Read Current Value
 
 ```iecst
-temp := SparkplugMetricGet('node1', 'Temperature');
+temp := SPARKPLUG_METRIC_GET('node1', 'Temperature');
 (* Returns: 73.1 *)
 
-running := SparkplugMetricGet('node1', 'MotorRunning');
+running := SPARKPLUG_METRIC_GET('node1', 'MotorRunning');
 (* Returns: TRUE *)
 ```
 
 Returns the current local value of the metric. This reads from GoPLC's in-memory metric store, not from the broker.
 
+#### Type-Specific Getters
+
+For type safety, use the typed variants instead of the generic `SPARKPLUG_METRIC_GET`:
+
+```iecst
+temp := SPARKPLUG_METRIC_GET_REAL('node1', 'Temperature');   (* Returns: 73.1 as REAL *)
+count := SPARKPLUG_METRIC_GET_INT('node1', 'BatchCount');     (* Returns: 42 as INT *)
+running := SPARKPLUG_METRIC_GET_BOOL('node1', 'MotorRunning'); (* Returns: TRUE as BOOL *)
+recipe := SPARKPLUG_METRIC_GET_STR('node1', 'RecipeName');    (* Returns: "Batch-A" as STRING *)
+```
+
+The generic `SPARKPLUG_METRIC_GET` returns ANY and relies on the runtime to infer the type. The typed variants guarantee the return type and return a default value (0.0, 0, FALSE, or empty string) if the metric is not found.
+
 ---
 
 ## 4. Publishing
 
-### 4.1 SparkplugNodeBirth -- Send NBIRTH
+### 4.1 SPARKPLUG_NODE_BIRTH -- Send NBIRTH
 
 ```iecst
-ok := SparkplugNodeBirth('node1');
+ok := SPARKPLUG_NODE_BIRTH('node1');
 ```
 
 Publishes the **Node Birth Certificate** to `spBv1.0/{groupID}/NBIRTH/{edgeNodeID}`. The birth message contains:
@@ -233,42 +246,42 @@ Publishes the **Node Birth Certificate** to `spBv1.0/{groupID}/NBIRTH/{edgeNodeI
 
 The birth certificate is a **retained** message — new subscribers (like Ignition connecting later) receive the full metric catalog immediately.
 
-> **When to send NBIRTH:** Call `SparkplugNodeBirth` once after connecting and adding all metrics. If Ignition sends a rebirth request via NCMD, call it again to republish the full metric catalog.
+> **When to send NBIRTH:** Call `SPARKPLUG_NODE_BIRTH` once after connecting and adding all metrics. If Ignition sends a rebirth request via NCMD, call it again to republish the full metric catalog.
 
-### 4.2 SparkplugNodeDeath -- Send NDEATH
+### 4.2 SPARKPLUG_NODE_DEATH -- Send NDEATH
 
 ```iecst
-ok := SparkplugNodeDeath('node1');
+ok := SPARKPLUG_NODE_DEATH('node1');
 ```
 
 Publishes the **Node Death Certificate** to `spBv1.0/{groupID}/NDEATH/{edgeNodeID}`. This signals an intentional, graceful shutdown. The broker also publishes NDEATH automatically (via LWT) if the connection drops unexpectedly.
 
-> **Graceful vs. ungraceful:** `SparkplugNodeDisconnect` triggers the broker's LWT (NDEATH). `SparkplugNodeDeath` sends it explicitly before disconnecting. Both result in the same NDEATH message reaching consumers — the distinction matters only for timing.
+> **Graceful vs. ungraceful:** `SPARKPLUG_NODE_DISCONNECT` triggers the broker's LWT (NDEATH). `SPARKPLUG_NODE_DEATH` sends it explicitly before disconnecting. Both result in the same NDEATH message reaching consumers — the distinction matters only for timing.
 
-### 4.3 SparkplugNodeData -- Send NDATA (Changed Metrics Only)
+### 4.3 SPARKPLUG_NODE_DATA -- Send NDATA (Changed Metrics Only)
 
 ```iecst
-ok := SparkplugNodeData('node1');
+ok := SPARKPLUG_NODE_DATA('node1');
 ```
 
 Publishes an **NDATA** message containing **only metrics that changed** since the last NDATA or NBIRTH. This is the primary data publishing function — call it on every scan cycle or at your desired publish rate.
 
 ```iecst
 (* Typical scan cycle pattern *)
-SparkplugMetricSet('node1', 'Temperature', current_temp);
-SparkplugMetricSet('node1', 'Pressure', current_pressure);
-SparkplugMetricSet('node1', 'MotorRunning', motor_fb);
+SPARKPLUG_METRIC_SET('node1', 'Temperature', current_temp);
+SPARKPLUG_METRIC_SET('node1', 'Pressure', current_pressure);
+SPARKPLUG_METRIC_SET('node1', 'MotorRunning', motor_fb);
 
 (* Publish only changed values *)
-SparkplugNodeData('node1');
+SPARKPLUG_NODE_DATA('node1');
 ```
 
-If no metrics have changed, `SparkplugNodeData` returns `TRUE` without publishing — no empty messages are sent. The sequence number only increments when a message is actually published.
+If no metrics have changed, `SPARKPLUG_NODE_DATA` returns `TRUE` without publishing — no empty messages are sent. The sequence number only increments when a message is actually published.
 
-### 4.4 SparkplugGetSeq -- Current Sequence Number
+### 4.4 SPARKPLUG_GET_SEQ -- Current Sequence Number
 
 ```iecst
-seq := SparkplugGetSeq('node1');
+seq := SPARKPLUG_GET_SEQ('node1');
 (* Returns: 42 — current sequence number (0-255, wraps) *)
 ```
 
@@ -278,41 +291,41 @@ Returns the current Sparkplug sequence number. Consumers use this to detect miss
 
 ## 5. Commands (NCMD)
 
-### 5.1 SparkplugCmdSubscribe -- Listen for SCADA Commands
+### 5.1 SPARKPLUG_CMD_SUBSCRIBE -- Listen for SCADA Commands
 
 ```iecst
-ok := SparkplugCmdSubscribe('node1');
+ok := SPARKPLUG_CMD_SUBSCRIBE('node1');
 ```
 
 Subscribes to the NCMD topic: `spBv1.0/{groupID}/NCMD/{edgeNodeID}`. SCADA systems (Ignition, etc.) publish NCMD messages to write values back to the edge node — setpoints, mode changes, rebirth requests.
 
-### 5.2 SparkplugCmdHas / CmdGet / CmdClear
+### 5.2 SPARKPLUG_CMD_HAS / CmdGet / CmdClear
 
 ```iecst
 (* Check if a command arrived for a specific metric *)
-IF SparkplugCmdHas('node1', 'Setpoint') THEN
+IF SPARKPLUG_CMD_HAS('node1', 'Setpoint') THEN
     (* Read the commanded value *)
-    new_sp := SparkplugCmdGet('node1', 'Setpoint');
+    new_sp := SPARKPLUG_CMD_GET('node1', 'Setpoint');
     (* Apply it *)
     target_temp := new_sp;
     (* Clear the command flag *)
-    SparkplugCmdClear('node1', 'Setpoint');
+    SPARKPLUG_CMD_CLEAR('node1', 'Setpoint');
 END_IF;
 
 (* Handle rebirth request from Ignition *)
-IF SparkplugCmdHas('node1', 'Node Control/Rebirth') THEN
-    SparkplugCmdClear('node1', 'Node Control/Rebirth');
-    SparkplugNodeBirth('node1');  (* republish full metric catalog *)
+IF SPARKPLUG_CMD_HAS('node1', 'Node Control/Rebirth') THEN
+    SPARKPLUG_CMD_CLEAR('node1', 'Node Control/Rebirth');
+    SPARKPLUG_NODE_BIRTH('node1');  (* republish full metric catalog *)
 END_IF;
 ```
 
 | Function | Params | Returns | Description |
 |----------|--------|---------|-------------|
-| `SparkplugCmdHas` | `(name, metricName)` | BOOL | Check if a command arrived |
-| `SparkplugCmdGet` | `(name, metricName)` | ANY | Read the commanded value |
-| `SparkplugCmdClear` | `(name, metricName)` | BOOL | Clear the command flag |
+| `SPARKPLUG_CMD_HAS` | `(name, metricName)` | BOOL | Check if a command arrived |
+| `SPARKPLUG_CMD_GET` | `(name, metricName)` | ANY | Read the commanded value |
+| `SPARKPLUG_CMD_CLEAR` | `(name, metricName)` | BOOL | Clear the command flag |
 
-> **Ignition rebirth:** When Ignition connects to a broker and finds an existing edge node, it sends a rebirth request via NCMD with metric name `Node Control/Rebirth`. Your ST program must handle this by calling `SparkplugNodeBirth` to republish the full metric catalog.
+> **Ignition rebirth:** When Ignition connects to a broker and finds an existing edge node, it sends a rebirth request via NCMD with metric name `Node Control/Rebirth`. Your ST program must handle this by calling `SPARKPLUG_NODE_BIRTH` to republish the full metric catalog.
 
 ---
 
@@ -339,58 +352,58 @@ END_VAR
 
 CASE state OF
     0: (* Create Sparkplug edge node *)
-        ok := SparkplugNodeCreate('prod', 'Factory/Line1', 'GoPLC-Line1',
+        ok := SPARKPLUG_NODE_CREATE('prod', 'Factory/Line1', 'GoPLC-Line1',
                                    'tcp://10.0.0.144:1883', 'goplc-line1-sp');
         IF ok THEN state := 1; END_IF;
 
     1: (* Connect to broker *)
-        ok := SparkplugNodeConnect('prod');
+        ok := SPARKPLUG_NODE_CONNECT('prod');
         IF ok THEN state := 2; END_IF;
 
     2: (* Register all metrics *)
-        SparkplugMetricAdd('prod', 'Line/Speed', line_speed);
-        SparkplugMetricAdd('prod', 'Line/SpeedSetpoint', speed_setpoint);
-        SparkplugMetricAdd('prod', 'Motor/Temperature', motor_temp);
-        SparkplugMetricAdd('prod', 'Conveyor/Running', conveyor_running);
-        SparkplugMetricAdd('prod', 'Production/BatchCount', batch_count);
-        SparkplugMetricAdd('prod', 'Production/RejectCount', reject_count);
+        SPARKPLUG_METRIC_ADD('prod', 'Line/Speed', line_speed);
+        SPARKPLUG_METRIC_ADD('prod', 'Line/SpeedSetpoint', speed_setpoint);
+        SPARKPLUG_METRIC_ADD('prod', 'Motor/Temperature', motor_temp);
+        SPARKPLUG_METRIC_ADD('prod', 'Conveyor/Running', conveyor_running);
+        SPARKPLUG_METRIC_ADD('prod', 'Production/BatchCount', batch_count);
+        SPARKPLUG_METRIC_ADD('prod', 'Production/RejectCount', reject_count);
         state := 3;
 
     3: (* Publish birth certificate — Ignition auto-discovers all tags *)
-        ok := SparkplugNodeBirth('prod');
+        ok := SPARKPLUG_NODE_BIRTH('prod');
         IF ok THEN state := 4; END_IF;
 
     4: (* Subscribe to commands from Ignition *)
-        ok := SparkplugCmdSubscribe('prod');
+        ok := SPARKPLUG_CMD_SUBSCRIBE('prod');
         IF ok THEN state := 10; END_IF;
 
     10: (* Running — update metrics and publish *)
         (* Update metric values from process *)
-        SparkplugMetricSet('prod', 'Line/Speed', line_speed);
-        SparkplugMetricSet('prod', 'Motor/Temperature', motor_temp);
-        SparkplugMetricSet('prod', 'Conveyor/Running', conveyor_running);
-        SparkplugMetricSet('prod', 'Production/BatchCount', batch_count);
-        SparkplugMetricSet('prod', 'Production/RejectCount', reject_count);
+        SPARKPLUG_METRIC_SET('prod', 'Line/Speed', line_speed);
+        SPARKPLUG_METRIC_SET('prod', 'Motor/Temperature', motor_temp);
+        SPARKPLUG_METRIC_SET('prod', 'Conveyor/Running', conveyor_running);
+        SPARKPLUG_METRIC_SET('prod', 'Production/BatchCount', batch_count);
+        SPARKPLUG_METRIC_SET('prod', 'Production/RejectCount', reject_count);
 
         (* Publish changed metrics every 10 scans (~1 second at 100ms scan) *)
         publish_counter := publish_counter + 1;
         IF publish_counter >= 10 THEN
-            SparkplugNodeData('prod');
+            SPARKPLUG_NODE_DATA('prod');
             publish_counter := 0;
         END_IF;
 
         (* Handle setpoint commands from Ignition *)
-        IF SparkplugCmdHas('prod', 'Line/SpeedSetpoint') THEN
-            new_sp := SparkplugCmdGet('prod', 'Line/SpeedSetpoint');
+        IF SPARKPLUG_CMD_HAS('prod', 'Line/SpeedSetpoint') THEN
+            new_sp := SPARKPLUG_CMD_GET('prod', 'Line/SpeedSetpoint');
             speed_setpoint := new_sp;
-            SparkplugMetricSet('prod', 'Line/SpeedSetpoint', speed_setpoint);
-            SparkplugCmdClear('prod', 'Line/SpeedSetpoint');
+            SPARKPLUG_METRIC_SET('prod', 'Line/SpeedSetpoint', speed_setpoint);
+            SPARKPLUG_CMD_CLEAR('prod', 'Line/SpeedSetpoint');
         END_IF;
 
         (* Handle rebirth request *)
-        IF SparkplugCmdHas('prod', 'Node Control/Rebirth') THEN
-            SparkplugCmdClear('prod', 'Node Control/Rebirth');
-            SparkplugNodeBirth('prod');
+        IF SPARKPLUG_CMD_HAS('prod', 'Node Control/Rebirth') THEN
+            SPARKPLUG_CMD_CLEAR('prod', 'Node Control/Rebirth');
+            SPARKPLUG_NODE_BIRTH('prod');
         END_IF;
 END_CASE;
 END_PROGRAM
@@ -416,7 +429,7 @@ END_PROGRAM
    ...
    ```
 
-4. **Bind Ignition tags** to Vision/Perspective screens. Writes from Ignition flow back as NCMD messages, which GoPLC receives via `SparkplugCmdHas`/`SparkplugCmdGet`.
+4. **Bind Ignition tags** to Vision/Perspective screens. Writes from Ignition flow back as NCMD messages, which GoPLC receives via `SPARKPLUG_CMD_HAS`/`SPARKPLUG_CMD_GET`.
 
 ### Tag Quality and Stale Detection
 
@@ -434,14 +447,14 @@ Ignition tracks tag quality based on Sparkplug lifecycle:
 
 ```iecst
 (* Good — creates folder hierarchy in Ignition tag browser *)
-SparkplugMetricAdd('prod', 'Line1/Motor/Speed', 0.0);
-SparkplugMetricAdd('prod', 'Line1/Motor/Temperature', 0.0);
-SparkplugMetricAdd('prod', 'Line1/Motor/Running', FALSE);
-SparkplugMetricAdd('prod', 'Line1/Conveyor/Speed', 0.0);
+SPARKPLUG_METRIC_ADD('prod', 'Line1/Motor/Speed', 0.0);
+SPARKPLUG_METRIC_ADD('prod', 'Line1/Motor/Temperature', 0.0);
+SPARKPLUG_METRIC_ADD('prod', 'Line1/Motor/Running', FALSE);
+SPARKPLUG_METRIC_ADD('prod', 'Line1/Conveyor/Speed', 0.0);
 
 (* Bad — flat namespace, hard to navigate in Ignition *)
-SparkplugMetricAdd('prod', 'line1_motor_speed', 0.0);
-SparkplugMetricAdd('prod', 'line1_motor_temp', 0.0);
+SPARKPLUG_METRIC_ADD('prod', 'line1_motor_speed', 0.0);
+SPARKPLUG_METRIC_ADD('prod', 'line1_motor_temp', 0.0);
 ```
 
 ---
@@ -451,20 +464,20 @@ SparkplugMetricAdd('prod', 'line1_motor_temp', 0.0);
 ### Startup Sequence
 
 ```
-1. SparkplugNodeCreate()     → Create node (no network)
-2. SparkplugMetricAdd() ×N   → Register all metrics
-3. SparkplugNodeConnect()    → MQTT CONNECT (registers NDEATH as LWT)
-4. SparkplugNodeBirth()      → Publish NBIRTH (retained, seq=0)
-5. SparkplugCmdSubscribe()   → Subscribe to NCMD
-6. SparkplugNodeData() loop  → Publish NDATA (changed metrics, seq++)
+1. SPARKPLUG_NODE_CREATE()     → Create node (no network)
+2. SPARKPLUG_METRIC_ADD() ×N   → Register all metrics
+3. SPARKPLUG_NODE_CONNECT()    → MQTT CONNECT (registers NDEATH as LWT)
+4. SPARKPLUG_NODE_BIRTH()      → Publish NBIRTH (retained, seq=0)
+5. SPARKPLUG_CMD_SUBSCRIBE()   → Subscribe to NCMD
+6. SPARKPLUG_NODE_DATA() loop  → Publish NDATA (changed metrics, seq++)
 ```
 
 ### Shutdown Sequence
 
 ```
-1. SparkplugNodeDeath()      → Publish NDEATH explicitly
-2. SparkplugNodeDisconnect() → MQTT DISCONNECT (broker clears LWT)
-3. SparkplugNodeDelete()     → Free resources
+1. SPARKPLUG_NODE_DEATH()      → Publish NDEATH explicitly
+2. SPARKPLUG_NODE_DISCONNECT() → MQTT DISCONNECT (broker clears LWT)
+3. SPARKPLUG_NODE_DELETE()     → Free resources
 ```
 
 ### Ungraceful Disconnect
@@ -507,12 +520,12 @@ GoPLC handles all Protobuf encoding/decoding automatically. You work with native
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| Ignition shows no tags | NBIRTH not published | Ensure `SparkplugNodeBirth` is called after all metrics are added |
+| Ignition shows no tags | NBIRTH not published | Ensure `SPARKPLUG_NODE_BIRTH` is called after all metrics are added |
 | Tags show Bad quality | NDEATH received | Check GoPLC connection to broker; verify keepalive |
-| Stale data in Ignition | NDATA not publishing | Verify `SparkplugNodeData` is called periodically |
+| Stale data in Ignition | NDATA not publishing | Verify `SPARKPLUG_NODE_DATA` is called periodically |
 | Ignition requests rebirth repeatedly | Sequence gap | Ensure no duplicate client IDs; check for network drops |
-| Commands not arriving | NCMD not subscribed | Call `SparkplugCmdSubscribe` after connecting |
-| Metrics missing from birth | Added after NBIRTH | Add all metrics before calling `SparkplugNodeBirth` |
+| Commands not arriving | NCMD not subscribed | Call `SPARKPLUG_CMD_SUBSCRIBE` after connecting |
+| Metrics missing from birth | Added after NBIRTH | Add all metrics before calling `SPARKPLUG_NODE_BIRTH` |
 | Broker rejects connection | Duplicate client ID | Use unique `clientID` per GoPLC instance |
 | TLS handshake failure | Certificate mismatch | Verify broker CA cert and hostname match `ssl://` URL |
 
@@ -522,27 +535,36 @@ GoPLC handles all Protobuf encoding/decoding automatically. You work with native
 
 | Function | Params | Returns | Description |
 |----------|--------|---------|-------------|
-| `SparkplugNodeCreate` | `(name, groupID, edgeNodeID, brokerURL, clientID [, username, password])` | BOOL | Create edge node |
-| `SparkplugNodeConnect` | `(name)` | BOOL | Connect to broker (registers NDEATH as LWT) |
-| `SparkplugNodeDisconnect` | `(name)` | BOOL | Disconnect from broker |
-| `SparkplugNodeIsConnected` | `(name)` | BOOL | Check connection state |
-| `SparkplugNodeDelete` | `(name)` | BOOL | Remove node and free resources |
-| `SparkplugMetricAdd` | `(name, metricName, value)` | BOOL | Register metric with initial value |
-| `SparkplugMetricSet` | `(name, metricName, value)` | BOOL | Update metric (marks changed) |
-| `SparkplugMetricGet` | `(name, metricName)` | ANY | Read current local value |
-| `SparkplugNodeBirth` | `(name)` | BOOL | Publish NBIRTH (full metric catalog) |
-| `SparkplugNodeDeath` | `(name)` | BOOL | Publish NDEATH (explicit shutdown) |
-| `SparkplugNodeData` | `(name)` | BOOL | Publish NDATA (changed metrics only) |
-| `SparkplugCmdSubscribe` | `(name)` | BOOL | Subscribe to NCMD topic |
-| `SparkplugCmdHas` | `(name, metricName)` | BOOL | Check if command arrived |
-| `SparkplugCmdGet` | `(name, metricName)` | ANY | Read commanded value |
-| `SparkplugCmdClear` | `(name, metricName)` | BOOL | Clear command flag |
-| `SparkplugGetSeq` | `(name)` | INT | Current sequence number (0-255) |
-| `SparkplugNodeList` | `()` | []STRING | List all Sparkplug nodes |
+| `SPARKPLUG_NODE_CREATE` | `(name, groupID, edgeNodeID, brokerURL, clientID)` | BOOL | Create edge node |
+| `SPARKPLUG_NODE_CREATE_AUTH` | `(name, groupID, edgeNodeID, brokerURL, clientID, username, password)` | BOOL | Create edge node with auth |
+| `SPARKPLUG_NODE_CONNECT` | `(name)` | BOOL | Connect to broker (registers NDEATH as LWT) |
+| `SPARKPLUG_NODE_DISCONNECT` | `(name)` | BOOL | Disconnect from broker |
+| `SPARKPLUG_NODE_IS_CONNECTED` | `(name)` | BOOL | Check connection state |
+| `SPARKPLUG_NODE_DELETE` | `(name)` | BOOL | Remove node and free resources |
+| `SPARKPLUG_METRIC_ADD` | `(name, metricName, value)` | BOOL | Register metric with initial value |
+| `SPARKPLUG_METRIC_SET` | `(name, metricName, value)` | BOOL | Update metric (marks changed) |
+| `SPARKPLUG_METRIC_GET` | `(name, metricName)` | ANY | Read current local value |
+| `SPARKPLUG_METRIC_GET_REAL` | `(name, metricName)` | REAL | Read metric as REAL |
+| `SPARKPLUG_METRIC_GET_INT` | `(name, metricName)` | INT | Read metric as INT |
+| `SPARKPLUG_METRIC_GET_BOOL` | `(name, metricName)` | BOOL | Read metric as BOOL |
+| `SPARKPLUG_METRIC_GET_STR` | `(name, metricName)` | STRING | Read metric as STRING |
+| `SPARKPLUG_NODE_BIRTH` | `(name)` | BOOL | Publish NBIRTH (full metric catalog) |
+| `SPARKPLUG_NODE_DEATH` | `(name)` | BOOL | Publish NDEATH (explicit shutdown) |
+| `SPARKPLUG_NODE_DATA` | `(name)` | BOOL | Publish NDATA (changed metrics only) |
+| `SPARKPLUG_CMD_SUBSCRIBE` | `(name)` | BOOL | Subscribe to NCMD topic |
+| `SPARKPLUG_CMD_HAS` | `(name, metricName)` | BOOL | Check if command arrived |
+| `SPARKPLUG_CMD_GET` | `(name, metricName)` | ANY | Read commanded value |
+| `SPARKPLUG_CMD_GET_REAL` | `(name, metricName)` | REAL | Read command as REAL |
+| `SPARKPLUG_CMD_GET_INT` | `(name, metricName)` | INT | Read command as INT |
+| `SPARKPLUG_CMD_GET_BOOL` | `(name, metricName)` | BOOL | Read command as BOOL |
+| `SPARKPLUG_CMD_GET_STR` | `(name, metricName)` | STRING | Read command as STRING |
+| `SPARKPLUG_CMD_CLEAR` | `(name, metricName)` | BOOL | Clear command flag |
+| `SPARKPLUG_GET_SEQ` | `(name)` | INT | Current sequence number (0-255) |
+| `SPARKPLUG_NODE_LIST` | `()` | STRING | Comma-separated node names |
 
 ---
 
-*GoPLC v1.0.520 | Sparkplug B v3.0 | Eclipse Tahu Protobuf + MQTT 3.1.1*
+*GoPLC v1.0.533 | Sparkplug B v3.0 | Eclipse Tahu Protobuf + MQTT 3.1.1*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
 *[Back to White Papers](https://jmbtechnical.com/whitepapers/)*

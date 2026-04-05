@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -1035,7 +1035,7 @@ RIGHT:  'ns=2;s=Temperature'                     (* string uses 's=' *)
 
 ---
 
-*GoPLC v1.0.520 | OPC UA Client (20 functions) + Server (16 functions)*
+*GoPLC v1.0.533 | OPC UA Client (20 functions) + Server (16 functions)*
 *Security: None, Basic256Sha256 (Sign, SignAndEncrypt)*
 
 *(c) 2026 JMB Technical Services LLC. All rights reserved.*

@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -12,7 +12,7 @@ GoPLC implements an Omron FINS (Factory Interface Network Service) **client** �
 
 | Role | Functions | Use Case |
 |------|-----------|----------|
-| **Client** | `FINSClientCreate` / `FINSClientRead*` / `FINSClientWrite*` / `FINSClientAdd*Poll` | Read/write memory areas on Omron CJ, NJ, NX series PLCs |
+| **Client** | `FINS_CLIENT_CREATE` / `FINS_CLIENT_READ_*` / `FINS_CLIENT_WRITE_*` / `FINS_CLIENT_ADD_*_POLL` | Read/write memory areas on Omron CJ, NJ, NX series PLCs |
 
 This is a client-only protocol in GoPLC. The FINS client connects to Omron PLCs over UDP (default port 9600) using the FINS/UDP transport, reading and writing the PLC's Data Memory (DM), Core I/O (CIO), and other memory areas.
 
@@ -25,13 +25,13 @@ This is a client-only protocol in GoPLC. The FINS client connects to Omron PLCs 
 │  ┌────────────────────────────────────────────────────────┐  │
 │  │ ST Program (IEC 61131-3 Structured Text)               │  │
 │  │                                                        │  │
-│  │ FINSClientCreate('omron1', '10.0.0.34', 9600,          │  │
+│  │ FINS_CLIENT_CREATE('omron1', '10.0.0.34', 9600,          │  │
 │  │                   0, 10, 100);                         │  │
-│  │ FINSClientConnect('omron1');                            │  │
-│  │ FINSClientAddDMPoll('omron1', 0, 100);                 │  │
+│  │ FINS_CLIENT_CONNECT('omron1');                            │  │
+│  │ FINS_CLIENT_ADD_DM_POLL('omron1', 0, 100);                 │  │
 │  │                                                        │  │
-│  │ dm_vals := FINSClientReadDM('omron1', 0, 10);          │  │
-│  │ FINSClientWriteDMWord('omron1', 100, 1234);            │  │
+│  │ dm_vals := FINS_CLIENT_READ_DM('omron1', 0, 10);          │  │
+│  │ FINS_CLIENT_WRITE_DM_WORD('omron1', 100, 1234);            │  │
 │  └──────────────────────────┬─────────────────────────────┘  │
 │                             │                                │
 │                             │  FINS/UDP                      │
@@ -85,10 +85,10 @@ The FINS client connects to an Omron PLC over UDP and performs read/write operat
 
 ### 2.1 Connection Management
 
-#### FINSClientCreate — Create Named Connection
+#### FINS_CLIENT_CREATE — Create Named Connection
 
 ```iecst
-FINSClientCreate(name: STRING, host: STRING [, port: INT] [, destNode: INT]
+FINS_CLIENT_CREATE(name: STRING, host: STRING [, port: INT] [, destNode: INT]
                  [, srcNode: INT] [, pollRateMs: INT]) : BOOL
 ```
 
@@ -105,32 +105,32 @@ Returns: `BOOL` — TRUE if the client was created successfully.
 
 ```iecst
 (* Minimal — auto-negotiate nodes, default port and poll rate *)
-ok := FINSClientCreate('omron1', '10.0.0.34');
+ok := FINS_CLIENT_CREATE('omron1', '10.0.0.34');
 
 (* Explicit node addressing — recommended for production *)
-ok := FINSClientCreate('omron1', '10.0.0.34', 9600, 34, 196);
+ok := FINS_CLIENT_CREATE('omron1', '10.0.0.34', 9600, 34, 196);
 
 (* Explicit everything — 50ms poll rate for fast I/O *)
-ok := FINSClientCreate('omron1', '10.0.0.34', 9600, 34, 196, 50);
+ok := FINS_CLIENT_CREATE('omron1', '10.0.0.34', 9600, 34, 196, 50);
 ```
 
 > **Named connections:** Every FINS client connection has a unique string name. This name is used in all subsequent calls. You can create as many connections as you need — one per PLC is the typical pattern.
 
-#### FINSClientConnect — Open UDP Connection
+#### FINS_CLIENT_CONNECT — Open UDP Connection
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `name` | STRING | Connection name from FINSClientCreate |
+| `name` | STRING | Connection name from FINS_CLIENT_CREATE |
 
 Returns: `BOOL` — TRUE if connected successfully.
 
 ```iecst
-ok := FINSClientConnect('omron1');
+ok := FINS_CLIENT_CONNECT('omron1');
 ```
 
 > **UDP connection:** Unlike TCP-based protocols, FINS uses UDP. "Connecting" establishes the local socket, performs FINS node address negotiation (if nodes are set to 0), and starts the background poll loop if any poll items have been registered.
 
-#### FINSClientDisconnect — Close Connection
+#### FINS_CLIENT_DISCONNECT — Close Connection
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -139,10 +139,10 @@ ok := FINSClientConnect('omron1');
 Returns: `BOOL` — TRUE if disconnected successfully.
 
 ```iecst
-ok := FINSClientDisconnect('omron1');
+ok := FINS_CLIENT_DISCONNECT('omron1');
 ```
 
-#### FINSClientIsConnected — Check Connection State
+#### FINS_CLIENT_IS_CONNECTED — Check Connection State
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -151,12 +151,12 @@ ok := FINSClientDisconnect('omron1');
 Returns: `BOOL` — TRUE if the connection is active.
 
 ```iecst
-IF NOT FINSClientIsConnected('omron1') THEN
-    FINSClientConnect('omron1');
+IF NOT FINS_CLIENT_IS_CONNECTED('omron1') THEN
+    FINS_CLIENT_CONNECT('omron1');
 END_IF;
 ```
 
-#### FINSClientDelete — Remove Client
+#### FINS_CLIENT_DELETE — Remove Client
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -167,15 +167,15 @@ Returns: `BOOL` — TRUE if the client was removed.
 Disconnects (if connected) and removes the client instance, including all poll items.
 
 ```iecst
-ok := FINSClientDelete('omron1');
+ok := FINS_CLIENT_DELETE('omron1');
 ```
 
-#### FINSClientList — List All Clients
+#### FINS_CLIENT_LIST — List All Clients
 
 Returns: `[]STRING` — Array of client instance names.
 
 ```iecst
-clients := FINSClientList();
+clients := FINS_CLIENT_LIST();
 (* Returns: ['omron1', 'omron2'] *)
 ```
 
@@ -190,24 +190,24 @@ END_VAR
 
 CASE state OF
     0: (* Create connection with explicit node addresses *)
-        ok := FINSClientCreate('omron1', '10.0.0.34', 9600, 34, 196, 100);
+        ok := FINS_CLIENT_CREATE('omron1', '10.0.0.34', 9600, 34, 196, 100);
         IF ok THEN
             state := 1;
         END_IF;
 
     1: (* Register poll items before connecting *)
-        FINSClientAddDMPoll('omron1', 0, 100);     (* D0-D99 *)
-        FINSClientAddCIOPoll('omron1', 0, 32);     (* CIO 0-31 *)
+        FINS_CLIENT_ADD_DM_POLL('omron1', 0, 100);     (* D0-D99 *)
+        FINS_CLIENT_ADD_CIO_POLL('omron1', 0, 32);     (* CIO 0-31 *)
         state := 2;
 
     2: (* Connect — starts polling *)
-        ok := FINSClientConnect('omron1');
+        ok := FINS_CLIENT_CONNECT('omron1');
         IF ok THEN
             state := 10;
         END_IF;
 
     10: (* Running — read/write in other programs *)
-        IF NOT FINSClientIsConnected('omron1') THEN
+        IF NOT FINS_CLIENT_IS_CONNECTED('omron1') THEN
             state := 2;  (* Reconnect *)
         END_IF;
 END_CASE;
@@ -218,7 +218,7 @@ END_PROGRAM
 
 ### 2.2 Reading Memory Areas
 
-#### FINSClientReadDM — Read Data Memory (Multiple Words)
+#### FINS_CLIENT_READ_DM — Read Data Memory (Multiple Words)
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -230,14 +230,14 @@ Returns: `[]INT` — Array of 16-bit word values.
 
 ```iecst
 (* Read 10 words starting at D0 *)
-dm_vals := FINSClientReadDM('omron1', 0, 10);
+dm_vals := FINS_CLIENT_READ_DM('omron1', 0, 10);
 (* dm_vals[0] = D0, dm_vals[1] = D1, ..., dm_vals[9] = D9 *)
 
 (* Read recipe parameters at D1000-D1019 *)
-recipe := FINSClientReadDM('omron1', 1000, 20);
+recipe := FINS_CLIENT_READ_DM('omron1', 1000, 20);
 ```
 
-#### FINSClientReadDMWord — Read Single DM Word
+#### FINS_CLIENT_READ_DM_WORD — Read Single DM Word
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -248,12 +248,12 @@ Returns: `INT` — Single 16-bit word value.
 
 ```iecst
 (* Read setpoint from D100 *)
-setpoint := FINSClientReadDMWord('omron1', 100);
+setpoint := FINS_CLIENT_READ_DM_WORD('omron1', 100);
 ```
 
-> **When to use which:** Use `FINSClientReadDMWord` for reading a single register (e.g., a setpoint or status word). Use `FINSClientReadDM` when you need a contiguous block (e.g., recipe data, array values). Reading a block in one call is significantly more efficient than reading words individually in a loop.
+> **When to use which:** Use `FINS_CLIENT_READ_DM_WORD` for reading a single register (e.g., a setpoint or status word). Use `FINS_CLIENT_READ_DM` when you need a contiguous block (e.g., recipe data, array values). Reading a block in one call is significantly more efficient than reading words individually in a loop.
 
-#### FINSClientReadCIO — Read Core I/O Area (Multiple Words)
+#### FINS_CLIENT_READ_CIO — Read Core I/O Area (Multiple Words)
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -265,13 +265,13 @@ Returns: `[]INT` — Array of 16-bit word values.
 
 ```iecst
 (* Read 16 words of I/O image starting at CIO 0 *)
-io_image := FINSClientReadCIO('omron1', 0, 16);
+io_image := FINS_CLIENT_READ_CIO('omron1', 0, 16);
 
 (* Check bit 3 of CIO word 0 — physical input terminal 0.03 *)
 input_03 := (io_image[0] AND 16#0008) <> 0;
 ```
 
-#### FINSClientReadCIOWord — Read Single CIO Word
+#### FINS_CLIENT_READ_CIO_WORD — Read Single CIO Word
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -282,7 +282,7 @@ Returns: `INT` — Single 16-bit word value.
 
 ```iecst
 (* Read CIO word 100 — internal relay area *)
-relay_word := FINSClientReadCIOWord('omron1', 100);
+relay_word := FINS_CLIENT_READ_CIO_WORD('omron1', 100);
 ```
 
 #### Example: Reading Mixed Areas
@@ -298,17 +298,17 @@ VAR
     i : INT;
 END_VAR
 
-IF FINSClientIsConnected('omron1') THEN
+IF FINS_CLIENT_IS_CONNECTED('omron1') THEN
     (* Read individual values *)
-    setpoint := FINSClientReadDMWord('omron1', 100);
-    actual_temp := FINSClientReadDMWord('omron1', 101);
+    setpoint := FINS_CLIENT_READ_DM_WORD('omron1', 100);
+    actual_temp := FINS_CLIENT_READ_DM_WORD('omron1', 101);
 
     (* Read I/O status word *)
-    io_status := FINSClientReadCIOWord('omron1', 0);
+    io_status := FINS_CLIENT_READ_CIO_WORD('omron1', 0);
     input_bit_5 := (io_status AND 16#0020) <> 0;
 
     (* Read a block of DM registers *)
-    dm_block := FINSClientReadDM('omron1', 200, 10);
+    dm_block := FINS_CLIENT_READ_DM('omron1', 200, 10);
 END_IF;
 END_PROGRAM
 ```
@@ -317,7 +317,7 @@ END_PROGRAM
 
 ### 2.3 Writing Memory Areas
 
-#### FINSClientWriteDM — Write Data Memory (Multiple Words)
+#### FINS_CLIENT_WRITE_DM — Write Data Memory (Multiple Words)
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -329,13 +329,13 @@ Returns: `BOOL` — TRUE if the write was acknowledged by the PLC.
 
 ```iecst
 (* Write 5 recipe values starting at D500 *)
-ok := FINSClientWriteDM('omron1', 500, [1000, 2000, 500, 100, 50]);
+ok := FINS_CLIENT_WRITE_DM('omron1', 500, [1000, 2000, 500, 100, 50]);
 
 (* Zero out a range *)
-ok := FINSClientWriteDM('omron1', 600, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+ok := FINS_CLIENT_WRITE_DM('omron1', 600, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 ```
 
-#### FINSClientWriteDMWord — Write Single DM Word
+#### FINS_CLIENT_WRITE_DM_WORD — Write Single DM Word
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -347,10 +347,10 @@ Returns: `BOOL` — TRUE if the write was acknowledged by the PLC.
 
 ```iecst
 (* Write setpoint to D100 *)
-ok := FINSClientWriteDMWord('omron1', 100, 1500);
+ok := FINS_CLIENT_WRITE_DM_WORD('omron1', 100, 1500);
 
 (* Set command word *)
-ok := FINSClientWriteDMWord('omron1', 200, 16#0001);
+ok := FINS_CLIENT_WRITE_DM_WORD('omron1', 200, 16#0001);
 ```
 
 #### Example: Read-Modify-Write Pattern
@@ -364,16 +364,16 @@ VAR
     new_setpoint : INT := 2500;
 END_VAR
 
-IF FINSClientIsConnected('omron1') THEN
+IF FINS_CLIENT_IS_CONNECTED('omron1') THEN
     CASE state OF
         0: (* Write a new setpoint to the PLC *)
-            ok := FINSClientWriteDMWord('omron1', 100, new_setpoint);
+            ok := FINS_CLIENT_WRITE_DM_WORD('omron1', 100, new_setpoint);
             IF ok THEN
                 state := 1;
             END_IF;
 
         1: (* Verify the write by reading back *)
-            current_val := FINSClientReadDMWord('omron1', 100);
+            current_val := FINS_CLIENT_READ_DM_WORD('omron1', 100);
             IF current_val = new_setpoint THEN
                 state := 10;  (* Success *)
             ELSE
@@ -391,7 +391,7 @@ END_PROGRAM
 
 ### 2.4 Background Polling
 
-The FINS client supports automatic background polling of memory ranges. Registered poll items are read at the configured `pollRateMs` interval, keeping a local cache current. On-demand `FINSClientReadDM` / `FINSClientReadCIO` calls return cached values when the requested range falls within a polled region, avoiding redundant network traffic.
+The FINS client supports automatic background polling of memory ranges. Registered poll items are read at the configured `pollRateMs` interval, keeping a local cache current. On-demand `FINS_CLIENT_READ_DM` / `FINS_CLIENT_READ_CIO` calls return cached values when the requested range falls within a polled region, avoiding redundant network traffic.
 
 ```
 Poll cycle (every pollRateMs):
@@ -407,7 +407,7 @@ Poll cycle (every pollRateMs):
   ST code reads latest values (from cache, zero-latency)
 ```
 
-#### FINSClientAddPollItem — Add Generic Poll Item
+#### FINS_CLIENT_ADD_POLL_ITEM — Add Generic Poll Item
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -420,13 +420,13 @@ Returns: `BOOL` — TRUE if the poll item was registered.
 
 ```iecst
 (* Poll D0-D99 every cycle *)
-ok := FINSClientAddPollItem('omron1', 'DM', 0, 100);
+ok := FINS_CLIENT_ADD_POLL_ITEM('omron1', 'DM', 0, 100);
 
 (* Poll CIO 0-31 every cycle *)
-ok := FINSClientAddPollItem('omron1', 'CIO', 0, 32);
+ok := FINS_CLIENT_ADD_POLL_ITEM('omron1', 'CIO', 0, 32);
 ```
 
-#### FINSClientAddDMPoll — Convenience DM Poll
+#### FINS_CLIENT_ADD_DM_POLL — Convenience DM Poll
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -436,17 +436,17 @@ ok := FINSClientAddPollItem('omron1', 'CIO', 0, 32);
 
 Returns: `BOOL` — TRUE if the poll item was registered.
 
-Equivalent to `FINSClientAddPollItem(name, 'DM', address, count)`.
+Equivalent to `FINS_CLIENT_ADD_POLL_ITEM(name, 'DM', address, count)`.
 
 ```iecst
 (* Poll D0-D99 *)
-ok := FINSClientAddDMPoll('omron1', 0, 100);
+ok := FINS_CLIENT_ADD_DM_POLL('omron1', 0, 100);
 
 (* Poll recipe area D1000-D1099 *)
-ok := FINSClientAddDMPoll('omron1', 1000, 100);
+ok := FINS_CLIENT_ADD_DM_POLL('omron1', 1000, 100);
 ```
 
-#### FINSClientAddCIOPoll — Convenience CIO Poll
+#### FINS_CLIENT_ADD_CIO_POLL — Convenience CIO Poll
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -456,14 +456,14 @@ ok := FINSClientAddDMPoll('omron1', 1000, 100);
 
 Returns: `BOOL` — TRUE if the poll item was registered.
 
-Equivalent to `FINSClientAddPollItem(name, 'CIO', address, count)`.
+Equivalent to `FINS_CLIENT_ADD_POLL_ITEM(name, 'CIO', address, count)`.
 
 ```iecst
 (* Poll CIO 0-31 — physical I/O image *)
-ok := FINSClientAddCIOPoll('omron1', 0, 32);
+ok := FINS_CLIENT_ADD_CIO_POLL('omron1', 0, 32);
 ```
 
-> **Register poll items before connecting.** Add all your poll items after `FINSClientCreate` but before `FINSClientConnect`. The poll loop starts when the connection is established. You can add poll items after connecting, but they take effect on the next poll cycle.
+> **Register poll items before connecting.** Add all your poll items after `FINS_CLIENT_CREATE` but before `FINS_CLIENT_CONNECT`. The poll loop starts when the connection is established. You can add poll items after connecting, but they take effect on the next poll cycle.
 
 > **Max payload:** A single FINS Memory Area Read response can carry up to 999 words (1998 bytes). If your poll count exceeds 999, GoPLC splits it into multiple FINS requests automatically. For best performance, keep individual poll ranges under 999 words.
 
@@ -482,28 +482,28 @@ END_VAR
 
 CASE state OF
     0: (* Create and configure *)
-        ok := FINSClientCreate('omron1', '10.0.0.34', 9600, 34, 196, 100);
+        ok := FINS_CLIENT_CREATE('omron1', '10.0.0.34', 9600, 34, 196, 100);
         IF ok THEN
             (* Register poll ranges *)
-            FINSClientAddDMPoll('omron1', 0, 200);     (* D0-D199 polled *)
-            FINSClientAddCIOPoll('omron1', 0, 32);     (* CIO 0-31 polled *)
+            FINS_CLIENT_ADD_DM_POLL('omron1', 0, 200);     (* D0-D199 polled *)
+            FINS_CLIENT_ADD_CIO_POLL('omron1', 0, 32);     (* CIO 0-31 polled *)
             state := 1;
         END_IF;
 
     1: (* Connect — polling starts *)
-        ok := FINSClientConnect('omron1');
+        ok := FINS_CLIENT_CONNECT('omron1');
         IF ok THEN
             state := 10;
         END_IF;
 
     10: (* Normal operation — reads come from cache *)
-        IF FINSClientIsConnected('omron1') THEN
+        IF FINS_CLIENT_IS_CONNECTED('omron1') THEN
             (* These reads are served from the poll cache *)
-            dm_block := FINSClientReadDM('omron1', 0, 10);
-            setpoint := FINSClientReadDMWord('omron1', 100);
+            dm_block := FINS_CLIENT_READ_DM('omron1', 0, 10);
+            setpoint := FINS_CLIENT_READ_DM_WORD('omron1', 100);
 
             (* CIO reads also from cache *)
-            io_word := FINSClientReadCIOWord('omron1', 0);
+            io_word := FINS_CLIENT_READ_CIO_WORD('omron1', 0);
             motor_running := (io_word AND 16#0001) <> 0;
         ELSE
             state := 1;  (* Reconnect *)
@@ -571,7 +571,7 @@ FINS/UDP uses port **9600** by default. GoPLC sends FINS commands as UDP datagra
 | SA2 | 1 byte | Source Unit Address (0x00) |
 | SID | 1 byte | Service ID (sequence number, 0x00-0xFF) |
 
-You never build FINS frames manually — `FINSClientReadDM`, `FINSClientWriteDM`, and the other functions handle all framing, sequencing, and error checking.
+You never build FINS frames manually — `FINS_CLIENT_READ_DM`, `FINS_CLIENT_WRITE_DM`, and the other functions handle all framing, sequencing, and error checking.
 
 ### 4.2 FINS Commands Used
 
@@ -592,7 +592,7 @@ FINS responses include a 2-byte end code. GoPLC interprets these and surfaces th
 | 0x0204 | Address out of range | Check DM/CIO address bounds |
 | 0x0401 | Aborted due to unit error | PLC CPU error — check PLC status |
 
-Read functions return zero values on error. Write functions return FALSE. Check `FINSClientIsConnected` to distinguish between a communication failure and a PLC-side error.
+Read functions return zero values on error. Write functions return FALSE. Check `FINS_CLIENT_IS_CONNECTED` to distinguish between a communication failure and a PLC-side error.
 
 ### 4.4 Timing
 
@@ -627,21 +627,21 @@ END_VAR
 
 CASE state OF
     0: (* Initialize *)
-        ok := FINSClientCreate('cj2m', '10.0.0.34', 9600, 34, 196, 100);
+        ok := FINS_CLIENT_CREATE('cj2m', '10.0.0.34', 9600, 34, 196, 100);
         IF ok THEN
-            FINSClientAddDMPoll('cj2m', 100, 4);  (* D100-D103 *)
+            FINS_CLIENT_ADD_DM_POLL('cj2m', 100, 4);  (* D100-D103 *)
             state := 1;
         END_IF;
 
     1: (* Connect *)
-        ok := FINSClientConnect('cj2m');
+        ok := FINS_CLIENT_CONNECT('cj2m');
         IF ok THEN
             state := 10;
         END_IF;
 
     10: (* Running *)
-        IF FINSClientIsConnected('cj2m') THEN
-            temps := FINSClientReadDM('cj2m', 100, 4);
+        IF FINS_CLIENT_IS_CONNECTED('cj2m') THEN
+            temps := FINS_CLIENT_READ_DM('cj2m', 100, 4);
 
             (* Scale from 0.1 degC to degC *)
             zone1_degC := INT_TO_REAL(temps[0]) / 10.0;
@@ -679,23 +679,23 @@ END_VAR
 
 CASE state OF
     0: (* Initialize *)
-        ok := FINSClientCreate('line1', '10.0.0.34', 9600, 34, 196, 50);
+        ok := FINS_CLIENT_CREATE('line1', '10.0.0.34', 9600, 34, 196, 50);
         IF ok THEN
-            FINSClientAddCIOPoll('line1', 0, 4);   (* CIO 0-3: input terminals *)
-            FINSClientAddDMPoll('line1', 200, 10);  (* D200-D209: status area *)
+            FINS_CLIENT_ADD_CIO_POLL('line1', 0, 4);   (* CIO 0-3: input terminals *)
+            FINS_CLIENT_ADD_DM_POLL('line1', 200, 10);  (* D200-D209: status area *)
             state := 1;
         END_IF;
 
     1: (* Connect *)
-        ok := FINSClientConnect('line1');
+        ok := FINS_CLIENT_CONNECT('line1');
         IF ok THEN
             state := 10;
         END_IF;
 
     10: (* Running *)
-        IF FINSClientIsConnected('line1') THEN
+        IF FINS_CLIENT_IS_CONNECTED('line1') THEN
             (* Read physical inputs from CIO *)
-            io_word := FINSClientReadCIOWord('line1', 0);
+            io_word := FINS_CLIENT_READ_CIO_WORD('line1', 0);
             start_button := (io_word AND 16#0001) <> 0;   (* CIO 0.00 *)
             stop_button := (io_word AND 16#0002) <> 0;    (* CIO 0.01 *)
             motor_feedback := (io_word AND 16#0004) <> 0;  (* CIO 0.02 *)
@@ -708,7 +708,7 @@ CASE state OF
             END_IF;
 
             (* Write command to PLC *)
-            FINSClientWriteDMWord('line1', 300, cmd_run);
+            FINS_CLIENT_WRITE_DM_WORD('line1', 300, cmd_run);
         ELSE
             state := 1;
         END_IF;
@@ -732,29 +732,29 @@ END_VAR
 
 CASE state OF
     0: (* Create connections to three PLCs *)
-        ok := FINSClientCreate('mixer', '10.0.0.34', 9600, 34, 196, 100);
-        ok := FINSClientCreate('conveyor', '10.0.0.35', 9600, 35, 196, 100);
-        ok := FINSClientCreate('filler', '10.0.0.36', 9600, 36, 196, 100);
+        ok := FINS_CLIENT_CREATE('mixer', '10.0.0.34', 9600, 34, 196, 100);
+        ok := FINS_CLIENT_CREATE('conveyor', '10.0.0.35', 9600, 35, 196, 100);
+        ok := FINS_CLIENT_CREATE('filler', '10.0.0.36', 9600, 36, 196, 100);
 
         (* Register polls *)
-        FINSClientAddDMPoll('mixer', 0, 50);
-        FINSClientAddDMPoll('conveyor', 0, 50);
-        FINSClientAddDMPoll('filler', 0, 50);
+        FINS_CLIENT_ADD_DM_POLL('mixer', 0, 50);
+        FINS_CLIENT_ADD_DM_POLL('conveyor', 0, 50);
+        FINS_CLIENT_ADD_DM_POLL('filler', 0, 50);
         state := 1;
 
     1: (* Connect all *)
-        FINSClientConnect('mixer');
-        FINSClientConnect('conveyor');
-        FINSClientConnect('filler');
+        FINS_CLIENT_CONNECT('mixer');
+        FINS_CLIENT_CONNECT('conveyor');
+        FINS_CLIENT_CONNECT('filler');
         state := 10;
 
     10: (* Running — read from each PLC *)
-        mixer_speed := FINSClientReadDMWord('mixer', 10);
-        conveyor_status := FINSClientReadDMWord('conveyor', 20);
-        fill_level := FINSClientReadDMWord('filler', 30);
+        mixer_speed := FINS_CLIENT_READ_DM_WORD('mixer', 10);
+        conveyor_status := FINS_CLIENT_READ_DM_WORD('conveyor', 20);
+        fill_level := FINS_CLIENT_READ_DM_WORD('filler', 30);
 
         (* Cross-PLC coordination: send mixer speed to filler *)
-        FINSClientWriteDMWord('filler', 100, mixer_speed);
+        FINS_CLIENT_WRITE_DM_WORD('filler', 100, mixer_speed);
 END_CASE;
 END_PROGRAM
 ```
@@ -784,25 +784,80 @@ END_PROGRAM
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `FINSClientCreate(name, host [, port] [, destNode] [, srcNode] [, pollRateMs])` | BOOL | Create named connection to Omron PLC |
-| `FINSClientConnect(name)` | BOOL | Open UDP connection and start polling |
-| `FINSClientDisconnect(name)` | BOOL | Close connection |
-| `FINSClientIsConnected(name)` | BOOL | Check connection state |
-| `FINSClientReadDM(name, address, count)` | []INT | Read DM words (Data Memory) |
-| `FINSClientWriteDM(name, address, values)` | BOOL | Write DM words |
-| `FINSClientReadDMWord(name, address)` | INT | Read single DM word |
-| `FINSClientWriteDMWord(name, address, value)` | BOOL | Write single DM word |
-| `FINSClientReadCIO(name, address, count)` | []INT | Read CIO words (Core I/O) |
-| `FINSClientReadCIOWord(name, address)` | INT | Read single CIO word |
-| `FINSClientAddPollItem(name, area, address, count)` | BOOL | Add generic memory area to poll list |
-| `FINSClientAddDMPoll(name, address, count)` | BOOL | Add DM range to poll list |
-| `FINSClientAddCIOPoll(name, address, count)` | BOOL | Add CIO range to poll list |
-| `FINSClientDelete(name)` | BOOL | Remove client and all poll items |
-| `FINSClientList()` | []STRING | List all client instance names |
+| `FINS_CLIENT_CREATE(name, host [, port] [, destNode] [, srcNode] [, pollRateMs])` | BOOL | Create named connection to Omron PLC |
+| `FINS_CLIENT_CONNECT(name)` | BOOL | Open UDP connection and start polling |
+| `FINS_CLIENT_DISCONNECT(name)` | BOOL | Close connection |
+| `FINS_CLIENT_IS_CONNECTED(name)` | BOOL | Check connection state |
+| `FINS_CLIENT_READ_DM(name, address, count)` | []INT | Read DM words (Data Memory) |
+| `FINS_CLIENT_WRITE_DM(name, address, values)` | BOOL | Write DM words |
+| `FINS_CLIENT_READ_DM_WORD(name, address)` | INT | Read single DM word |
+| `FINS_CLIENT_WRITE_DM_WORD(name, address, value)` | BOOL | Write single DM word |
+| `FINS_CLIENT_READ_CIO(name, address, count)` | []INT | Read CIO words (Core I/O) |
+| `FINS_CLIENT_READ_CIO_WORD(name, address)` | INT | Read single CIO word |
+| `FINS_CLIENT_ADD_POLL_ITEM(name, area, address, count)` | BOOL | Add generic memory area to poll list |
+| `FINS_CLIENT_ADD_DM_POLL(name, address, count)` | BOOL | Add DM range to poll list |
+| `FINS_CLIENT_ADD_CIO_POLL(name, address, count)` | BOOL | Add CIO range to poll list |
+| `FINS_CLIENT_DELETE(name)` | BOOL | Remove client and all poll items |
+| `FINS_CLIENT_LIST()` | []STRING | List all client instance names |
+
+### Server Functions (8)
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `FINS_SERVER_CREATE(name, port [, node])` | BOOL | Create FINS UDP server (default node 0) |
+| `FINS_SERVER_START(name)` | BOOL | Start listening on configured port |
+| `FINS_SERVER_STOP(name)` | BOOL | Stop server |
+| `FINS_SERVER_IS_RUNNING(name)` | BOOL | Check if server is listening |
+| `FINS_SERVER_SET_DM(name, address, value)` | BOOL | Set DM word value |
+| `FINS_SERVER_GET_DM(name, address)` | INT | Read DM word value |
+| `FINS_SERVER_DELETE(name)` | BOOL | Remove server instance |
+| `FINS_SERVER_LIST()` | []STRING | List all server instance names |
 
 ---
 
-*GoPLC v1.0.520 | FINS/UDP Client | Omron CJ/NJ/NX Series | IEC 61131-3 Structured Text*
+## 7. FINS Server
+
+GoPLC can also act as a FINS server — exposing DM memory words to Omron PLCs or other FINS clients. This enables GoPLC to act as a virtual I/O module or data bridge that Omron controllers can poll directly.
+
+### Server Lifecycle
+
+```iecst
+PROGRAM POU_FINSServer
+VAR
+    state : INT := 0;
+    ok : BOOL;
+    temperature : INT := 720;   (* 72.0 degF x10 *)
+    pressure : INT := 450;      (* 45.0 PSI x10 *)
+    cmd_from_plc : INT;
+END_VAR
+
+CASE state OF
+    0: (* Create server on FINS default port *)
+        ok := FINS_SERVER_CREATE('fins_srv', 9600);
+        IF ok THEN state := 1; END_IF;
+
+    1: (* Start listening *)
+        ok := FINS_SERVER_START('fins_srv');
+        IF ok THEN state := 10; END_IF;
+
+    10: (* Running — expose data to Omron PLCs *)
+        (* Omron PLC reads these via FINS Memory Area Read *)
+        FINS_SERVER_SET_DM('fins_srv', 0, temperature);
+        FINS_SERVER_SET_DM('fins_srv', 1, pressure);
+
+        (* Omron PLC writes commands via FINS Memory Area Write *)
+        cmd_from_plc := FINS_SERVER_GET_DM('fins_srv', 100);
+
+        IF NOT FINS_SERVER_IS_RUNNING('fins_srv') THEN
+            state := 1;
+        END_IF;
+END_CASE;
+END_PROGRAM
+```
+
+---
+
+*GoPLC v1.0.533 | FINS/UDP Client + Server | Omron CJ/NJ/NX Series | IEC 61131-3 Structured Text*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
 *[Back to White Papers](https://jmbtechnical.com/whitepapers/)*

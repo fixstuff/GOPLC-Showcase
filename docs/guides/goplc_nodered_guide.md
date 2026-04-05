@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -126,17 +126,27 @@ nodered:
 | `extra_modules` | []string | `[]` | Additional npm packages to install at startup |
 | `credential_secret` | string | `""` | Encryption key for Node-RED credential store |
 
-### 2.3 Environment Variables
+### 2.3 CLI Flag
 
-When running in Docker, configuration can also be set through environment variables:
+The Node-RED port can also be set via command-line flag:
 
 ```bash
-NODERED_ENABLED=true
-NODERED_PORT=1880
-NODERED_USER_DIR=/app/data/nodered
+goplc --nodered-port 1880
 ```
 
-### 2.4 What Happens at Startup
+All other Node-RED settings are configured through the YAML config file.
+
+### 2.4 Accessing Node-RED
+
+Node-RED binds to `127.0.0.1` on an internal port and is only accessible through the GoPLC reverse proxy:
+
+```
+http://<host>:<goplc-port>/nodered/
+```
+
+Never connect to Node-RED's internal port directly. The proxy handles path rewriting, CORS, and keeps everything on a single port.
+
+### 2.5 What Happens at Startup
 
 When GoPLC starts with Node-RED enabled:
 
@@ -148,7 +158,7 @@ When GoPLC starts with Node-RED enabled:
 6. **Delayed start** -- waits 2 seconds for GoPLC API to be ready, then launches Node-RED
 7. **Reverse proxy activation** -- `/nodered/*` routes to the subprocess, `/dashboard/*` redirects to `/nodered/dashboard/`
 
-### 2.5 Auto-Generated settings.js
+### 2.6 Auto-Generated settings.js
 
 GoPLC generates `settings.js` automatically in the user directory. Key settings:
 
@@ -963,7 +973,7 @@ These are the most commonly used API endpoints from Node-RED:
 | GET | `/api/variables/{name}` | Read single variable |
 | PUT | `/api/variables/{name}` | Write variable (`{"value": ...}`) |
 | POST | `/api/variables/bulk` | Bulk read (`{"names": [...]}`) |
-| GET | `/api/variables/meta/{name}` | Variable metadata (type, scope) |
+| GET | `/api/variables/meta` | List all variables with metadata (type, scope) |
 
 ### Runtime
 
@@ -983,7 +993,7 @@ These are the most commonly used API endpoints from Node-RED:
 | GET | `/api/tasks/{name}` | Task status and performance |
 | POST | `/api/tasks/{name}/start` | Start a task |
 | POST | `/api/tasks/{name}/stop` | Stop a task |
-| POST | `/api/tasks/{name}/reload` | Hot-reload task programs |
+| POST | `/api/tasks/{name}/reload` | Reload task programs |
 
 ### System
 

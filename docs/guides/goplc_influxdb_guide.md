@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -12,10 +12,10 @@ GoPLC provides native **InfluxDB** write functions callable directly from IEC 61
 
 | Role | Functions | Use Case |
 |------|-----------|----------|
-| **Connection** | `InfluxConnect` / `InfluxConnectV1` / `InfluxConnectV1Auth` | Connect to InfluxDB v1 or v2 instances |
-| **Single Writes** | `InfluxWrite` / `InfluxWriteInt` / `InfluxWriteBool` / `InfluxWriteStr` | Immediate single-point writes with explicit typing |
-| **Batch Writes** | `InfluxBatchAdd` / `InfluxBatchAddInt` / `InfluxBatchFlush` | Buffer multiple points and flush as one HTTP request |
-| **Line Protocol** | `InfluxWriteLine` / `InfluxBuildLine` | Raw line protocol for advanced use cases |
+| **Connection** | `INFLUX_CONNECT` / `INFLUX_CONNECT_V1` / `INFLUX_CONNECT_V1_AUTH` | Connect to InfluxDB v1 or v2 instances |
+| **Single Writes** | `INFLUX_WRITE` / `INFLUX_WRITE_INT` / `INFLUX_WRITE_BOOL` / `INFLUX_WRITE_STR` | Immediate single-point writes with explicit typing |
+| **Batch Writes** | `INFLUX_BATCH_ADD` / `INFLUX_BATCH_ADD_INT` / `INFLUX_BATCH_FLUSH` | Buffer multiple points and flush as one HTTP request |
+| **Line Protocol** | `INFLUX_WRITE_LINE` / `INFLUX_BUILD_LINE` | Raw line protocol for advanced use cases |
 
 All functions are controlled entirely from IEC 61131-3 Structured Text in GoPLC's browser-based IDE.
 
@@ -28,17 +28,17 @@ All functions are controlled entirely from IEC 61131-3 Structured Text in GoPLC'
 │  ┌────────────────────────────────────────────────────────┐  │
 │  │ ST Program                                             │  │
 │  │                                                        │  │
-│  │ InfluxConnect('db', 'http://10.0.0.144:8086',          │  │
+│  │ INFLUX_CONNECT('db', 'http://10.0.0.144:8086',          │  │
 │  │               'myorg', 'plcdata', 'token...')          │  │
 │  │                                                        │  │
-│  │ InfluxWrite('db', 'temperature', 'zone=1',             │  │
+│  │ INFLUX_WRITE('db', 'temperature', 'zone=1',             │  │
 │  │             'value', 72.5)                             │  │
 │  │                                                        │  │
-│  │ InfluxBatchAdd('db', 'motor', 'line=1',                │  │
+│  │ INFLUX_BATCH_ADD('db', 'motor', 'line=1',                │  │
 │  │                'speed', 1750.0)                        │  │
-│  │ InfluxBatchAdd('db', 'motor', 'line=1',                │  │
+│  │ INFLUX_BATCH_ADD('db', 'motor', 'line=1',                │  │
 │  │                'temp', 145.2)                          │  │
-│  │ InfluxBatchFlush('db')                                 │  │
+│  │ INFLUX_BATCH_FLUSH('db')                                 │  │
 │  └───────────────────────┬────────────────────────────────┘  │
 │                          │                                   │
 │                          │  HTTP POST (line protocol)        │
@@ -84,10 +84,10 @@ All functions are controlled entirely from IEC 61131-3 Structured Text in GoPLC'
 
 ## 2. Connection Management
 
-### 2.1 InfluxConnect -- Connect to InfluxDB v2
+### 2.1 INFLUX_CONNECT -- Connect to InfluxDB v2
 
 ```iecst
-ok := InfluxConnect('db', 'http://10.0.0.144:8086', 'myorg', 'plcdata',
+ok := INFLUX_CONNECT('db', 'http://10.0.0.144:8086', 'myorg', 'plcdata',
                      'your-api-token-here');
 ```
 
@@ -103,10 +103,10 @@ Returns `TRUE` on success.
 
 > **Creating a token:** In the InfluxDB UI, navigate to **Data > API Tokens > Generate Token**. For PLC data logging, create a write-only token scoped to the target bucket. Store the token securely — it cannot be retrieved after creation.
 
-### 2.2 InfluxConnectV1 -- Connect to InfluxDB v1 (No Auth)
+### 2.2 INFLUX_CONNECT_V1 -- Connect to InfluxDB v1 (No Auth)
 
 ```iecst
-ok := InfluxConnectV1('db', 'http://10.0.0.144:8086', 'plc_data');
+ok := INFLUX_CONNECT_V1('db', 'http://10.0.0.144:8086', 'plc_data');
 ```
 
 | Param | Type | Required | Description |
@@ -117,10 +117,10 @@ ok := InfluxConnectV1('db', 'http://10.0.0.144:8086', 'plc_data');
 
 Returns `TRUE` on success. Use this for InfluxDB 1.x instances without authentication enabled — common in isolated OT networks.
 
-### 2.3 InfluxConnectV1Auth -- Connect to InfluxDB v1 (With Auth)
+### 2.3 INFLUX_CONNECT_V1_AUTH -- Connect to InfluxDB v1 (With Auth)
 
 ```iecst
-ok := InfluxConnectV1Auth('db', 'http://10.0.0.144:8086', 'plc_data',
+ok := INFLUX_CONNECT_V1_AUTH('db', 'http://10.0.0.144:8086', 'plc_data',
                            'grafana_writer', 'wr1teP@ss');
 ```
 
@@ -134,28 +134,28 @@ ok := InfluxConnectV1Auth('db', 'http://10.0.0.144:8086', 'plc_data',
 
 Returns `TRUE` on success.
 
-### 2.4 InfluxDisconnect / InfluxIsConnected
+### 2.4 INFLUX_DISCONNECT / INFLUX_IS_CONNECTED
 
 ```iecst
 (* Check connection *)
-IF InfluxIsConnected('db') THEN
+IF INFLUX_IS_CONNECTED('db') THEN
     (* write data *)
 END_IF;
 
 (* Disconnect *)
-InfluxDisconnect('db');
+INFLUX_DISCONNECT('db');
 ```
 
 ---
 
 ## 3. Single-Point Writes
 
-### 3.1 InfluxWrite -- Auto-Typed Write
+### 3.1 INFLUX_WRITE -- Auto-Typed Write
 
 ```iecst
-ok := InfluxWrite('db', 'temperature', 'zone=1,building=A', 'value', 72.5);
-ok := InfluxWrite('db', 'motor', 'line=1', 'speed', 1750);
-ok := InfluxWrite('db', 'conveyor', 'line=1', 'running', TRUE);
+ok := INFLUX_WRITE('db', 'temperature', 'zone=1,building=A', 'value', 72.5);
+ok := INFLUX_WRITE('db', 'motor', 'line=1', 'speed', 1750);
+ok := INFLUX_WRITE('db', 'conveyor', 'line=1', 'running', TRUE);
 ```
 
 | Param | Type | Description |
@@ -177,18 +177,18 @@ Returns `TRUE` on success. GoPLC detects the value type and formats it correctly
 
 > **Empty tags:** Pass an empty string `''` for the tags parameter if no tags are needed. At least one field is always required.
 
-### 3.2 InfluxWriteInt / WriteBool / WriteStr -- Explicit Types
+### 3.2 INFLUX_WRITE_INT / WriteBool / WriteStr -- Explicit Types
 
 ```iecst
 (* Force integer type — avoids type conflicts if the measurement
    already has this field as integer *)
-ok := InfluxWriteInt('db', 'production', 'line=1', 'count', batch_count);
+ok := INFLUX_WRITE_INT('db', 'production', 'line=1', 'count', batch_count);
 
 (* Force boolean *)
-ok := InfluxWriteBool('db', 'status', 'machine=press1', 'fault', has_fault);
+ok := INFLUX_WRITE_BOOL('db', 'status', 'machine=press1', 'fault', has_fault);
 
 (* Force string *)
-ok := InfluxWriteStr('db', 'events', 'source=plc', 'message', 'Batch complete');
+ok := INFLUX_WRITE_STR('db', 'events', 'source=plc', 'message', 'Batch complete');
 ```
 
 Use the explicit-type variants when you need to guarantee the field type matches an existing measurement. InfluxDB rejects writes where a field type conflicts with previously written data (e.g., writing a float to a field that was first written as integer).
@@ -201,14 +201,14 @@ Use the explicit-type variants when you need to guarantee the field type matches
 
 For high-throughput data logging, batch writes combine multiple data points into a single HTTP request. This is critical for performance — individual writes at 100ms scan rates generate 600 HTTP requests per minute per field. Batching reduces this to a single request per flush.
 
-### 4.1 InfluxBatchAdd -- Add Point to Batch (Auto-Typed)
+### 4.1 INFLUX_BATCH_ADD -- Add Point to Batch (Auto-Typed)
 
 ```iecst
-ok := InfluxBatchAdd('db', 'motor', 'line=1,drive=vfd1', 'speed', 1750.0);
-ok := InfluxBatchAdd('db', 'motor', 'line=1,drive=vfd1', 'current', 12.4);
-ok := InfluxBatchAdd('db', 'motor', 'line=1,drive=vfd1', 'temp', 145.2);
-ok := InfluxBatchAdd('db', 'temperature', 'zone=1', 'value', 72.5);
-ok := InfluxBatchAdd('db', 'temperature', 'zone=2', 'value', 68.3);
+ok := INFLUX_BATCH_ADD('db', 'motor', 'line=1,drive=vfd1', 'speed', 1750.0);
+ok := INFLUX_BATCH_ADD('db', 'motor', 'line=1,drive=vfd1', 'current', 12.4);
+ok := INFLUX_BATCH_ADD('db', 'motor', 'line=1,drive=vfd1', 'temp', 145.2);
+ok := INFLUX_BATCH_ADD('db', 'temperature', 'zone=1', 'value', 72.5);
+ok := INFLUX_BATCH_ADD('db', 'temperature', 'zone=2', 'value', 68.3);
 ```
 
 | Param | Type | Description |
@@ -219,48 +219,48 @@ ok := InfluxBatchAdd('db', 'temperature', 'zone=2', 'value', 68.3);
 | `field` | STRING | Field name |
 | `value` | ANY | Field value (auto-typed) |
 
-Returns `TRUE` on success. The point is added to an in-memory buffer — no HTTP request is made until `InfluxBatchFlush` is called.
+Returns `TRUE` on success. The point is added to an in-memory buffer — no HTTP request is made until `INFLUX_BATCH_FLUSH` is called.
 
-### 4.2 InfluxBatchAddInt -- Add Integer Point to Batch
+### 4.2 INFLUX_BATCH_ADD_INT -- Add Integer Point to Batch
 
 ```iecst
-ok := InfluxBatchAddInt('db', 'production', 'line=1', 'count', batch_count);
-ok := InfluxBatchAddInt('db', 'production', 'line=1', 'rejects', reject_count);
+ok := INFLUX_BATCH_ADD_INT('db', 'production', 'line=1', 'count', batch_count);
+ok := INFLUX_BATCH_ADD_INT('db', 'production', 'line=1', 'rejects', reject_count);
 ```
 
 Explicitly adds an integer-typed point to the batch. Use this when the measurement field must be integer type.
 
-### 4.3 InfluxBatchFlush -- Send Batch to InfluxDB
+### 4.3 INFLUX_BATCH_FLUSH -- Send Batch to InfluxDB
 
 ```iecst
-lines_sent := InfluxBatchFlush('db');
+lines_sent := INFLUX_BATCH_FLUSH('db');
 (* Returns: 5 (number of lines written) or -1 on error *)
 ```
 
 Returns the number of line protocol lines sent, or `-1` on error (connection failure, auth error, type conflict). After a successful flush, the batch buffer is cleared automatically.
 
-### 4.4 InfluxBatchClear / InfluxBatchSize
+### 4.4 INFLUX_BATCH_CLEAR / INFLUX_BATCH_SIZE
 
 ```iecst
 (* Check how many points are buffered *)
-pending := InfluxBatchSize('db');
+pending := INFLUX_BATCH_SIZE('db');
 (* Returns: 5 *)
 
 (* Discard buffered points without sending *)
-InfluxBatchClear('db');
+INFLUX_BATCH_CLEAR('db');
 ```
 
-`InfluxBatchClear` discards all buffered points without sending them. Use this to reset the buffer after an error condition or mode change.
+`INFLUX_BATCH_CLEAR` discards all buffered points without sending them. Use this to reset the buffer after an error condition or mode change.
 
 ---
 
 ## 5. Line Protocol (Advanced)
 
-### 5.1 InfluxWriteLine -- Write Raw Line Protocol
+### 5.1 INFLUX_WRITE_LINE -- Write Raw Line Protocol
 
 ```iecst
-ok := InfluxWriteLine('db', 'temperature,zone=1 value=72.5');
-ok := InfluxWriteLine('db', 'motor,line=1 speed=1750i,temp=145.2,running=true');
+ok := INFLUX_WRITE_LINE('db', 'temperature,zone=1 value=72.5');
+ok := INFLUX_WRITE_LINE('db', 'motor,line=1 speed=1750i,temp=145.2,running=true');
 ```
 
 | Param | Type | Description |
@@ -290,13 +290,13 @@ Examples:
 - Boolean values: `true` / `false` (no quotes)
 - Float values: plain decimal: `72.5`
 
-### 5.2 InfluxBuildLine -- Build Line Protocol String
+### 5.2 INFLUX_BUILD_LINE -- Build Line Protocol String
 
 ```iecst
-line := InfluxBuildLine('temperature', 'zone=1', 'value', 72.5);
+line := INFLUX_BUILD_LINE('temperature', 'zone=1', 'value', 72.5);
 (* Returns: 'temperature,zone=1 value=72.5' *)
 
-line := InfluxBuildLine('motor', 'line=1,drive=vfd1', 'speed', 1750);
+line := INFLUX_BUILD_LINE('motor', 'line=1,drive=vfd1', 'speed', 1750);
 (* Returns: 'motor,line=1,drive=vfd1 speed=1750i' *)
 ```
 
@@ -307,7 +307,7 @@ line := InfluxBuildLine('motor', 'line=1,drive=vfd1', 'speed', 1750);
 | `field` | STRING | Field name |
 | `value` | ANY | Field value (auto-typed) |
 
-Returns a formatted line protocol string. This is a pure helper — no data is sent. Use it to build lines for `InfluxWriteLine` or for constructing multi-field lines by concatenation.
+Returns a formatted line protocol string. This is a pure helper — no data is sent. Use it to build lines for `INFLUX_WRITE_LINE` or for constructing multi-field lines by concatenation.
 
 ```iecst
 (* Build multi-field line manually *)
@@ -315,7 +315,7 @@ line := CONCAT('motor,line=1 ',
                'speed=', INT_TO_STRING(speed), 'i,',
                'temp=', REAL_TO_STRING(temp), ',',
                'running=', BOOL_TO_STRING(motor_on));
-InfluxWriteLine('db', line);
+INFLUX_WRITE_LINE('db', line);
 ```
 
 ---
@@ -345,34 +345,34 @@ END_VAR
 
 CASE state OF
     0: (* Connect to InfluxDB v2 *)
-        ok := InfluxConnect('db', 'http://10.0.0.144:8086',
+        ok := INFLUX_CONNECT('db', 'http://10.0.0.144:8086',
                              'myorg', 'plcdata',
                              'your-api-token-here');
         IF ok THEN state := 10; END_IF;
 
     10: (* Running — collect data into batch *)
         (* Motor data *)
-        InfluxBatchAdd('db', 'motor', 'line=1,drive=vfd1', 'speed', line_speed);
-        InfluxBatchAdd('db', 'motor', 'line=1,drive=vfd1', 'temp', motor_temp);
-        InfluxBatchAdd('db', 'motor', 'line=1,drive=vfd1', 'current', motor_current);
+        INFLUX_BATCH_ADD('db', 'motor', 'line=1,drive=vfd1', 'speed', line_speed);
+        INFLUX_BATCH_ADD('db', 'motor', 'line=1,drive=vfd1', 'temp', motor_temp);
+        INFLUX_BATCH_ADD('db', 'motor', 'line=1,drive=vfd1', 'current', motor_current);
 
         (* Zone temperatures *)
-        InfluxBatchAdd('db', 'temperature', 'zone=1', 'value', zone1_temp);
-        InfluxBatchAdd('db', 'temperature', 'zone=2', 'value', zone2_temp);
+        INFLUX_BATCH_ADD('db', 'temperature', 'zone=1', 'value', zone1_temp);
+        INFLUX_BATCH_ADD('db', 'temperature', 'zone=2', 'value', zone2_temp);
 
         (* Production counters — integer type *)
-        InfluxBatchAddInt('db', 'production', 'line=1', 'count', batch_count);
+        INFLUX_BATCH_ADD_INT('db', 'production', 'line=1', 'count', batch_count);
 
         (* Conveyor status *)
-        InfluxBatchAdd('db', 'conveyor', 'line=1', 'running', conveyor_running);
+        INFLUX_BATCH_ADD('db', 'conveyor', 'line=1', 'running', conveyor_running);
 
         (* Flush batch periodically *)
         scan_counter := scan_counter + 1;
         IF scan_counter >= flush_interval THEN
-            lines_sent := InfluxBatchFlush('db');
+            lines_sent := INFLUX_BATCH_FLUSH('db');
             IF lines_sent = -1 THEN
                 (* Write failed — check connection *)
-                IF NOT InfluxIsConnected('db') THEN
+                IF NOT INFLUX_IS_CONNECTED('db') THEN
                     state := 0;   (* reconnect *)
                 END_IF;
             END_IF;
@@ -403,22 +403,22 @@ END_VAR
 
 CASE state OF
     0: (* Connect to InfluxDB v1 — no auth *)
-        ok := InfluxConnectV1('db', 'http://10.0.0.144:8086', 'process_data');
+        ok := INFLUX_CONNECT_V1('db', 'http://10.0.0.144:8086', 'process_data');
         IF ok THEN state := 10; END_IF;
 
         (* Or with auth: *)
-        (* ok := InfluxConnectV1Auth('db', 'http://10.0.0.144:8086',
+        (* ok := INFLUX_CONNECT_V1_AUTH('db', 'http://10.0.0.144:8086',
                                       'process_data', 'writer', 'pass'); *)
 
     10: (* Running — batch writes every second *)
-        InfluxBatchAdd('db', 'process', 'unit=reactor1', 'temperature', temp);
-        InfluxBatchAdd('db', 'process', 'unit=reactor1', 'pressure', pressure);
-        InfluxBatchAdd('db', 'process', 'unit=reactor1', 'flow_rate', flow_rate);
-        InfluxBatchAdd('db', 'process', 'unit=reactor1', 'valve_open', valve_open);
+        INFLUX_BATCH_ADD('db', 'process', 'unit=reactor1', 'temperature', temp);
+        INFLUX_BATCH_ADD('db', 'process', 'unit=reactor1', 'pressure', pressure);
+        INFLUX_BATCH_ADD('db', 'process', 'unit=reactor1', 'flow_rate', flow_rate);
+        INFLUX_BATCH_ADD('db', 'process', 'unit=reactor1', 'valve_open', valve_open);
 
         scan_counter := scan_counter + 1;
         IF scan_counter >= 10 THEN
-            lines_sent := InfluxBatchFlush('db');
+            lines_sent := INFLUX_BATCH_FLUSH('db');
             scan_counter := 0;
         END_IF;
 END_CASE;
@@ -461,9 +461,9 @@ END_PROGRAM
 
 | Method | HTTP Requests (at 100ms scan, 7 fields) | Use Case |
 |--------|---------------------------------------|----------|
-| `InfluxWrite` per field | 4,200/min | Low-frequency data, events |
-| `InfluxBatchFlush` every 1s | 60/min | Production data logging |
-| `InfluxBatchFlush` every 10s | 6/min | Long-term trending |
+| `INFLUX_WRITE` per field | 4,200/min | Low-frequency data, events |
+| `INFLUX_BATCH_FLUSH` every 1s | 60/min | Production data logging |
+| `INFLUX_BATCH_FLUSH` every 10s | 6/min | Long-term trending |
 
 **Always use batch writes for cyclic data.** Single writes are appropriate for event-driven data (alarms, mode changes, batch completions) where immediacy matters more than throughput.
 
@@ -473,12 +473,12 @@ InfluxDB creates a **series** for every unique combination of measurement + tags
 
 ```iecst
 (* Good — low cardinality tags *)
-InfluxWrite('db', 'temperature', 'zone=1', 'value', temp);
-InfluxWrite('db', 'temperature', 'zone=2', 'value', temp);
+INFLUX_WRITE('db', 'temperature', 'zone=1', 'value', temp);
+INFLUX_WRITE('db', 'temperature', 'zone=2', 'value', temp);
 (* 2 series total *)
 
 (* Bad — unique ID in tag creates unbounded series *)
-InfluxWrite('db', 'temperature', CONCAT('id=', INT_TO_STRING(scan_count)),
+INFLUX_WRITE('db', 'temperature', CONCAT('id=', INT_TO_STRING(scan_count)),
             'value', temp);
 (* N series, growing forever — will crash InfluxDB *)
 ```
@@ -494,14 +494,14 @@ A typical pattern: 1-second data retained for 7 days, 1-minute downsampled data 
 
 ### Write Failures and Recovery
 
-`InfluxBatchFlush` returns `-1` on failure. GoPLC does not buffer failed writes across flushes — data in the failed batch is lost. If write reliability is critical:
+`INFLUX_BATCH_FLUSH` returns `-1` on failure. GoPLC does not buffer failed writes across flushes — data in the failed batch is lost. If write reliability is critical:
 
 ```iecst
-lines_sent := InfluxBatchFlush('db');
+lines_sent := INFLUX_BATCH_FLUSH('db');
 IF lines_sent = -1 THEN
     (* Log the failure, but don't retry — the batch is already cleared *)
     error_count := error_count + 1;
-    IF NOT InfluxIsConnected('db') THEN
+    IF NOT INFLUX_IS_CONNECTED('db') THEN
         state := 0;   (* trigger reconnect *)
     END_IF;
 END_IF;
@@ -517,12 +517,12 @@ For guaranteed delivery, combine with GoPLC's MQTT client to buffer data on a lo
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `InfluxConnect` returns FALSE | Wrong URL or network | Verify URL, port, firewall; `curl http://host:8086/ping` |
+| `INFLUX_CONNECT` returns FALSE | Wrong URL or network | Verify URL, port, firewall; `curl http://host:8086/ping` |
 | Write returns FALSE | Auth failure | Check token (v2) or username/password (v1) has write access |
 | "field type conflict" | Type mismatch | First write sets field type forever; use explicit-type functions |
-| Data appears but with wrong values | Integer vs float confusion | Use `InfluxWriteInt` for counters, `InfluxWrite` for analog values |
+| Data appears but with wrong values | Integer vs float confusion | Use `INFLUX_WRITE_INT` for counters, `INFLUX_WRITE` for analog values |
 | Grafana shows no data | Wrong database/bucket | Verify Grafana datasource matches GoPLC connection parameters |
-| `InfluxBatchFlush` returns -1 | Connection lost | Check `InfluxIsConnected`, reconnect if needed |
+| `INFLUX_BATCH_FLUSH` returns -1 | Connection lost | Check `INFLUX_IS_CONNECTED`, reconnect if needed |
 | High InfluxDB memory usage | Tag cardinality explosion | Audit tags — never use scan counts, timestamps, or unique IDs as tags |
 | Slow queries in Grafana | Missing tags / too many series | Use tags for dimensions you filter by; limit cardinality |
 
@@ -532,26 +532,26 @@ For guaranteed delivery, combine with GoPLC's MQTT client to buffer data on a lo
 
 | Function | Params | Returns | Description |
 |----------|--------|---------|-------------|
-| `InfluxConnect` | `(name, serverURL, org, bucket, token)` | BOOL | Connect to InfluxDB v2 |
-| `InfluxConnectV1` | `(name, serverURL, database)` | BOOL | Connect to InfluxDB v1 (no auth) |
-| `InfluxConnectV1Auth` | `(name, serverURL, database, username, password)` | BOOL | Connect to InfluxDB v1 (with auth) |
-| `InfluxDisconnect` | `(name)` | BOOL | Close connection |
-| `InfluxIsConnected` | `(name)` | BOOL | Check connection state |
-| `InfluxWrite` | `(name, measurement, tags, field, value)` | BOOL | Single write, auto-typed |
-| `InfluxWriteInt` | `(name, measurement, tags, field, value)` | BOOL | Single write, integer |
-| `InfluxWriteBool` | `(name, measurement, tags, field, value)` | BOOL | Single write, boolean |
-| `InfluxWriteStr` | `(name, measurement, tags, field, value)` | BOOL | Single write, string |
-| `InfluxWriteLine` | `(name, line)` | BOOL | Raw line protocol write |
-| `InfluxBatchAdd` | `(name, measurement, tags, field, value)` | BOOL | Add auto-typed point to batch |
-| `InfluxBatchAddInt` | `(name, measurement, tags, field, value)` | BOOL | Add integer point to batch |
-| `InfluxBatchFlush` | `(name)` | INT | Send batch (returns line count, -1 on error) |
-| `InfluxBatchClear` | `(name)` | BOOL | Discard buffered points |
-| `InfluxBatchSize` | `(name)` | INT | Number of buffered points |
-| `InfluxBuildLine` | `(measurement, tags, field, value)` | STRING | Build line protocol string (no write) |
+| `INFLUX_CONNECT` | `(name, serverURL, org, bucket, token)` | BOOL | Connect to InfluxDB v2 |
+| `INFLUX_CONNECT_V1` | `(name, serverURL, database)` | BOOL | Connect to InfluxDB v1 (no auth) |
+| `INFLUX_CONNECT_V1_AUTH` | `(name, serverURL, database, username, password)` | BOOL | Connect to InfluxDB v1 (with auth) |
+| `INFLUX_DISCONNECT` | `(name)` | BOOL | Close connection |
+| `INFLUX_IS_CONNECTED` | `(name)` | BOOL | Check connection state |
+| `INFLUX_WRITE` | `(name, measurement, tags, field, value)` | BOOL | Single write, auto-typed |
+| `INFLUX_WRITE_INT` | `(name, measurement, tags, field, value)` | BOOL | Single write, integer |
+| `INFLUX_WRITE_BOOL` | `(name, measurement, tags, field, value)` | BOOL | Single write, boolean |
+| `INFLUX_WRITE_STR` | `(name, measurement, tags, field, value)` | BOOL | Single write, string |
+| `INFLUX_WRITE_LINE` | `(name, line)` | BOOL | Raw line protocol write |
+| `INFLUX_BATCH_ADD` | `(name, measurement, tags, field, value)` | BOOL | Add auto-typed point to batch |
+| `INFLUX_BATCH_ADD_INT` | `(name, measurement, tags, field, value)` | BOOL | Add integer point to batch |
+| `INFLUX_BATCH_FLUSH` | `(name)` | INT | Send batch (returns line count, -1 on error) |
+| `INFLUX_BATCH_CLEAR` | `(name)` | BOOL | Discard buffered points |
+| `INFLUX_BATCH_SIZE` | `(name)` | INT | Number of buffered points |
+| `INFLUX_BUILD_LINE` | `(measurement, tags, field, value)` | STRING | Build line protocol string (no write) |
 
 ---
 
-*GoPLC v1.0.520 | InfluxDB v1 + v2 | HTTP Line Protocol Writer*
+*GoPLC v1.0.533 | InfluxDB v1 + v2 | HTTP Line Protocol Writer*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
 *[Back to White Papers](https://jmbtechnical.com/whitepapers/)*

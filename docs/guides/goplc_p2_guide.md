@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -14,8 +14,10 @@ There are **two ways** to control a P2 from GoPLC:
 
 | Mode | Interface | Best For |
 |------|-----------|----------|
-| **Binary Protocol** | `P2_INIT` / `P2_CMD` | Production — structured commands, schema-validated, CRC-protected |
+| **Binary Protocol** | `P2_INIT` / `P2_CMD` + convenience functions | Production — structured commands, schema-validated, CRC-protected |
 | **Direct Serial (TAQOZ)** | `SER_OPEN` / `SER_WRITE_STR` | Rapid prototyping — send Forth words directly to the P2 ROM interpreter |
+
+The binary protocol offers **two calling styles**: the universal `P2_CMD` function (accepts any command by name) and **37 convenience functions** like `P2_PIN_WRITE`, `P2_UART_SETUP`, etc. that provide a familiar, typed interface. Both styles route through the same schema-driven binary protocol — the convenience functions are thin wrappers over `P2_CMD`.
 
 Both modes use IEC 61131-3 Structured Text as the programming language in GoPLC's browser-based IDE.
 
@@ -62,7 +64,7 @@ Both modes use IEC 61131-3 Structured Text as the programming language in GoPLC'
 
 This is the production interface. GoPLC uploads firmware, establishes a CRC-protected binary link at 3 Mbaud, and provides 44 schema-driven commands through a single `P2_CMD` function.
 
-### 2.1 The Four ST Functions
+### 2.1 Core Functions
 
 ```iecst
 (* Connect to P2 and upload firmware *)
@@ -79,6 +81,27 @@ status := P2_STATUS('myp2');
 (* Disconnect *)
 P2_CLOSE('myp2');
 ```
+
+### 2.2 Convenience Functions
+
+For users who prefer dedicated function calls over `P2_CMD` string commands, GoPLC provides **37 convenience functions** that map 1:1 to binary protocol commands. They are thin wrappers — internally they call `P2_CMD` with the correct parameters.
+
+```iecst
+(* These two lines do exactly the same thing: *)
+P2_CMD('p2', 'pin_write', 'pin', 16, 'value', 1);     (* P2_CMD style *)
+P2_PIN_WRITE('p2', 16, 1);                              (* Convenience style *)
+
+(* Read a pin — convenience function returns the value directly *)
+val := P2_PIN_READ('p2', 0);           (* Returns: INT — 0 or 1 *)
+result := P2_CMD('p2', 'pin_read', 'pin', 0);  (* Returns: '{"value": 0}' *)
+```
+
+**Key difference:** Convenience functions return **native types** (BOOL, INT, STRING) directly, while `P2_CMD` always returns a JSON string that you parse. Use whichever style fits your program.
+
+| Style | Pros | Best For |
+|-------|------|----------|
+| **Convenience** (`P2_PIN_WRITE`, etc.) | Cleaner syntax, typed returns, easier to read | Beginners, simple I/O, quick prototyping |
+| **P2_CMD** | Access to all 44 commands including future additions, full JSON response | Power users, complex parameters, servo_batch |
 
 ### 2.2 Wire Protocol
 
@@ -150,11 +173,23 @@ result := P2_CMD('p2', 'fw_info');
 P2_CMD('p2', 'pin_mode', 'pin', 16, 'mode', 1);
 ```
 
+**Convenience:** `P2_PIN_MODE(name, pin, mode) : BOOL`
+
+```iecst
+ok := P2_PIN_MODE('p2', 16, 1);
+```
+
 #### pin_read — Read Digital State
 
 ```iecst
 result := P2_CMD('p2', 'pin_read', 'pin', 0);
 (* Returns: {"value": 1} or {"value": 0} *)
+```
+
+**Convenience:** `P2_PIN_READ(name, pin) : INT` — returns 0 or 1 directly
+
+```iecst
+val := P2_PIN_READ('p2', 0);
 ```
 
 > **P2 Note:** Pins read 5V signals as FALSE. Use 3.3V logic or external level shifting.
@@ -163,6 +198,20 @@ result := P2_CMD('p2', 'pin_read', 'pin', 0);
 
 ```iecst
 P2_CMD('p2', 'pin_write', 'pin', 16, 'value', 1);
+```
+
+**Convenience:** `P2_PIN_WRITE(name, pin, value) : BOOL`
+
+```iecst
+P2_PIN_WRITE('p2', 16, 1);
+```
+
+#### pin_toggle — Toggle Digital Output
+
+**Convenience only:** `P2_PIN_TOGGLE(name, pin) : BOOL` — reads the current state and writes the inverse. No single `P2_CMD` equivalent (requires two commands internally).
+
+```iecst
+P2_PIN_TOGGLE('p2', 16);
 ```
 
 #### Example: Digital I/O Scan Loop
@@ -182,6 +231,24 @@ IF sensor_in THEN
     P2_CMD('p2', 'pin_write', 'pin', 16, 'value', 1);
 ELSE
     P2_CMD('p2', 'pin_write', 'pin', 16, 'value', 0);
+END_IF;
+END_PROGRAM
+```
+
+**Same example using convenience functions:**
+
+```iecst
+PROGRAM POU_DigitalIO
+VAR
+    sensor_in : INT;
+END_VAR
+
+sensor_in := P2_PIN_READ('p2', 0);
+
+IF sensor_in = 1 THEN
+    P2_PIN_WRITE('p2', 16, 1);
+ELSE
+    P2_PIN_WRITE('p2', 16, 0);
 END_IF;
 END_PROGRAM
 ```
@@ -209,6 +276,12 @@ P2_CMD('p2', 'smartpin_start', 'pin', 10,
        'y', 858993459);       (* 1kHz at 200MHz: freq * 2^32 / clkfreq *)
 ```
 
+**Convenience:** `P2_SMARTPIN_START(name, pin, mode, x, y) : BOOL`
+
+```iecst
+P2_SMARTPIN_START('p2', 10, 16#00004C58, 10, 858993459);
+```
+
 > **Critical:** Smart pin X register packing varies by mode. For PWM/servo modes, X.word[0] = clocks per microsecond, X.word[1] = period in microseconds. See JonnyMac's OBEX objects (`jm_servo.spin2`, `jm_pwm.spin2`) for correct patterns. The higher-level `pwm_setup` and `servo_move` commands handle this packing for you.
 
 #### smartpin_read / smartpin_write / smartpin_stop
@@ -220,6 +293,20 @@ raw := P2_CMD('p2', 'smartpin_read', 'pin', 10);
 P2_CMD('p2', 'smartpin_write', 'pin', 10, 'value', 500);
 
 P2_CMD('p2', 'smartpin_stop', 'pin', 10);
+```
+
+**Convenience functions:**
+
+| Function | Signature | Returns |
+|----------|-----------|---------|
+| `P2_SMARTPIN_READ` | `(name, pin)` | INT — raw 32-bit value |
+| `P2_SMARTPIN_WRITE` | `(name, pin, value)` | BOOL |
+| `P2_SMARTPIN_STOP` | `(name, pin)` | BOOL |
+
+```iecst
+raw := P2_SMARTPIN_READ('p2', 10);
+P2_SMARTPIN_WRITE('p2', 10, 500);
+P2_SMARTPIN_STOP('p2', 10);
 ```
 
 ---
@@ -242,6 +329,12 @@ Up to 16 channels via smart pin async serial. A dedicated PASM2 RX cog polls all
 P2_CMD('p2', 'uart_setup', 'ch', 0, 'tx_pin', 30, 'rx_pin', 29, 'baud', 9600);
 ```
 
+**Convenience:** `P2_UART_SETUP(name, ch, txPin, rxPin, baud) : BOOL`
+
+```iecst
+P2_UART_SETUP('p2', 0, 30, 29, 9600);
+```
+
 #### uart_tx — Send Data
 
 Data is hex-encoded. `48656C6C6F` = "Hello".
@@ -251,12 +344,24 @@ Data is hex-encoded. `48656C6C6F` = "Hello".
 P2_CMD('p2', 'uart_tx', 'ch', 0, 'data', '7EFF060300000001EF');
 ```
 
+**Convenience:** `P2_UART_SEND(name, ch, hexData) : INT` — returns bytes sent
+
+```iecst
+count := P2_UART_SEND('p2', 0, '7EFF060300000001EF');
+```
+
 #### uart_rx — Receive Data
 
 ```iecst
 (* Read up to 32 bytes with 100ms timeout *)
 result := P2_CMD('p2', 'uart_rx', 'ch', 0, 'max_len', 32, 'timeout_ms', 100);
 (* Returns: {"count": 5, "data": "7EFF060000..."} *)
+```
+
+**Convenience:** `P2_UART_RECV(name, ch, maxLen, timeoutMs) : STRING` — returns hex data directly
+
+```iecst
+data := P2_UART_RECV('p2', 0, 32, 100);
 ```
 
 > **Timing Note:** UART RX is a blocking acyclic command. The 2-second acyclic timeout accommodates slow devices. For high-throughput serial, the PASM2 RX cog buffers incoming data between polls.
@@ -268,10 +373,22 @@ result := P2_CMD('p2', 'uart_rx', 'ch', 0, 'max_len', 32, 'timeout_ms', 100);
 result := P2_CMD('p2', 'uart_txrx', 'ch', 0, 'timeout_ms', 50, 'data', '48656C6C6F');
 ```
 
+**Convenience:** `P2_UART_TXRX(name, ch, hexData, timeoutMs) : STRING` — returns hex response
+
+```iecst
+resp := P2_UART_TXRX('p2', 0, '48656C6C6F', 50);
+```
+
 #### uart_stop — Close Channel
 
 ```iecst
 P2_CMD('p2', 'uart_stop', 'ch', 0);
+```
+
+**Convenience:** `P2_UART_STOP(name, ch) : BOOL`
+
+```iecst
+P2_UART_STOP('p2', 0);
 ```
 
 ---
@@ -292,6 +409,12 @@ Up to 8 buses. Uses `jm_i2c.spin2` from the Parallax OBEX for reliable bit-bang 
 ```iecst
 (* I2C bus on pins 10/11 at 400kHz *)
 P2_CMD('p2', 'i2c_setup', 'ch', 0, 'scl', 10, 'sda', 11, 'speed_khz', 400);
+```
+
+**Convenience:** `P2_I2C_SETUP(name, ch, scl, sda, speedKHz) : BOOL`
+
+```iecst
+P2_I2C_SETUP('p2', 0, 10, 11, 400);
 ```
 
 #### i2c_xfer — Read/Write Transfer
@@ -321,10 +444,37 @@ result := P2_CMD('p2', 'i2c_xfer', 'ch', 0, 'addr', 60,
 (* ack=1 means device present, ack=0 means no response *)
 ```
 
+**Convenience functions** simplify `i2c_xfer` into purpose-specific calls (flags and lengths are handled automatically):
+
+| Function | Signature | Returns |
+|----------|-----------|---------|
+| `P2_I2C_WRITE` | `(name, ch, addr, hexData)` | BOOL — write_len auto-calculated from data |
+| `P2_I2C_WRITE_BYTE` | `(name, ch, addr, byteValue)` | BOOL — writes a single byte |
+| `P2_I2C_READ` | `(name, ch, addr, readLen)` | STRING — hex read_data |
+| `P2_I2C_WRITE_READ` | `(name, ch, addr, hexWriteData, readLen)` | STRING — hex read_data |
+
+```iecst
+(* Write command byte 0xAE to OLED at 0x3C *)
+P2_I2C_WRITE('p2', 0, 60, 'AE');
+P2_I2C_WRITE_BYTE('p2', 0, 60, 16#AE);     (* same thing, integer arg *)
+
+(* Read 2 bytes from temp sensor at 0x48, register 0x00 *)
+data := P2_I2C_WRITE_READ('p2', 0, 72, '00', 2);   (* Returns: '0C80' *)
+
+(* Pure read — 4 bytes from address 0x50 *)
+data := P2_I2C_READ('p2', 0, 80, 4);
+```
+
 #### i2c_stop — Close Bus
 
 ```iecst
 P2_CMD('p2', 'i2c_stop', 'ch', 0);
+```
+
+**Convenience:** `P2_I2C_STOP(name, ch) : BOOL`
+
+```iecst
+P2_I2C_STOP('p2', 0);
 ```
 
 ---
@@ -351,6 +501,12 @@ P2_CMD('p2', 'spi_setup', 'ch', 0,
        'speed_khz', 1000, 'mode', 0);
 ```
 
+**Convenience:** `P2_SPI_SETUP(name, ch, clk, mosi, miso, cs, speedKHz, mode) : BOOL`
+
+```iecst
+P2_SPI_SETUP('p2', 0, 40, 41, 42, 43, 1000, 0);
+```
+
 #### spi_xfer — Transfer Data
 
 | Flag Bit | Meaning |
@@ -368,10 +524,23 @@ result := P2_CMD('p2', 'spi_xfer', 'ch', 0, 'flags', 7, 'tx_data', 'FF00');
 P2_CMD('p2', 'spi_xfer', 'ch', 0, 'flags', 3, 'tx_data', 'DEADBEEF');
 ```
 
+**Convenience:** `P2_SPI_XFER(name, ch, flags, hexTxData) : STRING` — returns hex rx_data
+
+```iecst
+rx := P2_SPI_XFER('p2', 0, 7, 'FF00');          (* Returns: 'a5b7' *)
+P2_SPI_XFER('p2', 0, 3, 'DEADBEEF');            (* Write-only *)
+```
+
 #### spi_stop
 
 ```iecst
 P2_CMD('p2', 'spi_stop', 'ch', 0);
+```
+
+**Convenience:** `P2_SPI_STOP(name, ch) : BOOL`
+
+```iecst
+P2_SPI_STOP('p2', 0);
 ```
 
 ---
@@ -394,11 +563,23 @@ P2_CMD('p2', 'spi_stop', 'ch', 0);
 P2_CMD('p2', 'adc_setup', 'pin', 44, 'gain', 0);
 ```
 
+**Convenience:** `P2_ADC_SETUP(name, pin, gain) : BOOL`
+
+```iecst
+P2_ADC_SETUP('p2', 44, 0);
+```
+
 #### adc_read — Read Millivolts
 
 ```iecst
 result := P2_CMD('p2', 'adc_read', 'pin', 44);
 (* Returns: {"millivolts": 1650} — signed i32, can be negative *)
+```
+
+**Convenience:** `P2_ADC_READ(name, pin) : INT` — returns millivolts directly
+
+```iecst
+mv := P2_ADC_READ('p2', 44);    (* Returns: 1650 *)
 ```
 
 #### dac_setup / dac_write — Analog Output
@@ -408,6 +589,13 @@ result := P2_CMD('p2', 'adc_read', 'pin', 44);
 ```iecst
 P2_CMD('p2', 'dac_setup', 'pin', 45);
 P2_CMD('p2', 'dac_write', 'pin', 45, 'value', 32768);   (* ~1.65V *)
+```
+
+**Convenience:** `P2_DAC_SETUP(name, pin) : BOOL` / `P2_DAC_WRITE(name, pin, value) : BOOL`
+
+```iecst
+P2_DAC_SETUP('p2', 45);
+P2_DAC_WRITE('p2', 45, 32768);
 ```
 
 #### Example: Analog Read Loop
@@ -422,6 +610,20 @@ END_VAR
 mv := P2_CMD('p2', 'adc_read', 'pin', 44);
 (* Parse millivolts from JSON, scale to engineering units *)
 (* voltage := JSON_GET_INT(mv, 'millivolts') / 1000.0; *)
+END_PROGRAM
+```
+
+**Same example using convenience functions:**
+
+```iecst
+PROGRAM POU_AnalogMonitor
+VAR
+    mv : INT;
+    voltage : REAL;
+END_VAR
+
+mv := P2_ADC_READ('p2', 44);
+voltage := INT_TO_REAL(mv) / 1000.0;
 END_PROGRAM
 ```
 
@@ -441,6 +643,15 @@ P2_CMD('p2', 'pwm_duty', 'pin', 16, 'duty', 16384);
 
 (* Stop *)
 P2_CMD('p2', 'pwm_stop', 'pin', 16);
+```
+
+**Convenience:** `P2_PWM_SETUP(name, pin, freqHz) : BOOL` / `P2_PWM_DUTY(name, pin, duty) : BOOL` / `P2_PWM_STOP(name, pin) : BOOL`
+
+```iecst
+P2_PWM_SETUP('p2', 16, 1000);
+P2_PWM_DUTY('p2', 16, 32768);
+P2_PWM_DUTY('p2', 16, 16384);
+P2_PWM_STOP('p2', 16);
 ```
 
 > **Under the hood:** Uses `P_OE | P_PWM_SAWTOOTH` with X register packed per JonnyMac pattern: `x.word[0] = (clkfreq/freq)/units`, `x.word[1] = units`. `pwm_setup` handles this packing for you.
@@ -468,6 +679,14 @@ P2_CMD('p2', 'servo_move', 'pin', 0, 'duty', 2000, 'speed', 5);
 
 (* Move at constant 90 deg/sec *)
 P2_CMD('p2', 'servo_move', 'pin', 0, 'duty', 500, 'speed', -90);
+```
+
+**Convenience:** `P2_SERVO_MOVE(name, pin, duty, speed) : BOOL`
+
+```iecst
+P2_SERVO_MOVE('p2', 0, 1500, 0);       (* center, instant *)
+P2_SERVO_MOVE('p2', 0, 2000, 5);       (* ease to 2000us *)
+P2_SERVO_MOVE('p2', 0, 500, -90);      (* 90 deg/sec *)
 ```
 
 > **Servo Cog Interpolation:** The firmware's servo cog runs independently at 50 Hz. Each cycle it computes `delta = (target - current) / divisor + 1` and updates `wypin`. This produces smooth exponential easing — the servo decelerates as it approaches the target. Your ST code only sets the target; the cog handles the motion.
@@ -536,6 +755,14 @@ result := P2_CMD('p2', 'enc_read', 'pinA', 8);
 P2_CMD('p2', 'enc_reset', 'pinA', 8);
 ```
 
+**Convenience:** `P2_ENC_SETUP(name, pinA, pinB) : BOOL` / `P2_ENC_READ(name, pinA) : INT` / `P2_ENC_RESET(name, pinA) : BOOL`
+
+```iecst
+P2_ENC_SETUP('p2', 8, 9);
+pos := P2_ENC_READ('p2', 8);     (* Returns: -42 *)
+P2_ENC_RESET('p2', 8);
+```
+
 ---
 
 ### 3.11 Frequency Counter
@@ -546,6 +773,13 @@ P2_CMD('p2', 'freq_setup', 'pin', 10, 'gate_ms', 100);
 
 result := P2_CMD('p2', 'freq_read', 'pin', 10);
 (* Returns: {"hz": 1000, "duty": 500} — 1kHz at 50% duty *)
+```
+
+**Convenience:** `P2_FREQ_SETUP(name, pin, gateMs) : BOOL` / `P2_FREQ_READ(name, pin) : INT` — returns Hz
+
+```iecst
+P2_FREQ_SETUP('p2', 10, 100);
+hz := P2_FREQ_READ('p2', 10);    (* Returns: 1000 *)
 ```
 
 > **Known Issue:** The frequency counter has a bus fight when `DIR=1` conflicts with an external signal and `rdpin` resets the counter. A firmware redesign is planned.
@@ -565,9 +799,22 @@ P2_CMD('p2', 'oled_init', 'ch', 0, 'addr', 60);
 P2_CMD('p2', 'oled_clear', 'ch', 0);
 
 (* Print text — rows 0-7 *)
-P2_CMD('p2', 'oled_print', 'row', 0, 'text', 'GoPLC v1.0.520');
+P2_CMD('p2', 'oled_print', 'row', 0, 'text', 'GoPLC v1.0.533');
 P2_CMD('p2', 'oled_print', 'row', 2, 'text', 'Scan: 2ms');
 P2_CMD('p2', 'oled_print', 'row', 4, 'text', 'Status: RUNNING');
+```
+
+**Convenience:** `P2_OLED_INIT(name, ch, addr) : BOOL` / `P2_OLED_CLEAR(name, ch) : BOOL` / `P2_OLED_PRINT(name, row, text) : BOOL`
+
+```iecst
+P2_I2C_SETUP('p2', 0, 10, 11, 400);
+
+P2_OLED_INIT('p2', 0, 60);
+P2_OLED_CLEAR('p2', 0);
+
+P2_OLED_PRINT('p2', 0, 'GoPLC v1.0.533');
+P2_OLED_PRINT('p2', 2, 'Scan: 2ms');
+P2_OLED_PRINT('p2', 4, 'Status: RUNNING');
 ```
 
 ---
@@ -921,12 +1168,115 @@ This is the single biggest source of bugs when writing raw smart pin code:
 | `enc_reset` | 0x89 | pinA:u8 | ok:u8 |
 | `freq_setup` | 0x8A | pin:u8, gate_ms:u16 | ok:u8 |
 | `freq_read` | 0x8B | pin:u8 | hz:u32, duty:u32 |
-| `servo_move` | 0x8D | pin:u8, duty:u16, speed:i16 | ok:u8 |
 | `servo_batch` | 0x8C | count:u8, entries:[{pin:u8, duty:u16}] | updated:u8 |
+| `servo_move` | 0x8D | pin:u8, duty:u16, speed:i16 | ok:u8 |
 
 ---
 
-*GoPLC v1.0.520 | Firmware: cyclic_io.spin2 (flexspin) | P2 Rev G @ 200 MHz*
+## Appendix B: Convenience Function Quick Reference
+
+All convenience functions are thin wrappers over `P2_CMD`. They take the device name as the first argument and return native types instead of JSON strings.
+
+### GPIO
+
+| Function | Signature | Returns |
+|----------|-----------|---------|
+| `P2_PIN_MODE` | `(name, pin, mode)` | BOOL |
+| `P2_PIN_READ` | `(name, pin)` | INT (0 or 1) |
+| `P2_PIN_WRITE` | `(name, pin, value)` | BOOL |
+| `P2_PIN_TOGGLE` | `(name, pin)` | BOOL (reads then inverts) |
+
+### Smart Pins
+
+| Function | Signature | Returns |
+|----------|-----------|---------|
+| `P2_SMARTPIN_START` | `(name, pin, mode, x, y)` | BOOL |
+| `P2_SMARTPIN_READ` | `(name, pin)` | INT (raw 32-bit) |
+| `P2_SMARTPIN_WRITE` | `(name, pin, value)` | BOOL |
+| `P2_SMARTPIN_STOP` | `(name, pin)` | BOOL |
+
+### UART
+
+| Function | Signature | Returns |
+|----------|-----------|---------|
+| `P2_UART_SETUP` | `(name, ch, txPin, rxPin, baud)` | BOOL |
+| `P2_UART_SEND` | `(name, ch, hexData)` | INT (bytes sent) |
+| `P2_UART_RECV` | `(name, ch, maxLen, timeoutMs)` | STRING (hex data) |
+| `P2_UART_TXRX` | `(name, ch, hexData, timeoutMs)` | STRING (hex response) |
+| `P2_UART_STOP` | `(name, ch)` | BOOL |
+
+### I2C
+
+| Function | Signature | Returns |
+|----------|-----------|---------|
+| `P2_I2C_SETUP` | `(name, ch, scl, sda, speedKHz)` | BOOL |
+| `P2_I2C_WRITE` | `(name, ch, addr, hexData)` | BOOL (write_len auto-calculated) |
+| `P2_I2C_WRITE_BYTE` | `(name, ch, addr, byteValue)` | BOOL |
+| `P2_I2C_READ` | `(name, ch, addr, readLen)` | STRING (hex read_data) |
+| `P2_I2C_WRITE_READ` | `(name, ch, addr, hexWriteData, readLen)` | STRING (hex read_data) |
+| `P2_I2C_STOP` | `(name, ch)` | BOOL |
+
+### SPI
+
+| Function | Signature | Returns |
+|----------|-----------|---------|
+| `P2_SPI_SETUP` | `(name, ch, clk, mosi, miso, cs, speedKHz, mode)` | BOOL |
+| `P2_SPI_XFER` | `(name, ch, flags, hexTxData)` | STRING (hex rx_data) |
+| `P2_SPI_STOP` | `(name, ch)` | BOOL |
+
+### ADC / DAC
+
+| Function | Signature | Returns |
+|----------|-----------|---------|
+| `P2_ADC_SETUP` | `(name, pin, gain)` | BOOL |
+| `P2_ADC_READ` | `(name, pin)` | INT (millivolts, signed) |
+| `P2_DAC_SETUP` | `(name, pin)` | BOOL |
+| `P2_DAC_WRITE` | `(name, pin, value)` | BOOL (value 0-65535) |
+
+### PWM
+
+| Function | Signature | Returns |
+|----------|-----------|---------|
+| `P2_PWM_SETUP` | `(name, pin, freqHz)` | BOOL |
+| `P2_PWM_DUTY` | `(name, pin, duty)` | BOOL (duty 0-65535) |
+| `P2_PWM_STOP` | `(name, pin)` | BOOL |
+
+### Encoder
+
+| Function | Signature | Returns |
+|----------|-----------|---------|
+| `P2_ENC_SETUP` | `(name, pinA, pinB)` | BOOL |
+| `P2_ENC_READ` | `(name, pinA)` | INT (signed 32-bit count) |
+| `P2_ENC_RESET` | `(name, pinA)` | BOOL |
+
+### Frequency Counter
+
+| Function | Signature | Returns |
+|----------|-----------|---------|
+| `P2_FREQ_SETUP` | `(name, pin, gateMs)` | BOOL |
+| `P2_FREQ_READ` | `(name, pin)` | INT (Hz) |
+
+### Servo
+
+| Function | Signature | Returns |
+|----------|-----------|---------|
+| `P2_SERVO_MOVE` | `(name, pin, duty, speed)` | BOOL (duty in us, speed: 0=instant, +N=divisor, -N=deg/sec) |
+
+> **Note:** `servo_batch` is `P2_CMD`-only due to its array parameter. Use `P2_SERVO_MOVE` for single servos, `P2_CMD` with JSON for synchronized multi-servo updates.
+
+### OLED Display
+
+| Function | Signature | Returns |
+|----------|-----------|---------|
+| `P2_OLED_INIT` | `(name, ch, addr)` | BOOL |
+| `P2_OLED_CLEAR` | `(name, ch)` | BOOL |
+| `P2_OLED_PRINT` | `(name, row, text)` | BOOL |
+
+> **Note:** Eye display commands (`eye_start`, `eye_move`, `eye_pupil`, `eye_lid`, `eye_bottom_lid`, `eye_ring`) and `servo_batch` are available through `P2_CMD` only. Convenience functions cover 38 hardware I/O operations.
+
+---
+
+*GoPLC v1.0.533 | Firmware: cyclic_io.spin2 (flexspin) | P2 Rev G @ 200 MHz*
 *Schema source of truth: go-p2/firmware/p2_commands.json (44 commands)*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*

@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -12,8 +12,8 @@ GoPLC implements a complete **DNP3 (IEEE 1815)** stack — both master (client) 
 
 | Role | Functions | Use Case |
 |------|-----------|----------|
-| **Master** | `DNP3MasterCreate` / `DNP3MasterRead*` / `DNP3MasterWrite*` | Poll remote outstations: RTUs, protective relays, reclosers, IEDs |
-| **Outstation** | `DNP3OutstationCreate` / `DNP3OutstationSet*` / `DNP3OutstationGet*` | Expose GoPLC data to SCADA masters, DCS, or other DNP3 clients |
+| **Master** | `DNP3_MASTER_CREATE` / `DNP3_MASTER_READ_*` / `DNP3_MASTER_WRITE_*` | Poll remote outstations: RTUs, protective relays, reclosers, IEDs |
+| **Outstation** | `DNP3_OUTSTATION_CREATE` / `DNP3_OUTSTATION_SET_*` / `DNP3_OUTSTATION_GET_*` | Expose GoPLC data to SCADA masters, DCS, or other DNP3 clients |
 
 Both roles can run simultaneously. A single GoPLC instance can poll three field RTUs as a master while serving aggregated point data to a utility SCADA system as an outstation — all from the same ST program.
 
@@ -26,12 +26,12 @@ Both roles can run simultaneously. A single GoPLC instance can poll three field 
 │  ┌──────────────────────────┐  ┌────────────────────────────┐ │
 │  │ ST Program (Master)      │  │ ST Program (Outstation)    │ │
 │  │                          │  │                            │ │
-│  │ DNP3MasterCreate()       │  │ DNP3OutstationCreate()     │ │
-│  │ DNP3MasterConnect()      │  │ DNP3OutstationStart()      │ │
-│  │ DNP3MasterReadAI()       │  │ DNP3OutstationSetAI()      │ │
-│  │ DNP3MasterReadBI()       │  │ DNP3OutstationSetBI()      │ │
-│  │ DNP3MasterWriteBO()      │  │ DNP3OutstationGetBO()      │ │
-│  │ DNP3MasterWriteAO()      │  │ DNP3OutstationGetAO()      │ │
+│  │ DNP3_MASTER_CREATE()       │  │ DNP3_OUTSTATION_CREATE()     │ │
+│  │ DNP3_MASTER_CONNECT()      │  │ DNP3_OUTSTATION_START()      │ │
+│  │ DNP3_MASTER_READ_AI()       │  │ DNP3_OUTSTATION_SET_AI()      │ │
+│  │ DNP3_MASTER_READ_BI()       │  │ DNP3_OUTSTATION_SET_BI()      │ │
+│  │ DNP3_MASTER_WRITE_BO()      │  │ DNP3_OUTSTATION_GET_BO()      │ │
+│  │ DNP3_MASTER_WRITE_AO()      │  │ DNP3_OUTSTATION_GET_AO()      │ │
 │  └──────────┬───────────────┘  └──────────┬─────────────────┘ │
 │             │                             │                   │
 │             │  TCP Client                 │  TCP Server        │
@@ -95,7 +95,7 @@ The DNP3 master connects to remote outstations (RTUs, IEDs, relays) and performs
 
 ### 2.1 Connection Management
 
-#### DNP3MasterCreate — Create Named Master Connection
+#### DNP3_MASTER_CREATE — Create Named Master Connection
 
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -109,31 +109,31 @@ Returns: `BOOL` — TRUE if the master connection was created successfully.
 
 ```iecst
 (* Connect to an RTU at 10.0.0.100, default addresses *)
-ok := DNP3MasterCreate('rtu1', '10.0.0.100', 20000);
+ok := DNP3_MASTER_CREATE('rtu1', '10.0.0.100', 20000);
 
 (* Connect with explicit DNP3 addresses — master=1, outstation=10 *)
-ok := DNP3MasterCreate('rtu1', '10.0.0.100', 20000, 1, 10);
+ok := DNP3_MASTER_CREATE('rtu1', '10.0.0.100', 20000, 1, 10);
 
 (* Multiple outstations on different addresses *)
-ok := DNP3MasterCreate('sub_north', '10.0.1.50', 20000, 1, 11);
-ok := DNP3MasterCreate('sub_south', '10.0.1.51', 20000, 1, 12);
+ok := DNP3_MASTER_CREATE('sub_north', '10.0.1.50', 20000, 1, 11);
+ok := DNP3_MASTER_CREATE('sub_south', '10.0.1.51', 20000, 1, 12);
 ```
 
 > **Named connections:** Every master connection has a unique string name. This name is used in all subsequent calls. Create one connection per outstation — the typical pattern for utility SCADA polling.
 
-#### DNP3MasterConnect — Establish TCP Connection
+#### DNP3_MASTER_CONNECT — Establish TCP Connection
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `name` | STRING | Connection name from DNP3MasterCreate |
+| `name` | STRING | Connection name from DNP3_MASTER_CREATE |
 
 Returns: `BOOL` — TRUE if connected successfully.
 
 ```iecst
-ok := DNP3MasterConnect('rtu1');
+ok := DNP3_MASTER_CONNECT('rtu1');
 ```
 
-#### DNP3MasterDisconnect — Close TCP Connection
+#### DNP3_MASTER_DISCONNECT — Close TCP Connection
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -142,10 +142,10 @@ ok := DNP3MasterConnect('rtu1');
 Returns: `BOOL` — TRUE if disconnected successfully.
 
 ```iecst
-ok := DNP3MasterDisconnect('rtu1');
+ok := DNP3_MASTER_DISCONNECT('rtu1');
 ```
 
-#### DNP3MasterIsConnected — Check Connection State
+#### DNP3_MASTER_IS_CONNECTED — Check Connection State
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -154,8 +154,8 @@ ok := DNP3MasterDisconnect('rtu1');
 Returns: `BOOL` — TRUE if the TCP connection is active and the DNP3 link layer is up.
 
 ```iecst
-IF NOT DNP3MasterIsConnected('rtu1') THEN
-    DNP3MasterConnect('rtu1');
+IF NOT DNP3_MASTER_IS_CONNECTED('rtu1') THEN
+    DNP3_MASTER_CONNECT('rtu1');
 END_IF;
 ```
 
@@ -170,19 +170,19 @@ END_VAR
 
 CASE state OF
     0: (* Create master connection *)
-        ok := DNP3MasterCreate('rtu1', '10.0.0.100', 20000, 1, 10);
+        ok := DNP3_MASTER_CREATE('rtu1', '10.0.0.100', 20000, 1, 10);
         IF ok THEN
             state := 1;
         END_IF;
 
     1: (* Connect *)
-        ok := DNP3MasterConnect('rtu1');
+        ok := DNP3_MASTER_CONNECT('rtu1');
         IF ok THEN
             state := 10;
         END_IF;
 
     10: (* Running — read/write in other programs *)
-        IF NOT DNP3MasterIsConnected('rtu1') THEN
+        IF NOT DNP3_MASTER_IS_CONNECTED('rtu1') THEN
             state := 1;  (* Reconnect *)
         END_IF;
 END_CASE;
@@ -195,7 +195,7 @@ END_PROGRAM
 
 All read functions return the **most recent cached value** from the outstation. GoPLC polls the outstation automatically in the background and processes unsolicited responses. Reads never block.
 
-#### DNP3MasterReadBI — Read Binary Input
+#### DNP3_MASTER_READ_BI — Read Binary Input
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -206,15 +206,15 @@ Returns: `BOOL` — Current state of the binary input.
 
 ```iecst
 (* Read switch status — BI index 0 *)
-breaker_closed := DNP3MasterReadBI('rtu1', 0);
+breaker_closed := DNP3_MASTER_READ_BI('rtu1', 0);
 
 (* Read alarm contact — BI index 5 *)
-hi_level_alarm := DNP3MasterReadBI('rtu1', 5);
+hi_level_alarm := DNP3_MASTER_READ_BI('rtu1', 5);
 ```
 
 > **Binary Inputs** represent discrete field status: breaker position, door contacts, level switches, equipment running indications. These are read-only from the master's perspective — the outstation reports them.
 
-#### DNP3MasterReadBO — Read Binary Output
+#### DNP3_MASTER_READ_BO — Read Binary Output
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -225,12 +225,12 @@ Returns: `BOOL` — Current state of the binary output.
 
 ```iecst
 (* Read back the current state of a control output *)
-pump_running := DNP3MasterReadBO('rtu1', 0);
+pump_running := DNP3_MASTER_READ_BO('rtu1', 0);
 ```
 
 > **Binary Output readback:** This reads the current *feedback state* of a binary output point on the outstation. Use this to verify that a command was executed — compare the readback against the commanded value.
 
-#### DNP3MasterReadAI — Read Analog Input
+#### DNP3_MASTER_READ_AI — Read Analog Input
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -241,15 +241,15 @@ Returns: `REAL` — Current value of the analog input.
 
 ```iecst
 (* Read field measurements *)
-bus_voltage := DNP3MasterReadAI('rtu1', 0);    (* Volts *)
-line_current := DNP3MasterReadAI('rtu1', 1);   (* Amps *)
-active_power := DNP3MasterReadAI('rtu1', 2);   (* kW *)
-frequency := DNP3MasterReadAI('rtu1', 3);      (* Hz *)
+bus_voltage := DNP3_MASTER_READ_AI('rtu1', 0);    (* Volts *)
+line_current := DNP3_MASTER_READ_AI('rtu1', 1);   (* Amps *)
+active_power := DNP3_MASTER_READ_AI('rtu1', 2);   (* kW *)
+frequency := DNP3_MASTER_READ_AI('rtu1', 3);      (* Hz *)
 ```
 
 > **Analog Inputs** represent continuously varying field measurements: voltage, current, power, flow, pressure, temperature, tank level. The outstation typically scales raw instrument readings into engineering units before reporting.
 
-#### DNP3MasterReadAO — Read Analog Output
+#### DNP3_MASTER_READ_AO — Read Analog Output
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -260,10 +260,10 @@ Returns: `REAL` — Current value of the analog output.
 
 ```iecst
 (* Read back the current setpoint *)
-current_setpoint := DNP3MasterReadAO('rtu1', 0);
+current_setpoint := DNP3_MASTER_READ_AO('rtu1', 0);
 ```
 
-#### DNP3MasterReadCounter — Read Counter
+#### DNP3_MASTER_READ_COUNTER — Read Counter
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -274,10 +274,10 @@ Returns: `INT` — Current counter value.
 
 ```iecst
 (* Read pulse accumulator — energy meter *)
-kwh_total := DNP3MasterReadCounter('rtu1', 0);
+kwh_total := DNP3_MASTER_READ_COUNTER('rtu1', 0);
 
 (* Read event count *)
-operations := DNP3MasterReadCounter('rtu1', 1);
+operations := DNP3_MASTER_READ_COUNTER('rtu1', 1);
 ```
 
 > **Counters** accumulate events or pulses: kWh totals, breaker operations, flow totalizer pulses. They only increment (or reset). DNP3 also supports *frozen counters* — a snapshot of the counter value at a specific time — which the runtime handles internally.
@@ -288,7 +288,7 @@ operations := DNP3MasterReadCounter('rtu1', 1);
 
 Write functions send control commands to the outstation. DNP3 uses a **Select-Before-Operate (SBO)** or **Direct Operate** model for commands. GoPLC uses Direct Operate by default for simplicity.
 
-#### DNP3MasterWriteBO — Write Binary Output (Control)
+#### DNP3_MASTER_WRITE_BO — Write Binary Output (Control)
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -300,18 +300,18 @@ Returns: `BOOL` — TRUE if the command was acknowledged by the outstation.
 
 ```iecst
 (* Close breaker *)
-ok := DNP3MasterWriteBO('rtu1', 0, TRUE);
+ok := DNP3_MASTER_WRITE_BO('rtu1', 0, TRUE);
 
 (* Open breaker *)
-ok := DNP3MasterWriteBO('rtu1', 0, FALSE);
+ok := DNP3_MASTER_WRITE_BO('rtu1', 0, FALSE);
 
 (* Start pump *)
-ok := DNP3MasterWriteBO('rtu1', 1, TRUE);
+ok := DNP3_MASTER_WRITE_BO('rtu1', 1, TRUE);
 ```
 
 > **Control operations** in DNP3 are fundamentally different from Modbus register writes. Each BO command is a discrete, timestamped event that the outstation validates before executing. The outstation may reject commands based on interlocks, local/remote switch position, or authentication requirements.
 
-#### DNP3MasterWriteAO — Write Analog Output (Setpoint)
+#### DNP3_MASTER_WRITE_AO — Write Analog Output (Setpoint)
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -323,17 +323,17 @@ Returns: `BOOL` — TRUE if the setpoint was acknowledged by the outstation.
 
 ```iecst
 (* Set voltage regulator tap position *)
-ok := DNP3MasterWriteAO('rtu1', 0, 122.5);
+ok := DNP3_MASTER_WRITE_AO('rtu1', 0, 122.5);
 
 (* Set flow setpoint *)
-ok := DNP3MasterWriteAO('rtu1', 1, 150.0);
+ok := DNP3_MASTER_WRITE_AO('rtu1', 1, 150.0);
 ```
 
 ---
 
 ### 2.4 Lifecycle Management
 
-#### DNP3MasterDelete — Remove Master Connection
+#### DNP3_MASTER_DELETE — Remove Master Connection
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -342,15 +342,15 @@ ok := DNP3MasterWriteAO('rtu1', 1, 150.0);
 Returns: `BOOL` — TRUE if deleted. Automatically disconnects if connected.
 
 ```iecst
-ok := DNP3MasterDelete('rtu1');
+ok := DNP3_MASTER_DELETE('rtu1');
 ```
 
-#### DNP3MasterList — List All Master Connections
+#### DNP3_MASTER_LIST — List All Master Connections
 
 Returns: `[]STRING` — Array of all master connection names.
 
 ```iecst
-masters := DNP3MasterList();
+masters := DNP3_MASTER_LIST();
 (* Returns: ['rtu1', 'sub_north', 'sub_south'] *)
 ```
 
@@ -362,7 +362,7 @@ The DNP3 outstation acts as a server — it listens for incoming master connecti
 
 ### 3.1 Connection Management
 
-#### DNP3OutstationCreate — Create Named Outstation
+#### DNP3_OUTSTATION_CREATE — Create Named Outstation
 
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -374,30 +374,30 @@ Returns: `BOOL` — TRUE if the outstation was created successfully.
 
 ```iecst
 (* Create outstation on default port *)
-ok := DNP3OutstationCreate('sub1', 20000);
+ok := DNP3_OUTSTATION_CREATE('sub1', 20000);
 
 (* Create with explicit DNP3 address *)
-ok := DNP3OutstationCreate('sub1', 20000, 10);
+ok := DNP3_OUTSTATION_CREATE('sub1', 20000, 10);
 
 (* Create second outstation on a different port *)
-ok := DNP3OutstationCreate('sub2', 20001, 11);
+ok := DNP3_OUTSTATION_CREATE('sub2', 20001, 11);
 ```
 
 > **Multiple masters:** A single outstation can accept connections from multiple masters simultaneously. This is standard practice — a primary SCADA master and a backup/disaster-recovery master both connect to the same outstation.
 
-#### DNP3OutstationStart — Begin Listening
+#### DNP3_OUTSTATION_START — Begin Listening
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `name` | STRING | Outstation name from DNP3OutstationCreate |
+| `name` | STRING | Outstation name from DNP3_OUTSTATION_CREATE |
 
 Returns: `BOOL` — TRUE if the outstation started listening.
 
 ```iecst
-ok := DNP3OutstationStart('sub1');
+ok := DNP3_OUTSTATION_START('sub1');
 ```
 
-#### DNP3OutstationStop — Stop Listening
+#### DNP3_OUTSTATION_STOP — Stop Listening
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -406,10 +406,10 @@ ok := DNP3OutstationStart('sub1');
 Returns: `BOOL` — TRUE if stopped. Disconnects all connected masters.
 
 ```iecst
-ok := DNP3OutstationStop('sub1');
+ok := DNP3_OUTSTATION_STOP('sub1');
 ```
 
-#### DNP3OutstationIsConnected — Check If Any Master Is Connected
+#### DNP3_OUTSTATION_IS_CONNECTED — Check If Any Master Is Connected
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -418,7 +418,7 @@ ok := DNP3OutstationStop('sub1');
 Returns: `BOOL` — TRUE if at least one master is connected.
 
 ```iecst
-IF DNP3OutstationIsConnected('sub1') THEN
+IF DNP3_OUTSTATION_IS_CONNECTED('sub1') THEN
     (* At least one SCADA master is polling us *)
 END_IF;
 ```
@@ -429,7 +429,7 @@ END_IF;
 
 Set functions update the outstation's point table. When a master polls (or the outstation sends an unsolicited response), it receives these values. Call these from your ST program to publish field data.
 
-#### DNP3OutstationSetBI — Set Binary Input
+#### DNP3_OUTSTATION_SET_BI — Set Binary Input
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -441,14 +441,14 @@ Returns: `BOOL` — TRUE if the point was updated.
 
 ```iecst
 (* Report equipment status to SCADA *)
-DNP3OutstationSetBI('sub1', 0, breaker_closed);
-DNP3OutstationSetBI('sub1', 1, transformer_alarm);
-DNP3OutstationSetBI('sub1', 2, door_open);
+DNP3_OUTSTATION_SET_BI('sub1', 0, breaker_closed);
+DNP3_OUTSTATION_SET_BI('sub1', 1, transformer_alarm);
+DNP3_OUTSTATION_SET_BI('sub1', 2, door_open);
 ```
 
 > **Event generation:** When a binary input changes state, the outstation automatically generates a change event with a timestamp. The master retrieves these events via class polling — ensuring no state transitions are missed, even between integrity polls.
 
-#### DNP3OutstationSetAI — Set Analog Input
+#### DNP3_OUTSTATION_SET_AI — Set Analog Input
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -460,15 +460,15 @@ Returns: `BOOL` — TRUE if the point was updated.
 
 ```iecst
 (* Report field measurements to SCADA *)
-DNP3OutstationSetAI('sub1', 0, bus_voltage);     (* 13.8 kV *)
-DNP3OutstationSetAI('sub1', 1, line_current);    (* 245.6 A *)
-DNP3OutstationSetAI('sub1', 2, active_power);    (* 3200.0 kW *)
-DNP3OutstationSetAI('sub1', 3, ambient_temp);    (* 35.2 C *)
+DNP3_OUTSTATION_SET_AI('sub1', 0, bus_voltage);     (* 13.8 kV *)
+DNP3_OUTSTATION_SET_AI('sub1', 1, line_current);    (* 245.6 A *)
+DNP3_OUTSTATION_SET_AI('sub1', 2, active_power);    (* 3200.0 kW *)
+DNP3_OUTSTATION_SET_AI('sub1', 3, ambient_temp);    (* 35.2 C *)
 ```
 
 > **Deadband:** Analog events are generated when the value changes by more than the configured deadband. The runtime applies a default deadband appropriate for the point's scale. This prevents the event buffer from filling with noise on fluctuating measurements.
 
-#### DNP3OutstationSetCounter — Set Counter
+#### DNP3_OUTSTATION_SET_COUNTER — Set Counter
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -480,10 +480,10 @@ Returns: `BOOL` — TRUE if the point was updated.
 
 ```iecst
 (* Report accumulated energy *)
-DNP3OutstationSetCounter('sub1', 0, kwh_total);
+DNP3_OUTSTATION_SET_COUNTER('sub1', 0, kwh_total);
 
 (* Report breaker operations count *)
-DNP3OutstationSetCounter('sub1', 1, breaker_ops);
+DNP3_OUTSTATION_SET_COUNTER('sub1', 1, breaker_ops);
 ```
 
 ---
@@ -492,7 +492,7 @@ DNP3OutstationSetCounter('sub1', 1, breaker_ops);
 
 Get functions read command values that a master has written to the outstation. Use these to receive control commands and setpoints from the SCADA system.
 
-#### DNP3OutstationGetBO — Get Binary Output (Control Command)
+#### DNP3_OUTSTATION_GET_BO — Get Binary Output (Control Command)
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -503,13 +503,13 @@ Returns: `BOOL` — The last commanded value from the master.
 
 ```iecst
 (* Check if SCADA commanded breaker close *)
-close_cmd := DNP3OutstationGetBO('sub1', 0);
+close_cmd := DNP3_OUTSTATION_GET_BO('sub1', 0);
 IF close_cmd THEN
     (* Execute close sequence on local equipment *)
 END_IF;
 ```
 
-#### DNP3OutstationGetAO — Get Analog Output (Setpoint)
+#### DNP3_OUTSTATION_GET_AO — Get Analog Output (Setpoint)
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -520,17 +520,17 @@ Returns: `REAL` — The last setpoint value from the master.
 
 ```iecst
 (* Read voltage setpoint from SCADA *)
-voltage_sp := DNP3OutstationGetAO('sub1', 0);
+voltage_sp := DNP3_OUTSTATION_GET_AO('sub1', 0);
 
 (* Read flow setpoint from SCADA *)
-flow_sp := DNP3OutstationGetAO('sub1', 1);
+flow_sp := DNP3_OUTSTATION_GET_AO('sub1', 1);
 ```
 
 ---
 
 ### 3.4 Diagnostics and Lifecycle
 
-#### DNP3OutstationGetStats — Outstation Statistics
+#### DNP3_OUTSTATION_GET_STATS — Outstation Statistics
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -539,13 +539,13 @@ flow_sp := DNP3OutstationGetAO('sub1', 1);
 Returns: `MAP` — Connection and protocol statistics.
 
 ```iecst
-stats := DNP3OutstationGetStats('sub1');
+stats := DNP3_OUTSTATION_GET_STATS('sub1');
 (* Returns: {"connected_masters": 2, "requests": 15432,
              "responses": 15432, "events_queued": 12,
              "unsolicited_sent": 847} *)
 ```
 
-#### DNP3OutstationDelete — Remove Outstation
+#### DNP3_OUTSTATION_DELETE — Remove Outstation
 
 | Param | Type | Description |
 |-------|------|-------------|
@@ -554,15 +554,15 @@ stats := DNP3OutstationGetStats('sub1');
 Returns: `BOOL` — TRUE if deleted. Automatically stops if running.
 
 ```iecst
-ok := DNP3OutstationDelete('sub1');
+ok := DNP3_OUTSTATION_DELETE('sub1');
 ```
 
-#### DNP3OutstationList — List All Outstations
+#### DNP3_OUTSTATION_LIST — List All Outstations
 
 Returns: `[]STRING` — Array of all outstation names.
 
 ```iecst
-outstations := DNP3OutstationList();
+outstations := DNP3_OUTSTATION_LIST();
 (* Returns: ['sub1', 'sub2'] *)
 ```
 
@@ -624,52 +624,52 @@ END_VAR
 
 CASE state OF
     0: (* Create all master connections *)
-        ok := DNP3MasterCreate('siteA', '10.0.1.10', 20000, 1, 10);
-        ok := DNP3MasterCreate('siteB', '10.0.1.11', 20000, 1, 11);
-        ok := DNP3MasterCreate('siteC', '10.0.1.12', 20000, 1, 12);
+        ok := DNP3_MASTER_CREATE('siteA', '10.0.1.10', 20000, 1, 10);
+        ok := DNP3_MASTER_CREATE('siteB', '10.0.1.11', 20000, 1, 11);
+        ok := DNP3_MASTER_CREATE('siteC', '10.0.1.12', 20000, 1, 12);
         state := 1;
 
     1: (* Connect all *)
-        DNP3MasterConnect('siteA');
-        DNP3MasterConnect('siteB');
-        DNP3MasterConnect('siteC');
+        DNP3_MASTER_CONNECT('siteA');
+        DNP3_MASTER_CONNECT('siteB');
+        DNP3_MASTER_CONNECT('siteC');
         state := 10;
 
     10: (* Poll and control *)
         (* --- Site A: Pump Station --- *)
-        IF DNP3MasterIsConnected('siteA') THEN
-            siteA_pump_run := DNP3MasterReadBI('siteA', 0);
-            siteA_discharge_psi := DNP3MasterReadAI('siteA', 0);
-            siteA_flow_gpm := DNP3MasterReadAI('siteA', 1);
-            siteA_runtime_hrs := DNP3MasterReadCounter('siteA', 0);
+        IF DNP3_MASTER_IS_CONNECTED('siteA') THEN
+            siteA_pump_run := DNP3_MASTER_READ_BI('siteA', 0);
+            siteA_discharge_psi := DNP3_MASTER_READ_AI('siteA', 0);
+            siteA_flow_gpm := DNP3_MASTER_READ_AI('siteA', 1);
+            siteA_runtime_hrs := DNP3_MASTER_READ_COUNTER('siteA', 0);
 
             (* Send pump command *)
             IF pump_start_cmd THEN
-                DNP3MasterWriteBO('siteA', 0, TRUE);
+                DNP3_MASTER_WRITE_BO('siteA', 0, TRUE);
             END_IF;
         ELSE
-            DNP3MasterConnect('siteA');
+            DNP3_MASTER_CONNECT('siteA');
         END_IF;
 
         (* --- Site B: Tank Farm --- *)
-        IF DNP3MasterIsConnected('siteB') THEN
-            siteB_tank_level := DNP3MasterReadAI('siteB', 0);
-            siteB_hi_level := DNP3MasterReadBI('siteB', 0);
-            siteB_lo_level := DNP3MasterReadBI('siteB', 1);
+        IF DNP3_MASTER_IS_CONNECTED('siteB') THEN
+            siteB_tank_level := DNP3_MASTER_READ_AI('siteB', 0);
+            siteB_hi_level := DNP3_MASTER_READ_BI('siteB', 0);
+            siteB_lo_level := DNP3_MASTER_READ_BI('siteB', 1);
         ELSE
-            DNP3MasterConnect('siteB');
+            DNP3_MASTER_CONNECT('siteB');
         END_IF;
 
         (* --- Site C: Treatment Plant --- *)
-        IF DNP3MasterIsConnected('siteC') THEN
-            siteC_cl2_residual := DNP3MasterReadAI('siteC', 0);
-            siteC_turbidity := DNP3MasterReadAI('siteC', 1);
-            siteC_flow_mgd := DNP3MasterReadAI('siteC', 2);
+        IF DNP3_MASTER_IS_CONNECTED('siteC') THEN
+            siteC_cl2_residual := DNP3_MASTER_READ_AI('siteC', 0);
+            siteC_turbidity := DNP3_MASTER_READ_AI('siteC', 1);
+            siteC_flow_mgd := DNP3_MASTER_READ_AI('siteC', 2);
 
             (* Send chlorine dosing setpoint *)
-            DNP3MasterWriteAO('siteC', 0, cl2_setpoint);
+            DNP3_MASTER_WRITE_AO('siteC', 0, cl2_setpoint);
         ELSE
-            DNP3MasterConnect('siteC');
+            DNP3_MASTER_CONNECT('siteC');
         END_IF;
 END_CASE;
 END_PROGRAM
@@ -743,13 +743,13 @@ END_VAR
 
 CASE state OF
     0: (* Create outstation *)
-        ok := DNP3OutstationCreate('sub1', 20000, 10);
+        ok := DNP3_OUTSTATION_CREATE('sub1', 20000, 10);
         IF ok THEN
             state := 1;
         END_IF;
 
     1: (* Start listening *)
-        ok := DNP3OutstationStart('sub1');
+        ok := DNP3_OUTSTATION_START('sub1');
         IF ok THEN
             state := 10;
         END_IF;
@@ -757,28 +757,28 @@ CASE state OF
     10: (* Running — map local data to DNP3 points *)
 
         (* === Binary Inputs: Equipment Status === *)
-        DNP3OutstationSetBI('sub1', 0, breaker_52a);    (* Breaker closed *)
-        DNP3OutstationSetBI('sub1', 1, breaker_52b);    (* Breaker open *)
-        DNP3OutstationSetBI('sub1', 2, lockout_86);     (* Lockout active *)
-        DNP3OutstationSetBI('sub1', 3, door_alarm);     (* Door open *)
-        DNP3OutstationSetBI('sub1', 4, dc_supply_ok);   (* DC OK *)
+        DNP3_OUTSTATION_SET_BI('sub1', 0, breaker_52a);    (* Breaker closed *)
+        DNP3_OUTSTATION_SET_BI('sub1', 1, breaker_52b);    (* Breaker open *)
+        DNP3_OUTSTATION_SET_BI('sub1', 2, lockout_86);     (* Lockout active *)
+        DNP3_OUTSTATION_SET_BI('sub1', 3, door_alarm);     (* Door open *)
+        DNP3_OUTSTATION_SET_BI('sub1', 4, dc_supply_ok);   (* DC OK *)
 
         (* === Analog Inputs: Measurements === *)
-        DNP3OutstationSetAI('sub1', 0, bus_kv);         (* Bus voltage kV *)
-        DNP3OutstationSetAI('sub1', 1, feeder_amps);    (* Feeder current A *)
-        DNP3OutstationSetAI('sub1', 2, active_kw);      (* Active power kW *)
-        DNP3OutstationSetAI('sub1', 3, reactive_kvar);  (* Reactive power kVAR *)
-        DNP3OutstationSetAI('sub1', 4, power_factor);   (* Power factor *)
-        DNP3OutstationSetAI('sub1', 5, xfmr_temp_c);   (* Transformer temp C *)
+        DNP3_OUTSTATION_SET_AI('sub1', 0, bus_kv);         (* Bus voltage kV *)
+        DNP3_OUTSTATION_SET_AI('sub1', 1, feeder_amps);    (* Feeder current A *)
+        DNP3_OUTSTATION_SET_AI('sub1', 2, active_kw);      (* Active power kW *)
+        DNP3_OUTSTATION_SET_AI('sub1', 3, reactive_kvar);  (* Reactive power kVAR *)
+        DNP3_OUTSTATION_SET_AI('sub1', 4, power_factor);   (* Power factor *)
+        DNP3_OUTSTATION_SET_AI('sub1', 5, xfmr_temp_c);   (* Transformer temp C *)
 
         (* === Counters === *)
-        DNP3OutstationSetCounter('sub1', 0, kwh_delivered);
-        DNP3OutstationSetCounter('sub1', 1, breaker_ops);
+        DNP3_OUTSTATION_SET_COUNTER('sub1', 0, kwh_delivered);
+        DNP3_OUTSTATION_SET_COUNTER('sub1', 1, breaker_ops);
 
         (* === Read Commands from SCADA Master === *)
-        breaker_close_cmd := DNP3OutstationGetBO('sub1', 0);
-        breaker_trip_cmd := DNP3OutstationGetBO('sub1', 1);
-        tap_setpoint := DNP3OutstationGetAO('sub1', 0);
+        breaker_close_cmd := DNP3_OUTSTATION_GET_BO('sub1', 0);
+        breaker_trip_cmd := DNP3_OUTSTATION_GET_BO('sub1', 1);
+        tap_setpoint := DNP3_OUTSTATION_GET_AO('sub1', 0);
 
         (* Execute commands locally *)
         IF breaker_close_cmd THEN
@@ -817,27 +817,27 @@ END_VAR
 
 CASE state OF
     0: (* Create master connections to field RTUs *)
-        DNP3MasterCreate('well1', '10.0.2.10', 20000, 1, 20);
-        DNP3MasterCreate('well2', '10.0.2.11', 20000, 1, 21);
+        DNP3_MASTER_CREATE('well1', '10.0.2.10', 20000, 1, 20);
+        DNP3_MASTER_CREATE('well2', '10.0.2.11', 20000, 1, 21);
 
         (* Create outstation for upstream SCADA *)
-        DNP3OutstationCreate('scada_feed', 20000, 10);
+        DNP3_OUTSTATION_CREATE('scada_feed', 20000, 10);
         state := 1;
 
     1: (* Connect and start *)
-        DNP3MasterConnect('well1');
-        DNP3MasterConnect('well2');
-        DNP3OutstationStart('scada_feed');
+        DNP3_MASTER_CONNECT('well1');
+        DNP3_MASTER_CONNECT('well2');
+        DNP3_OUTSTATION_START('scada_feed');
         state := 10;
 
     10: (* Running — poll, aggregate, serve *)
 
         (* Poll field RTUs *)
-        well_1_flow := DNP3MasterReadAI('well1', 0);
-        well_1_running := DNP3MasterReadBI('well1', 0);
-        well_2_flow := DNP3MasterReadAI('well2', 0);
-        well_2_running := DNP3MasterReadBI('well2', 0);
-        reservoir_level := DNP3MasterReadAI('well1', 1);
+        well_1_flow := DNP3_MASTER_READ_AI('well1', 0);
+        well_1_running := DNP3_MASTER_READ_BI('well1', 0);
+        well_2_flow := DNP3_MASTER_READ_AI('well2', 0);
+        well_2_running := DNP3_MASTER_READ_BI('well2', 0);
+        reservoir_level := DNP3_MASTER_READ_AI('well1', 1);
 
         (* Aggregate *)
         total_flow := well_1_flow + well_2_flow;
@@ -846,20 +846,20 @@ CASE state OF
         IF well_2_running THEN wells_online := wells_online + 1; END_IF;
 
         (* Serve aggregated data to upstream SCADA *)
-        DNP3OutstationSetAI('scada_feed', 0, total_flow);
-        DNP3OutstationSetAI('scada_feed', 1, reservoir_level);
-        DNP3OutstationSetAI('scada_feed', 2, well_1_flow);
-        DNP3OutstationSetAI('scada_feed', 3, well_2_flow);
-        DNP3OutstationSetBI('scada_feed', 0, well_1_running);
-        DNP3OutstationSetBI('scada_feed', 1, well_2_running);
-        DNP3OutstationSetCounter('scada_feed', 0, wells_online);
+        DNP3_OUTSTATION_SET_AI('scada_feed', 0, total_flow);
+        DNP3_OUTSTATION_SET_AI('scada_feed', 1, reservoir_level);
+        DNP3_OUTSTATION_SET_AI('scada_feed', 2, well_1_flow);
+        DNP3_OUTSTATION_SET_AI('scada_feed', 3, well_2_flow);
+        DNP3_OUTSTATION_SET_BI('scada_feed', 0, well_1_running);
+        DNP3_OUTSTATION_SET_BI('scada_feed', 1, well_2_running);
+        DNP3_OUTSTATION_SET_COUNTER('scada_feed', 0, wells_online);
 
         (* Reconnect if needed *)
-        IF NOT DNP3MasterIsConnected('well1') THEN
-            DNP3MasterConnect('well1');
+        IF NOT DNP3_MASTER_IS_CONNECTED('well1') THEN
+            DNP3_MASTER_CONNECT('well1');
         END_IF;
-        IF NOT DNP3MasterIsConnected('well2') THEN
-            DNP3MasterConnect('well2');
+        IF NOT DNP3_MASTER_IS_CONNECTED('well2') THEN
+            DNP3_MASTER_CONNECT('well2');
         END_IF;
 END_CASE;
 END_PROGRAM
@@ -949,7 +949,7 @@ END_PROGRAM
 
 - **Always check `IsConnected` before reads/writes.** Reads on a disconnected master return stale cached values (the last known good value). Your logic must distinguish between "connected and reading 0.0" and "disconnected and stale."
 - **Reconnect in a state machine.** DNP3 connections over WAN links will drop. Use the `CASE` state machine pattern shown in the examples — never just call `Connect` unconditionally every scan.
-- **Do not create connections every scan.** `DNP3MasterCreate` and `DNP3OutstationCreate` are one-time setup calls. Guard them with a state variable.
+- **Do not create connections every scan.** `DNP3_MASTER_CREATE` and `DNP3_OUTSTATION_CREATE` are one-time setup calls. Guard them with a state variable.
 
 ### Point Index Ranges
 
@@ -960,8 +960,8 @@ END_PROGRAM
 ### Timing
 
 - **Master reads are non-blocking.** They return the cached value immediately. The runtime polls the outstation in the background at the configured class poll interval.
-- **Master writes are blocking.** `DNP3MasterWriteBO` and `DNP3MasterWriteAO` wait for the outstation's acknowledgment before returning. Keep write frequency reasonable — do not command every scan cycle.
-- **Outstation sets are immediate.** `DNP3OutstationSetBI/AI/Counter` update the point table instantly. The master sees the new value on its next poll or via unsolicited response.
+- **Master writes are blocking.** `DNP3_MASTER_WRITE_BO` and `DNP3_MASTER_WRITE_AO` wait for the outstation's acknowledgment before returning. Keep write frequency reasonable — do not command every scan cycle.
+- **Outstation sets are immediate.** `DNP3_OUTSTATION_SET_BI/AI/Counter` update the point table instantly. The master sees the new value on its next poll or via unsolicited response.
 
 ### Security Considerations
 
@@ -978,36 +978,36 @@ END_PROGRAM
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `DNP3MasterCreate(name, host, port [, localAddr] [, remoteAddr])` | BOOL | Create named master connection |
-| `DNP3MasterConnect(name)` | BOOL | Establish TCP connection |
-| `DNP3MasterDisconnect(name)` | BOOL | Close TCP connection |
-| `DNP3MasterIsConnected(name)` | BOOL | Check connection state |
-| `DNP3MasterReadBI(name, index)` | BOOL | Read binary input |
-| `DNP3MasterReadBO(name, index)` | BOOL | Read binary output |
-| `DNP3MasterReadAI(name, index)` | REAL | Read analog input |
-| `DNP3MasterReadAO(name, index)` | REAL | Read analog output |
-| `DNP3MasterReadCounter(name, index)` | INT | Read counter |
-| `DNP3MasterWriteBO(name, index, value)` | BOOL | Write binary output (control) |
-| `DNP3MasterWriteAO(name, index, value)` | BOOL | Write analog output (setpoint) |
-| `DNP3MasterDelete(name)` | BOOL | Remove master connection |
-| `DNP3MasterList()` | []STRING | List all master connections |
+| `DNP3_MASTER_CREATE(name, host, port [, localAddr] [, remoteAddr])` | BOOL | Create named master connection |
+| `DNP3_MASTER_CONNECT(name)` | BOOL | Establish TCP connection |
+| `DNP3_MASTER_DISCONNECT(name)` | BOOL | Close TCP connection |
+| `DNP3_MASTER_IS_CONNECTED(name)` | BOOL | Check connection state |
+| `DNP3_MASTER_READ_BI(name, index)` | BOOL | Read binary input |
+| `DNP3_MASTER_READ_BO(name, index)` | BOOL | Read binary output |
+| `DNP3_MASTER_READ_AI(name, index)` | REAL | Read analog input |
+| `DNP3_MASTER_READ_AO(name, index)` | REAL | Read analog output |
+| `DNP3_MASTER_READ_COUNTER(name, index)` | INT | Read counter |
+| `DNP3_MASTER_WRITE_BO(name, index, value)` | BOOL | Write binary output (control) |
+| `DNP3_MASTER_WRITE_AO(name, index, value)` | BOOL | Write analog output (setpoint) |
+| `DNP3_MASTER_DELETE(name)` | BOOL | Remove master connection |
+| `DNP3_MASTER_LIST()` | []STRING | List all master connections |
 
 ### Outstation Functions (12)
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `DNP3OutstationCreate(name, port [, address])` | BOOL | Create named outstation |
-| `DNP3OutstationStart(name)` | BOOL | Begin listening for masters |
-| `DNP3OutstationStop(name)` | BOOL | Stop listening |
-| `DNP3OutstationIsConnected(name)` | BOOL | Check if any master is connected |
-| `DNP3OutstationSetBI(name, index, value)` | BOOL | Set binary input point |
-| `DNP3OutstationSetAI(name, index, value)` | BOOL | Set analog input point |
-| `DNP3OutstationSetCounter(name, index, value)` | BOOL | Set counter point |
-| `DNP3OutstationGetBO(name, index)` | BOOL | Get binary output (command from master) |
-| `DNP3OutstationGetAO(name, index)` | REAL | Get analog output (setpoint from master) |
-| `DNP3OutstationGetStats(name)` | MAP | Connection and protocol statistics |
-| `DNP3OutstationDelete(name)` | BOOL | Remove outstation |
-| `DNP3OutstationList()` | []STRING | List all outstations |
+| `DNP3_OUTSTATION_CREATE(name, port [, address])` | BOOL | Create named outstation |
+| `DNP3_OUTSTATION_START(name)` | BOOL | Begin listening for masters |
+| `DNP3_OUTSTATION_STOP(name)` | BOOL | Stop listening |
+| `DNP3_OUTSTATION_IS_CONNECTED(name)` | BOOL | Check if any master is connected |
+| `DNP3_OUTSTATION_SET_BI(name, index, value)` | BOOL | Set binary input point |
+| `DNP3_OUTSTATION_SET_AI(name, index, value)` | BOOL | Set analog input point |
+| `DNP3_OUTSTATION_SET_COUNTER(name, index, value)` | BOOL | Set counter point |
+| `DNP3_OUTSTATION_GET_BO(name, index)` | BOOL | Get binary output (command from master) |
+| `DNP3_OUTSTATION_GET_AO(name, index)` | REAL | Get analog output (setpoint from master) |
+| `DNP3_OUTSTATION_GET_STATS(name)` | MAP | Connection and protocol statistics |
+| `DNP3_OUTSTATION_DELETE(name)` | BOOL | Remove outstation |
+| `DNP3_OUTSTATION_LIST()` | []STRING | List all outstations |
 
 ---
 
@@ -1029,7 +1029,7 @@ END_PROGRAM
 
 ---
 
-*GoPLC v1.0.520 | DNP3 Master + Outstation | IEC 61131-3 Structured Text*
+*GoPLC v1.0.533 | DNP3 Master + Outstation | IEC 61131-3 Structured Text*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
 *[Back to White Papers](https://jmbtechnical.com/whitepapers/)*

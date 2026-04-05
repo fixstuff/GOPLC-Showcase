@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -12,10 +12,10 @@ GoPLC implements an **Allen-Bradley DF1 full-duplex** serial client callable dir
 
 | Role | Functions | Use Case |
 |------|-----------|----------|
-| **Client** | `DF1ClientCreate` / `DF1ClientRead*` / `DF1ClientWrite*` | Read/write SLC 500 and MicroLogix data files over RS-232 |
-| **Diagnostics** | `DF1ClientEcho` / `DF1ClientGetDiagnosticStatus` / `DF1ClientScanNodes` | Network troubleshooting and device discovery |
-| **CPU Control** | `DF1ClientSetCPUMode` | Switch processor between Program, Run, and Test modes |
-| **Polling** | `DF1ClientAddPollItem` / `DF1ClientGetStats` | Automatic cyclic data collection with tag mapping |
+| **Client** | `DF1_CLIENT_CREATE` / `DF1_CLIENT_READ_*` / `DF1_CLIENT_WRITE_*` | Read/write SLC 500 and MicroLogix data files over RS-232 |
+| **Diagnostics** | `DF1_CLIENT_ECHO` / `DF1_CLIENT_GET_DIAGNOSTIC_STATUS` / `DF1_CLIENT_SCAN_NODES` | Network troubleshooting and device discovery |
+| **CPU Control** | `DF1_CLIENT_SET_CPU_MODE` | Switch processor between Program, Run, and Test modes |
+| **Polling** | `DF1_CLIENT_ADD_POLL_ITEM` / `DF1_CLIENT_GET_STATS` | Automatic cyclic data collection with tag mapping |
 
 All functions are controlled entirely from IEC 61131-3 Structured Text in GoPLC's browser-based IDE.
 
@@ -28,11 +28,11 @@ All functions are controlled entirely from IEC 61131-3 Structured Text in GoPLC'
 │  ┌──────────────────────────────────────────────────┐    │
 │  │ ST Program                                       │    │
 │  │                                                  │    │
-│  │ DF1ClientCreate('slc', '/dev/ttyUSB0')           │    │
-│  │ DF1ClientConnect('slc')                          │    │
-│  │ DF1ClientReadWords('slc', 'N7:0', 10)            │    │
-│  │ DF1ClientWriteWord('slc', 'N7:20', 1234)         │    │
-│  │ DF1ClientAddPollItem('slc', 'N7:0', 'speed', 1)  │    │
+│  │ DF1_CLIENT_CREATE('slc', '/dev/ttyUSB0')           │    │
+│  │ DF1_CLIENT_CONNECT('slc')                          │    │
+│  │ DF1_CLIENT_READ_WORDS('slc', 'N7:0', 10)            │    │
+│  │ DF1_CLIENT_WRITE_WORD('slc', 'N7:20', 1234)         │    │
+│  │ DF1_CLIENT_ADD_POLL_ITEM('slc', 'N7:0', 'speed', 1)  │    │
 │  └─────────────────────┬────────────────────────────┘    │
 │                        │                                 │
 │                        │  DF1 Full-Duplex                │
@@ -90,10 +90,10 @@ Allen-Bradley SLC/MicroLogix use a **file:element** addressing scheme:
 
 ## 2. Connection Management
 
-### 2.1 DF1ClientCreate -- Create Named Connection
+### 2.1 DF1_CLIENT_CREATE -- Create Named Connection
 
 ```iecst
-ok := DF1ClientCreate('slc', '/dev/ttyUSB0');
+ok := DF1_CLIENT_CREATE('slc', '/dev/ttyUSB0');
 ```
 
 | Param | Type | Required | Default | Description |
@@ -104,50 +104,50 @@ ok := DF1ClientCreate('slc', '/dev/ttyUSB0');
 | `localNode` | INT | No | 0 | DF1 source node address (0-254) |
 | `remoteNode` | INT | No | 1 | DF1 destination node address (0-254) |
 
-Returns `TRUE` on success. The connection is created but **not yet connected** -- call `DF1ClientConnect` next.
+Returns `TRUE` on success. The connection is created but **not yet connected** -- call `DF1_CLIENT_CONNECT` next.
 
 ```iecst
 (* Defaults: 19200 baud, local node 0, remote node 1 *)
-ok := DF1ClientCreate('slc', '/dev/ttyUSB0');
+ok := DF1_CLIENT_CREATE('slc', '/dev/ttyUSB0');
 
 (* Explicit baud rate for older SLC 500 *)
-ok := DF1ClientCreate('slc', '/dev/ttyUSB0', 9600);
+ok := DF1_CLIENT_CREATE('slc', '/dev/ttyUSB0', 9600);
 
 (* Full specification — node addresses for multi-drop scenarios *)
-ok := DF1ClientCreate('slc', '/dev/ttyUSB0', 19200, 0, 1);
+ok := DF1_CLIENT_CREATE('slc', '/dev/ttyUSB0', 19200, 0, 1);
 ```
 
 > **SLC 500 Channel 0 defaults:** 19200 baud, 8 data bits, no parity, 1 stop bit (8N1), full-duplex. These are the factory defaults and match GoPLC's defaults. Only change baud if you have explicitly reconfigured the SLC channel.
 
 > **MicroLogix 1100/1400:** Support up to 38400 baud on the built-in RS-232 port (CH0). The default is 19200.
 
-### 2.2 DF1ClientConnect / Disconnect / IsConnected
+### 2.2 DF1_CLIENT_CONNECT / Disconnect / IsConnected
 
 ```iecst
 (* Open the serial port and establish DF1 session *)
-ok := DF1ClientConnect('slc');
+ok := DF1_CLIENT_CONNECT('slc');
 
 (* Check connection state *)
-IF DF1ClientIsConnected('slc') THEN
+IF DF1_CLIENT_IS_CONNECTED('slc') THEN
     (* read/write operations *)
 END_IF;
 
 (* Graceful disconnect *)
-DF1ClientDisconnect('slc');
+DF1_CLIENT_DISCONNECT('slc');
 ```
 
-`DF1ClientConnect` opens the serial port, configures the baud rate and framing (8N1), and sends a diagnostic status request to verify the remote node is responding.
+`DF1_CLIENT_CONNECT` opens the serial port, configures the baud rate and framing (8N1), and sends a diagnostic status request to verify the remote node is responding.
 
 > **Linux serial permissions:** The GoPLC process needs read/write access to the serial port. Add the user to the `dialout` group: `sudo usermod -aG dialout goplc`. This persists across reboots.
 
-### 2.3 DF1ClientDelete / DF1ClientList
+### 2.3 DF1_CLIENT_DELETE / DF1_CLIENT_LIST
 
 ```iecst
 (* Remove a connection *)
-DF1ClientDelete('slc');
+DF1_CLIENT_DELETE('slc');
 
 (* List all DF1 connections *)
-names := DF1ClientList();
+names := DF1_CLIENT_LIST();
 (* Returns: ['slc', 'micro1', 'plc5'] *)
 ```
 
@@ -155,10 +155,10 @@ names := DF1ClientList();
 
 ## 3. Read / Write Operations
 
-### 3.1 DF1ClientReadWords -- Read Multiple Words
+### 3.1 DF1_CLIENT_READ_WORDS -- Read Multiple Words
 
 ```iecst
-values := DF1ClientReadWords('slc', 'N7:0', 10);
+values := DF1_CLIENT_READ_WORDS('slc', 'N7:0', 10);
 (* Returns: [100, 200, 0, -32768, 1234, 0, 0, 0, 42, 999] *)
 ```
 
@@ -172,10 +172,10 @@ Returns `[]INT` — an array of 16-bit signed integers. For float files (`F8:*`)
 
 > **Maximum read size:** 120 words per request. This is a DF1 protocol limitation — the maximum command data field is 242 bytes. For larger reads, issue multiple requests with incrementing addresses.
 
-### 3.2 DF1ClientWriteWords -- Write Multiple Words
+### 3.2 DF1_CLIENT_WRITE_WORDS -- Write Multiple Words
 
 ```iecst
-ok := DF1ClientWriteWords('slc', 'N7:20', [100, 200, 300]);
+ok := DF1_CLIENT_WRITE_WORDS('slc', 'N7:20', [100, 200, 300]);
 ```
 
 | Param | Type | Description |
@@ -188,15 +188,15 @@ Returns `TRUE` on success.
 
 > **Write protection:** SLC 500 processors in **RUN** mode allow writes to data files (N, F, B, etc.) but not to program files. In **PROGRAM** mode, all files are writable. In **REMOTE RUN**, writes to data files are allowed and the processor can be switched to PROGRAM remotely.
 
-### 3.3 DF1ClientReadWord / WriteWord -- Single Word Operations
+### 3.3 DF1_CLIENT_READ_WORD / WriteWord -- Single Word Operations
 
 ```iecst
 (* Read a single integer *)
-speed := DF1ClientReadWord('slc', 'N7:5');
+speed := DF1_CLIENT_READ_WORD('slc', 'N7:5');
 (* Returns: 1750 *)
 
 (* Write a single integer *)
-ok := DF1ClientWriteWord('slc', 'N7:20', 1234);
+ok := DF1_CLIENT_WRITE_WORD('slc', 'N7:20', 1234);
 ```
 
 These are convenience wrappers around the multi-word functions. Use them when you need exactly one value — they produce the same DF1 command under the hood.
@@ -205,10 +205,10 @@ These are convenience wrappers around the multi-word functions. Use them when yo
 
 ## 4. Diagnostics and CPU Control
 
-### 4.1 DF1ClientEcho -- Diagnostic Echo
+### 4.1 DF1_CLIENT_ECHO -- Diagnostic Echo
 
 ```iecst
-response := DF1ClientEcho('slc', [16#DEAD, 16#BEEF]);
+response := DF1_CLIENT_ECHO('slc', [16#DEAD, 16#BEEF]);
 (* Returns: [16#DEAD, 16#BEEF] — exact echo of sent data *)
 ```
 
@@ -219,25 +219,25 @@ response := DF1ClientEcho('slc', [16#DEAD, 16#BEEF]);
 
 Returns the echoed data. This is a DF1 **Diagnostic Status** command (CMD 0x06, FNC 0x00) — the remote node must echo the data verbatim. Use this to verify the serial link without touching PLC data files.
 
-> **Troubleshooting tip:** If `DF1ClientEcho` fails but the serial port opens successfully, check: (1) baud rate mismatch, (2) TX/RX wires swapped, (3) wrong node address, (4) SLC channel not configured for DF1 full-duplex.
+> **Troubleshooting tip:** If `DF1_CLIENT_ECHO` fails but the serial port opens successfully, check: (1) baud rate mismatch, (2) TX/RX wires swapped, (3) wrong node address, (4) SLC channel not configured for DF1 full-duplex.
 
-### 4.2 DF1ClientGetDiagnosticStatus
+### 4.2 DF1_CLIENT_GET_DIAGNOSTIC_STATUS
 
 ```iecst
-status := DF1ClientGetDiagnosticStatus('slc');
+status := DF1_CLIENT_GET_DIAGNOSTIC_STATUS('slc');
 (* Returns: [status_word1, status_word2, ...] — processor-dependent *)
 ```
 
 Returns the remote node's diagnostic status counters. The content varies by processor type — SLC 500 returns NAK/ENQ/timeout counters, MicroLogix returns similar but with different offsets.
 
-### 4.3 DF1ClientSetCPUMode -- Change Processor Mode
+### 4.3 DF1_CLIENT_SET_CPU_MODE -- Change Processor Mode
 
 ```iecst
 (* Switch to RUN mode *)
-ok := DF1ClientSetCPUMode('slc', 1);
+ok := DF1_CLIENT_SET_CPU_MODE('slc', 1);
 
 (* Switch to PROGRAM mode *)
-ok := DF1ClientSetCPUMode('slc', 0);
+ok := DF1_CLIENT_SET_CPU_MODE('slc', 0);
 ```
 
 | Param | Type | Description |
@@ -249,10 +249,10 @@ Returns `TRUE` on success.
 
 > **Safety warning:** Switching a running SLC 500 to PROGRAM mode **immediately stops all outputs**. Outputs go to their configured fault state (typically OFF). Use this only during commissioning or maintenance, never in production without proper safety procedures. The TEST mode runs the program but forces all outputs OFF — useful for logic verification.
 
-### 4.4 DF1ClientScanNodes -- Discover Devices on Link
+### 4.4 DF1_CLIENT_SCAN_NODES -- Discover Devices on Link
 
 ```iecst
-nodes := DF1ClientScanNodes('slc', 0, 31);
+nodes := DF1_CLIENT_SCAN_NODES('slc', 0, 31);
 (* Returns: [1, 5, 12] — node addresses that responded *)
 ```
 
@@ -270,13 +270,13 @@ Returns `[]INT` — an array of node addresses that responded to a diagnostic ec
 
 ## 5. Automatic Polling
 
-### 5.1 DF1ClientAddPollItem -- Register Cyclic Read
+### 5.1 DF1_CLIENT_ADD_POLL_ITEM -- Register Cyclic Read
 
 ```iecst
-ok := DF1ClientAddPollItem('slc', 'N7:0', 'line_speed', 1);
-ok := DF1ClientAddPollItem('slc', 'N7:1', 'motor_temp', 1);
-ok := DF1ClientAddPollItem('slc', 'N7:10', 'batch_count', 1);
-ok := DF1ClientAddPollItem('slc', 'F8:0', 'pressure', 2);   (* float = 2 words *)
+ok := DF1_CLIENT_ADD_POLL_ITEM('slc', 'N7:0', 'line_speed', 1);
+ok := DF1_CLIENT_ADD_POLL_ITEM('slc', 'N7:1', 'motor_temp', 1);
+ok := DF1_CLIENT_ADD_POLL_ITEM('slc', 'N7:10', 'batch_count', 1);
+ok := DF1_CLIENT_ADD_POLL_ITEM('slc', 'F8:0', 'pressure', 2);   (* float = 2 words *)
 ```
 
 | Param | Type | Description |
@@ -290,10 +290,10 @@ Returns `TRUE` on success. Once registered, GoPLC automatically reads these addr
 
 Poll items are coalesced into efficient multi-word reads when addresses are contiguous in the same data file. For example, `N7:0` through `N7:9` as 10 separate poll items will be read with a single 10-word read command.
 
-### 5.2 DF1ClientGetStats -- Connection Statistics
+### 5.2 DF1_CLIENT_GET_STATS -- Connection Statistics
 
 ```iecst
-stats := DF1ClientGetStats('slc');
+stats := DF1_CLIENT_GET_STATS('slc');
 (* Returns: {
      "tx_count": 15234,
      "rx_count": 15230,
@@ -339,38 +339,38 @@ END_VAR
 
 CASE state OF
     0: (* Create connection — SLC 500 on CH0, default 19200 baud *)
-        ok := DF1ClientCreate('slc', '/dev/ttyUSB0');
+        ok := DF1_CLIENT_CREATE('slc', '/dev/ttyUSB0');
         IF ok THEN state := 1; END_IF;
 
     1: (* Connect *)
-        ok := DF1ClientConnect('slc');
+        ok := DF1_CLIENT_CONNECT('slc');
         IF ok THEN state := 2; END_IF;
 
     2: (* Verify link with echo test *)
-        IF DF1ClientIsConnected('slc') THEN
-            DF1ClientEcho('slc', [16#1234]);
+        IF DF1_CLIENT_IS_CONNECTED('slc') THEN
+            DF1_CLIENT_ECHO('slc', [16#1234]);
             state := 3;
         END_IF;
 
     3: (* Register poll items for automatic cyclic reads *)
-        DF1ClientAddPollItem('slc', 'N7:0', 'line_speed', 1);
-        DF1ClientAddPollItem('slc', 'N7:1', 'motor_temp', 1);
-        DF1ClientAddPollItem('slc', 'N7:2', 'batch_count', 1);
-        DF1ClientAddPollItem('slc', 'F8:0', 'pressure', 2);
-        DF1ClientAddPollItem('slc', 'B3:0', 'status_bits', 1);
+        DF1_CLIENT_ADD_POLL_ITEM('slc', 'N7:0', 'line_speed', 1);
+        DF1_CLIENT_ADD_POLL_ITEM('slc', 'N7:1', 'motor_temp', 1);
+        DF1_CLIENT_ADD_POLL_ITEM('slc', 'N7:2', 'batch_count', 1);
+        DF1_CLIENT_ADD_POLL_ITEM('slc', 'F8:0', 'pressure', 2);
+        DF1_CLIENT_ADD_POLL_ITEM('slc', 'B3:0', 'status_bits', 1);
         state := 10;
 
     10: (* Running — read polled values and write setpoints *)
-        speed := DF1ClientReadWord('slc', 'N7:0');
-        temp := DF1ClientReadWord('slc', 'N7:1');
+        speed := DF1_CLIENT_READ_WORD('slc', 'N7:0');
+        temp := DF1_CLIENT_READ_WORD('slc', 'N7:1');
 
         (* Write new setpoint if changed *)
         IF new_setpoint <> speed THEN
-            DF1ClientWriteWord('slc', 'N7:20', new_setpoint);
+            DF1_CLIENT_WRITE_WORD('slc', 'N7:20', new_setpoint);
         END_IF;
 
         (* Monitor connection health *)
-        stats := DF1ClientGetStats('slc');
+        stats := DF1_CLIENT_GET_STATS('slc');
 END_CASE;
 END_PROGRAM
 ```
@@ -391,33 +391,33 @@ END_VAR
 
 CASE state OF
     0: (* Create — MicroLogix 1400 supports 38400 baud *)
-        ok := DF1ClientCreate('ml', '/dev/ttyUSB1', 38400);
+        ok := DF1_CLIENT_CREATE('ml', '/dev/ttyUSB1', 38400);
         IF ok THEN state := 1; END_IF;
 
     1: (* Connect *)
-        ok := DF1ClientConnect('ml');
+        ok := DF1_CLIENT_CONNECT('ml');
         IF ok THEN state := 2; END_IF;
 
     2: (* Scan for other nodes on the link *)
-        nodes := DF1ClientScanNodes('ml', 0, 15);
+        nodes := DF1_CLIENT_SCAN_NODES('ml', 0, 15);
         state := 3;
 
     3: (* Read 10 integers starting at N7:0 *)
-        int_values := DF1ClientReadWords('ml', 'N7:0', 10);
+        int_values := DF1_CLIENT_READ_WORDS('ml', 'N7:0', 10);
         state := 4;
 
     4: (* Read 2 floats (4 words) starting at F8:0 *)
-        float_words := DF1ClientReadWords('ml', 'F8:0', 4);
+        float_words := DF1_CLIENT_READ_WORDS('ml', 'F8:0', 4);
         (* float_words[0..1] = F8:0, float_words[2..3] = F8:1 *)
         state := 5;
 
     5: (* Write bit file — set B3:0 word to enable all 16 bits *)
-        ok := DF1ClientWriteWord('ml', 'B3:0', 16#FFFF);
+        ok := DF1_CLIENT_WRITE_WORD('ml', 'B3:0', 16#FFFF);
         state := 10;
 
     10: (* Running — cyclic read/write *)
-        int_values := DF1ClientReadWords('ml', 'N7:0', 10);
-        DF1ClientWriteWords('ml', 'N7:20', [int_values[0] + 1, int_values[1]]);
+        int_values := DF1_CLIENT_READ_WORDS('ml', 'N7:0', 10);
+        DF1_CLIENT_WRITE_WORDS('ml', 'N7:20', [int_values[0] + 1, int_values[1]]);
 END_CASE;
 END_PROGRAM
 ```
@@ -468,7 +468,7 @@ MicroLogix 1100/1400 configure Channel 0 through **RSLogix 500 > Channel Configu
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `Connect` succeeds but reads fail | Baud rate mismatch | Match baud in `DF1ClientCreate` to SLC channel config |
+| `Connect` succeeds but reads fail | Baud rate mismatch | Match baud in `DF1_CLIENT_CREATE` to SLC channel config |
 | All reads return timeout | TX/RX wires swapped | Use null modem cable or swap pins 2 and 3 |
 | Intermittent CRC errors | Electrical noise on RS-232 | Shorten cable, add ferrites, verify ground |
 | NAK responses on writes | Processor in wrong mode | Check CPU mode — data file writes need RUN or REMOTE RUN |
@@ -503,26 +503,26 @@ You never build frames manually — GoPLC handles all framing, byte stuffing, CR
 
 | Function | Params | Returns | Description |
 |----------|--------|---------|-------------|
-| `DF1ClientCreate` | `(name, port [, baud] [, localNode] [, remoteNode])` | BOOL | Create connection (default 19200, nodes 0/1) |
-| `DF1ClientConnect` | `(name)` | BOOL | Open serial port and establish DF1 session |
-| `DF1ClientDisconnect` | `(name)` | BOOL | Close serial port |
-| `DF1ClientIsConnected` | `(name)` | BOOL | Check connection state |
-| `DF1ClientReadWords` | `(name, address, count)` | []INT | Read multiple 16-bit words from data file |
-| `DF1ClientWriteWords` | `(name, address, values)` | BOOL | Write multiple 16-bit words to data file |
-| `DF1ClientReadWord` | `(name, address)` | INT | Read single 16-bit word |
-| `DF1ClientWriteWord` | `(name, address, value)` | BOOL | Write single 16-bit word |
-| `DF1ClientEcho` | `(name, data)` | []INT | Diagnostic echo — verify serial link |
-| `DF1ClientGetDiagnosticStatus` | `(name)` | []INT | Remote node diagnostic counters |
-| `DF1ClientSetCPUMode` | `(name, mode)` | BOOL | 0=PROGRAM, 1=RUN, 2=TEST |
-| `DF1ClientGetStats` | `(name)` | MAP | Connection health metrics |
-| `DF1ClientScanNodes` | `(name, startNode, endNode)` | []INT | Discover responding nodes |
-| `DF1ClientAddPollItem` | `(name, address, tag, count)` | BOOL | Register cyclic read |
-| `DF1ClientDelete` | `(name)` | BOOL | Remove connection |
-| `DF1ClientList` | `()` | []STRING | List all DF1 connections |
+| `DF1_CLIENT_CREATE` | `(name, port [, baud] [, localNode] [, remoteNode])` | BOOL | Create connection (default 19200, nodes 0/1) |
+| `DF1_CLIENT_CONNECT` | `(name)` | BOOL | Open serial port and establish DF1 session |
+| `DF1_CLIENT_DISCONNECT` | `(name)` | BOOL | Close serial port |
+| `DF1_CLIENT_IS_CONNECTED` | `(name)` | BOOL | Check connection state |
+| `DF1_CLIENT_READ_WORDS` | `(name, address, count)` | []INT | Read multiple 16-bit words from data file |
+| `DF1_CLIENT_WRITE_WORDS` | `(name, address, values)` | BOOL | Write multiple 16-bit words to data file |
+| `DF1_CLIENT_READ_WORD` | `(name, address)` | INT | Read single 16-bit word |
+| `DF1_CLIENT_WRITE_WORD` | `(name, address, value)` | BOOL | Write single 16-bit word |
+| `DF1_CLIENT_ECHO` | `(name, data)` | []INT | Diagnostic echo — verify serial link |
+| `DF1_CLIENT_GET_DIAGNOSTIC_STATUS` | `(name)` | []INT | Remote node diagnostic counters |
+| `DF1_CLIENT_SET_CPU_MODE` | `(name, mode)` | BOOL | 0=PROGRAM, 1=RUN, 2=TEST |
+| `DF1_CLIENT_GET_STATS` | `(name)` | MAP | Connection health metrics |
+| `DF1_CLIENT_SCAN_NODES` | `(name, startNode, endNode)` | []INT | Discover responding nodes |
+| `DF1_CLIENT_ADD_POLL_ITEM` | `(name, address, tag, count)` | BOOL | Register cyclic read |
+| `DF1_CLIENT_DELETE` | `(name)` | BOOL | Remove connection |
+| `DF1_CLIENT_LIST` | `()` | []STRING | List all DF1 connections |
 
 ---
 
-*GoPLC v1.0.520 | Allen-Bradley DF1 Full-Duplex | RS-232 Serial Client*
+*GoPLC v1.0.533 | Allen-Bradley DF1 Full-Duplex | RS-232 Serial Client*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
 *[Back to White Papers](https://jmbtechnical.com/whitepapers/)*

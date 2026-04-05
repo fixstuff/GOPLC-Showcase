@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -879,7 +879,7 @@ The Arduino Servo library supports a maximum of 12 servos, but the GoPLC firmwar
 
 ---
 
-*GoPLC v1.0.520 | Firmware: goplc_io.ino (~99KB compiled) | Arduino Uno R4 WiFi @ 48 MHz*
+*GoPLC v1.0.533 | Firmware: goplc_io.ino (~99KB compiled) | Arduino Uno R4 WiFi @ 48 MHz*
 *Protocol: Binary frame (SYNC+SEQ+CMD+LEN+PAYLOAD+CRC16) over USB CDC @ 115200 baud*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*

@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -13,7 +13,7 @@ GoPLC is a browser-based soft PLC that combines an IEC 61131-3 Structured Text r
 | Component | Technology | Purpose |
 |-----------|------------|---------|
 | **IDE** | Monaco Editor (VS Code engine) | ST editing, syntax highlighting, IntelliSense, error markers |
-| **REST API** | 253 endpoints | Full CRUD for programs, tasks, variables, HMI, diagnostics |
+| **REST API** | 254 endpoints | Full CRUD for programs, tasks, variables, HMI, diagnostics |
 | **WebSocket** | Real-time push | Variable subscriptions, scan metrics, debug events, HMI binding |
 | **Project Files** | `.goplc` (JSON v1.7) | Portable project snapshots — programs, tasks, I/O, HMI, metadata |
 
@@ -32,7 +32,7 @@ GoPLC is a browser-based soft PLC that combines an IEC 61131-3 Structured Text r
           │                  │                      │
           ▼                  ▼                      ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│  GoPLC Runtime (Go, Linux/Windows/macOS)                         │
+│  GoPLC Runtime (Go, Linux/Windows)                         │
 │                                                                  │
 │  ┌────────────┐  ┌────────────┐  ┌──────────┐  ┌─────────────┐  │
 │  │ Task       │  │ Program    │  │ Variable │  │ Protocol    │  │
@@ -102,20 +102,20 @@ POST   /api/tasks/{name}/stop  — Stop task
 POST   /api/tasks/{name}/reload — Hot reload (no downtime)
 ```
 
-### 2.4 Hot Reload
+### 2.4 Task Reload
 
 ```
 POST /api/tasks/{name}/reload
 ```
 
-Hot reload re-compiles and swaps programs in a running task **without stopping execution**. Variable values are retained across the reload. The sequence:
+Task reload re-compiles and restarts a single task without affecting other running tasks. The sequence:
 
-1. Compile new program versions
-2. Pause task at scan boundary
-3. Swap program references
-4. Resume task — next scan runs new code
+1. Stop the target task
+2. Re-parse all program sources assigned to the task
+3. Create a fresh interpreter with new code
+4. Restart the task (if it was running)
 
-This enables live code updates in production without losing state or interrupting I/O.
+Variable values and state machine positions are reset on reload — timers, counters, and local variables restart from their initial values. Other tasks continue running uninterrupted throughout the process.
 
 ### 2.5 Example: Create a 100ms Task
 
@@ -257,14 +257,16 @@ END_FUNCTION_BLOCK
 ```
 
 ```iecst
-(* Global Variable List — shared across all programs *)
-VAR_GLOBAL
+(* Global Variable List — named GVL shared across all tasks *)
+VAR_GLOBAL(GVL_Process)
     temperature_raw : INT;
     temperature_scaled : REAL;
     heater_output : REAL;
     system_running : BOOL := FALSE;
 END_VAR
 ```
+
+> **Named vs unnamed GVLs:** `VAR_GLOBAL(Name)` creates a named GVL visible to all tasks — access variables as `GVL_Process.temperature_raw`. A plain `VAR_GLOBAL` without a name is scoped to programs within a single task only.
 
 ```iecst
 (* Main Program — uses all of the above *)
@@ -402,14 +404,14 @@ GoPLC provides structured logging from within ST programs. Log messages can be r
 
 | Function | Description |
 |----------|-------------|
-| `DEBUG_LOG(message)` | Log at DEBUG level |
-| `DEBUG_TRACE(message)` | Log at TRACE level |
-| `DEBUG_INFO(message)` | Log at INFO level |
-| `DEBUG_WARN(message)` | Log at WARN level |
-| `DEBUG_ERROR(message)` | Log at ERROR level |
-| `DEBUG_ENABLE()` | Enable logging globally |
-| `DEBUG_DISABLE()` | Disable logging globally |
-| `DEBUG_SET_LEVEL(level)` | Set minimum log level: `'TRACE'`, `'DEBUG'`, `'INFO'`, `'WARN'`, `'ERROR'` |
+| `DEBUG_LOG(module, message)` | Log at DEBUG level |
+| `DEBUG_TRACE(module, message)` | Log at TRACE level |
+| `DEBUG_INFO(module, message)` | Log at INFO level |
+| `DEBUG_WARN(module, message)` | Log at WARN level |
+| `DEBUG_ERROR(module, message)` | Log at ERROR level |
+| `DEBUG_ENABLE(module)` | Enable logging for a module |
+| `DEBUG_DISABLE(module)` | Disable logging for a module |
+| `DEBUG_SET_LEVEL(module, level)` | Set minimum log level: `'TRACE'`, `'DEBUG'`, `'INFO'`, `'WARN'`, `'ERROR'` |
 
 ### 5.2 Log Targets
 
@@ -442,25 +444,18 @@ DEBUG_TO_POSTGRES('host=10.0.0.144 port=5432 dbname=goplc user=goplc password=se
 
 ```iecst
 (* Log to InfluxDB for time-series analysis *)
-DEBUG_TO_INFLUX('http://10.0.0.144:8086', 'goplc_logs');
+DEBUG_TO_INFLUX('http://10.0.0.144:8086', 'my-token', 'my-org', 'goplc_logs');
 ```
 
 Writes log entries as InfluxDB points with tags for `level`, `program`, and `task`.
 
 #### Syslog Target
 
-Logs are forwarded via UDP using RFC 3164 format. Configure the syslog destination through the API:
+Logs are forwarded via UDP using RFC 3164 format. Configure the syslog destination from ST code:
 
-```
-POST /api/config/logging
-{
-    "syslog": {
-        "enabled": true,
-        "host": "10.0.0.144",
-        "port": 514,
-        "facility": "local0"
-    }
-}
+```iecst
+(* Forward logs to syslog server *)
+DEBUG_TO_SYSLOG('10.0.0.144:514');
 ```
 
 #### Ring Buffer (In-Memory)
@@ -482,12 +477,12 @@ VAR
 END_VAR
 
 IF NOT init_done THEN
-    DEBUG_ENABLE();
-    DEBUG_SET_LEVEL('INFO');
+    DEBUG_ENABLE('diag');
+    DEBUG_SET_LEVEL('diag', 'INFO');
     DEBUG_TO_FILE('/var/log/goplc/diagnostics.log');
     DEBUG_TO_SQLITE('/var/lib/goplc/diagnostics.db');
-    DEBUG_TO_INFLUX('http://10.0.0.144:8086', 'plc_logs');
-    DEBUG_INFO('Diagnostics program initialized');
+    DEBUG_TO_INFLUX('http://10.0.0.144:8086', 'token', 'org', 'plc_logs');
+    DEBUG_INFO('diag', 'Diagnostics program initialized');
     init_done := TRUE;
 END_IF;
 
@@ -495,14 +490,14 @@ cycle_count := cycle_count + 1;
 
 (* Periodic status *)
 IF (cycle_count MOD 600) = 0 THEN
-    DEBUG_INFO(CONCAT('Heartbeat — cycle: ', DINT_TO_STRING(cycle_count)));
+    DEBUG_INFO('diag', CONCAT('Heartbeat — cycle: ', DINT_TO_STRING(cycle_count)));
 END_IF;
 
 (* Alarm conditions *)
 IF temperature > 180.0 THEN
-    DEBUG_ERROR(CONCAT('OVER-TEMP: ', REAL_TO_STRING(temperature), ' F'));
+    DEBUG_ERROR('diag', CONCAT('OVER-TEMP: ', REAL_TO_STRING(temperature), ' F'));
 ELSIF temperature > 150.0 THEN
-    DEBUG_WARN(CONCAT('High temp warning: ', REAL_TO_STRING(temperature), ' F'));
+    DEBUG_WARN('diag', CONCAT('High temp warning: ', REAL_TO_STRING(temperature), ' F'));
 END_IF;
 END_PROGRAM
 ```
@@ -576,12 +571,17 @@ Available tool calls in control mode:
 |------|-------------|
 | `read_variable(name)` | Read any variable value |
 | `write_variable(name, value)` | Write a variable (requires `allow_writes`) |
-| `start_task(name)` | Start a stopped task |
-| `stop_task(name)` | Stop a running task |
-| `deploy_program(name, code)` | Compile and deploy ST code (requires `allow_deploy`) |
-| `get_diagnostics()` | Full runtime diagnostic snapshot |
+| `list_variables(filter)` | List variables with optional prefix filter |
+| `start_task(name)` | Start a stopped task (or `'all'`) |
+| `stop_task(name)` | Stop a running task (or `'all'`) |
+| `reload_task(name)` | Reload a task with updated code |
+| `get_task_status()` | Get status of all tasks |
+| `get_diagnostics()` | Runtime diagnostics (memory, scan stats, uptime, faults) |
 | `get_faults()` | Active fault list |
-| `list_variables(filter)` | Search variables by name pattern |
+| `deploy_program(name, code)` | Generate and deploy ST code (requires `allow_deploy`) |
+| `list_st_functions(search)` | Look up available ST built-in functions |
+| `create_hmi_page(name, content)` | Create a Node-RED Dashboard 2.0 flow |
+| `create_manifest(config)` | Register a hardware manifest |
 
 > **Safety:** Control mode requires explicit `allow_writes` and `allow_deploy` flags. Without them, the AI can only observe. This prevents accidental writes to live outputs from a casual chat prompt.
 
@@ -607,7 +607,7 @@ The AI will autonomously:
 
 ## 7. HMI Builder
 
-GoPLC serves HMI pages as HTML + Vue.js applications with real-time variable binding over WebSocket. Pages are created, edited, and deployed entirely through the API.
+GoPLC serves HMI pages as plain HTML with a JavaScript library (`goplc-hmi.js`) for reading, writing, and subscribing to PLC variables. Pages are created, edited, and deployed entirely through the API.
 
 ### 7.1 API
 
@@ -627,78 +627,56 @@ http://<host>:8300/hmi/{pageName}
 
 ### 7.2 Variable Binding
 
-HMI pages connect to the GoPLC WebSocket for live variable updates. The Vue.js runtime handles subscription management automatically.
+HMI pages use the `goplc` JavaScript library for live variable access. The library supports both REST polling and WebSocket for real-time updates.
+
+| Function | Description |
+|----------|-------------|
+| `goplc.variables()` | Read all variables and their current values |
+| `goplc.read(name)` | Read a single variable (returns name, value, type) |
+| `goplc.write(name, value)` | Write a variable value |
+| `goplc.subscribe(callback, ms)` | Poll all variables on an interval (default 500ms) |
+| `goplc.subscribeTo(names, callback, ms)` | Poll specific variables on an interval |
+| `goplc.connect(onMessage)` | Connect via WebSocket for real-time push updates |
+| `goplc.info()` | Get PLC runtime info (version, hostname, etc.) |
+| `goplc.runtime()` | Get runtime status |
+
+### 7.3 Example: Temperature Control HMI
 
 ```html
-<!-- Example HMI page with real-time binding -->
-<div id="app">
-    <h1>Temperature Control</h1>
+<script src="/hmi/goplc-hmi.js"></script>
 
-    <!-- Read-only display -->
-    <goplc-gauge
-        variable="temperature_scaled"
-        min="32" max="212"
-        label="Process Temp"
-        units="°F"
-        :ranges="[
-            {min: 32, max: 100, color: '#2196F3'},
-            {min: 100, max: 150, color: '#4CAF50'},
-            {min: 150, max: 180, color: '#FF9800'},
-            {min: 180, max: 212, color: '#F44336'}
-        ]">
-    </goplc-gauge>
+<h1>Temperature Control</h1>
+<p>Temperature: <span id="temp">--</span> °F</p>
+<p>Heater Output: <span id="heater">--</span> %</p>
+<p>
+    Setpoint: <input id="sp" type="number" min="50" max="200" step="0.5">
+    <button onclick="goplc.write('pid_params.setpoint', Number(document.getElementById('sp').value))">Set</button>
+</p>
+<p>
+    <button onclick="goplc.write('system_running', true)">Start</button>
+    <button onclick="goplc.write('system_running', false)">Stop</button>
+</p>
 
-    <!-- Writable control -->
-    <goplc-numeric
-        variable="pid_params.setpoint"
-        label="Setpoint"
-        min="50" max="200" step="0.5"
-        units="°F">
-    </goplc-numeric>
+<script>
+// Real-time updates via WebSocket
+goplc.connect(function(msg) {
+    if (msg.data) {
+        if (msg.data.temperature_scaled !== undefined)
+            document.getElementById('temp').textContent = msg.data.temperature_scaled.toFixed(1);
+        if (msg.data.heater_output !== undefined)
+            document.getElementById('heater').textContent = msg.data.heater_output.toFixed(1);
+    }
+});
 
-    <!-- Boolean toggle -->
-    <goplc-button
-        variable="system_running"
-        label="System Enable"
-        type="toggle"
-        on-color="#4CAF50"
-        off-color="#F44336">
-    </goplc-button>
-
-    <!-- Trend chart -->
-    <goplc-chart
-        :variables="['temperature_scaled', 'heater_output']"
-        :labels="['Temperature (°F)', 'Heater (%)']"
-        time-range="300"
-        height="300">
-    </goplc-chart>
-
-    <!-- Tank level visualization -->
-    <goplc-tank
-        variable="tank_level_pct"
-        label="Feed Tank"
-        min="0" max="100"
-        units="%"
-        low-alarm="10"
-        high-alarm="90">
-    </goplc-tank>
-</div>
+// Or use REST polling as a fallback
+goplc.subscribeTo(['temperature_scaled', 'heater_output'], function(vars) {
+    document.getElementById('temp').textContent = vars.temperature_scaled.toFixed(1);
+    document.getElementById('heater').textContent = vars.heater_output.toFixed(1);
+}, 1000);
+</script>
 ```
 
-### 7.3 Built-in Components
-
-| Component | Element | Description |
-|-----------|---------|-------------|
-| **Gauge** | `<goplc-gauge>` | Radial gauge with color ranges |
-| **Button** | `<goplc-button>` | Momentary or toggle, writes BOOL |
-| **Numeric Input** | `<goplc-numeric>` | Number entry with min/max/step, writes REAL/INT |
-| **Chart** | `<goplc-chart>` | Time-series trend, multiple variables |
-| **Tank** | `<goplc-tank>` | Vertical tank level with alarm bands |
-| **Text** | `<goplc-text>` | Formatted text display, reads any variable |
-| **LED** | `<goplc-led>` | Status indicator, reads BOOL |
-| **Slider** | `<goplc-slider>` | Horizontal/vertical range input |
-
-All components automatically subscribe to their bound variable via WebSocket. Write-capable components send updates through the REST API on user interaction.
+The library is framework-agnostic — use plain HTML, Vue.js, React, or any frontend tooling. HMI pages are standard web pages with full access to the PLC variable space.
 
 ---
 
@@ -716,26 +694,23 @@ A `.goplc` file is a JSON document (schema version 1.7) that contains the entire
         "description": "PID-based temperature control system",
         "author": "jbelcher",
         "created": "2026-04-01T10:00:00Z",
-        "modified": "2026-04-03T14:30:00Z",
-        "goplc_version": "1.0.520"
+        "modified": "2026-04-03T14:30:00Z"
     },
-    "programs": [
-        {
-            "name": "POU_Control",
-            "type": "PROGRAM",
-            "source": "PROGRAM POU_Control\nVAR\n  ...\nEND_PROGRAM"
+    "programs": {
+        "POU_Control": {
+            "source": "PROGRAM POU_Control\nVAR\n  ...\nEND_PROGRAM",
+            "task": "MainTask",
+            "mode": "st"
         },
-        {
-            "name": "FB_PID",
-            "type": "FUNCTION_BLOCK",
-            "source": "FUNCTION_BLOCK FB_PID\n  ..."
+        "FB_PID": {
+            "source": "FUNCTION_BLOCK FB_PID\n  ...",
+            "mode": "st"
         },
-        {
-            "name": "GVL_Shared",
-            "type": "GVL",
-            "source": "VAR_GLOBAL\n  ..."
+        "GVL_Shared": {
+            "source": "VAR_GLOBAL(GVL_Shared)\n  ...",
+            "mode": "st"
         }
-    ],
+    },
     "tasks": [
         {
             "name": "MainTask",
@@ -749,27 +724,20 @@ A `.goplc` file is a JSON document (schema version 1.7) that contains the entire
             "cpu_affinity": -1
         }
     ],
-    "io_mapping": {
-        "modbus_tcp": [ ... ],
-        "opcua": [ ... ]
-    },
-    "protocols": {
-        "modbus_tcp": { "host": "10.0.0.50", "port": 502 },
-        "mqtt": { "broker": "tcp://10.0.0.144:1883" }
-    },
-    "hmi_pages": [
-        {
-            "name": "overview",
-            "title": "System Overview",
-            "html": "<div id=\"app\">...</div>"
+    "hmi_pages": {
+        "overview": {
+            "content": "<h1>System Overview</h1>...",
+            "title": "System Overview"
         }
-    ],
+    },
     "snapshot": {
+        "timestamp": "2026-04-03T14:30:00Z",
         "variables": {
             "temperature_scaled": 72.3,
             "heater_output": 0.0,
             "system_running": false
-        }
+        },
+        "version": "1.0.533"
     }
 }
 ```
@@ -781,26 +749,30 @@ A `.goplc` file is a JSON document (schema version 1.7) that contains the entire
 | `/api/runtime/download` | GET | Download current project as `.goplc` file |
 | `/api/runtime/upload` | POST | Upload and apply a `.goplc` file (replaces current project) |
 | `/api/snapshots` | GET | List all saved snapshots |
-| `/api/snapshots` | POST | Create a new snapshot of current state |
-| `/api/snapshots/{id}/restore` | POST | Restore project from a snapshot |
+| `/api/snapshots/history` | GET | Get snapshot history |
+| `/api/snapshots/{hash}` | GET | Retrieve a specific snapshot |
+| `/api/snapshots/{hash}` | DELETE | Delete a snapshot |
+| `/api/snapshots/{hash}/restore` | POST | Restore project from a snapshot |
 
 ### 8.3 Snapshots
 
-Snapshots capture the full project state at a point in time — programs, tasks, variables, HMI pages, and configuration. They are stored on the runtime and can be restored instantly.
+Snapshots capture the full project state at a point in time — programs, tasks, variables, and configuration. They are created automatically on project download and import, and stored on the runtime for instant restore.
 
 ```
-POST /api/snapshots
-{ "name": "pre-tuning", "description": "Before PID parameter changes" }
+GET /api/snapshots
 
 Response:
-{ "id": "snap_20260403_143000", "name": "pre-tuning", "created": "2026-04-03T14:30:00Z" }
+[
+    {"hash": "a1b2c3d4", "created": "2026-04-03T14:30:00Z", "program_count": 3},
+    {"hash": "e5f6g7h8", "created": "2026-04-02T09:15:00Z", "program_count": 2}
+]
 ```
 
 ```
-POST /api/snapshots/snap_20260403_143000/restore
+POST /api/snapshots/a1b2c3d4/restore
 ```
 
-> **Upload Behavior:** Uploading a `.goplc` file replaces the entire project — programs, tasks, and configuration. Running tasks are stopped, the new project is applied, and tasks are restarted. Variable values from the `snapshot` section are restored if present.
+> **Upload Behavior:** Uploading a `.goplc` file replaces the entire project — programs, tasks, and configuration. Running tasks are stopped, the new project is applied, and tasks are restarted. A snapshot is automatically created before the upload is applied. Variable values from the `snapshot` section are restored if present.
 
 ---
 
@@ -880,12 +852,12 @@ Unsubscribe:
 ### 9.3 Example: External System Reading Variables
 
 ```iecst
-(* Variables defined in ST are automatically exposed via API *)
-VAR_GLOBAL
-    tank_level_pct : REAL;      (* GET /api/variables/tank_level_pct *)
-    pump_running : BOOL;        (* GET /api/variables/pump_running *)
-    batch_count : DINT;         (* GET /api/variables/batch_count *)
-    recipe_name : STRING;       (* GET /api/variables/recipe_name *)
+(* Named GVL — variables exposed via API and shared across all tasks *)
+VAR_GLOBAL(GVL_HMI)
+    tank_level_pct : REAL;      (* GET /api/variables/GVL_HMI.tank_level_pct *)
+    pump_running : BOOL;        (* GET /api/variables/GVL_HMI.pump_running *)
+    batch_count : DINT;         (* GET /api/variables/GVL_HMI.batch_count *)
+    recipe_name : STRING;       (* GET /api/variables/GVL_HMI.recipe_name *)
 END_VAR
 ```
 
@@ -1153,7 +1125,7 @@ stats := SF_STATS('telemetry');
 
 ---
 
-*GoPLC v1.0.520 | 253 REST endpoints | WebSocket real-time | IEC 61131-3 Structured Text*
+*GoPLC v1.0.533 | 254 REST endpoints | WebSocket real-time | IEC 61131-3 Structured Text*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
 *[Back to White Papers](https://jmbtechnical.com/whitepapers/)*

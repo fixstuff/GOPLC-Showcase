@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -1124,7 +1124,7 @@ END_PROGRAM
 
 ---
 
-*GoPLC v1.0.520 | 43 EtherNet/IP functions (23 scanner + 20 adapter)*
+*GoPLC v1.0.533 | 43 EtherNet/IP functions (23 scanner + 20 adapter)*
 *CIP over EtherNet/IP | TCP port 44818 | Allen-Bradley compatible*
 
 *(c) 2026 JMB Technical Services LLC. All rights reserved.*

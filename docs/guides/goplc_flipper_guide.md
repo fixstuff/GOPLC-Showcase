@@ -2,7 +2,7 @@
 
 **James M. Belcher**
 Founder, JMB Technical Services LLC
-April 2026 | GoPLC v1.0.520
+April 2026 | GoPLC v1.0.533
 
 ---
 
@@ -708,7 +708,7 @@ The Flipper is not a real-time I/O device. USB serial latency is 2-5 ms minimum,
 
 ---
 
-*GoPLC v1.0.520 | Driver: flipper_zero (USB CDC ACM) | Flipper Zero (STM32WB55 @ 64 MHz)*
+*GoPLC v1.0.533 | Driver: flipper_zero (USB CDC ACM) | Flipper Zero (STM32WB55 @ 64 MHz)*
 *31 ST functions across 7 subsystems: Connection, GPIO, NFC, RFID, Sub-GHz, IR, iButton*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
