@@ -46,6 +46,7 @@ First-class client and server implementations for every major automation protoco
 | **[DF1](goplc_df1_guide.md)** | DF1 (AB serial) | 16 | Client, SLC 500 / MicroLogix, N7/F8/B3 file addressing. |
 | **[Sparkplug B](goplc_sparkplug_guide.md)** | Sparkplug B / MQTT | 16 | Edge node, NBIRTH/NDATA lifecycle, Ignition integration. |
 | **[InfluxDB](goplc_influxdb_guide.md)** | InfluxDB v1/v2 | 16 | Write + batch, line protocol, Grafana dashboards. |
+| **[JSON](goplc_json_guide.md)** | JSON Functions | 22 | Parse, build, query, modify JSON from ST. Dot-path access, typed getters, JSONPath. |
 
 ## Platform
 
