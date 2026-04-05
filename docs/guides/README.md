@@ -14,6 +14,7 @@ Connect microcontrollers and USB devices directly to your PLC logic. GoPLC handl
 | **[Arduino](goplc_arduino_guide.md)** | Uno R4 WiFi | 20 | GPIO, 14-bit analog, PWM, DAC, I2C, servo, WiFi, BLE, LED matrix, HC-SR04 ultrasonic. |
 | **[Teensy](goplc_teensy_guide.md)** | Teensy 4.0 | 47 | CAN bus, hardware PID, complementary PWM, NeoPixel, encoder, RTC, TRNG, SPI, UART. |
 | **[Flipper Zero](goplc_flipper_guide.md)** | Flipper Zero | 31 | NFC, RFID (125 kHz), Sub-GHz radio, infrared, iButton, GPIO. |
+| **[RP2040-Zero](goplc_rp2040_guide.md)** | Waveshare RP2040-Zero | 26 | GPIO, ADC, PWM, NeoPixel, I2C, SPI, UART, servo, OLED, distance, temp sensor. Rust firmware (UF2). |
 | **[Phidgets](goplc_phidgets_guide.md)** | Phidgets USB | 16 | Voltage, current, temperature, humidity, load cells, relays, motors. |
 
 ## CNC, Laser & 3D Printing
