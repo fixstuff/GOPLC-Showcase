@@ -503,18 +503,22 @@ MB_RTU_SERVER_SET_COIL('srv', 0, pump_running);
 start_cmd := MB_RTU_SERVER_GET_COIL('srv', 10);
 ```
 
-#### MB_RTU_SERVER_SET_DISCRETE — Discrete Inputs
+#### MB_RTU_SERVER_SET_DISCRETE / GET_DISCRETE — Discrete Inputs
 
 ```iecst
 ok := MB_RTU_SERVER_SET_DISCRETE(name, address, value);
+val := MB_RTU_SERVER_GET_DISCRETE(name, address);
 ```
 
-Discrete inputs are read-only from the master's perspective (FC02). Your ST code updates them.
+Discrete inputs are read-only from the master's perspective (FC02). Your ST code updates them with SET and reads them back with GET.
 
 ```iecst
 (* Expose digital input states *)
 MB_RTU_SERVER_SET_DISCRETE('srv', 0, limit_switch_1);
 MB_RTU_SERVER_SET_DISCRETE('srv', 1, limit_switch_2);
+
+(* Read back *)
+val := MB_RTU_SERVER_GET_DISCRETE('srv', 0);
 ```
 
 ---
@@ -946,6 +950,7 @@ sudo chmod 666 /dev/ttyUSB0
 | `MB_RTU_SERVER_SET_COIL(name, addr, value)` | BOOL | Write coil |
 | `MB_RTU_SERVER_GET_COIL(name, addr)` | BOOL | Read coil |
 | `MB_RTU_SERVER_SET_DISCRETE(name, addr, value)` | BOOL | Write discrete input |
+| `MB_RTU_SERVER_GET_DISCRETE(name, addr)` | BOOL | Read discrete input |
 | `MB_RTU_SERVER_STATS(name)` | MAP | Server statistics |
 | `MB_RTU_SERVER_DELETE(name)` | BOOL | Delete server instance |
 | `MB_RTU_SERVER_LIST()` | []STRING | List active servers |

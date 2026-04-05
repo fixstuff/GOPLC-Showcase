@@ -487,6 +487,52 @@ clients := MQTT_BROKER_CLIENTS('edge');
 
 Returns a JSON array describing all currently connected clients. Useful for diagnostics and security auditing.
 
+#### MQTT_BROKER_IS_RUNNING -- Check Broker State
+
+```iecst
+IF NOT MQTT_BROKER_IS_RUNNING('edge') THEN
+    MQTT_BROKER_START('edge');
+END_IF;
+```
+
+Returns `TRUE` if the broker is actively listening for connections.
+
+#### MQTT_BROKER_KICK -- Disconnect a Client
+
+```iecst
+ok := MQTT_BROKER_KICK('edge', 'rogue-client-42');
+```
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `name` | STRING | Broker name |
+| `client_id` | STRING | Client ID to disconnect |
+
+Forcibly disconnects a client from the broker. Use with `MQTT_BROKER_CLIENTS` to identify unwanted connections.
+
+#### MQTT_BROKER_PUBLISH -- Publish from Broker
+
+```iecst
+ok := MQTT_BROKER_PUBLISH('edge', 'system/announce', 'GoPLC broker online');
+```
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `name` | STRING | Broker name |
+| `topic` | STRING | Topic to publish on |
+| `payload` | STRING | Message payload |
+
+Publishes a message directly from the broker to all subscribers of the topic. Unlike `MQTT_PUBLISH` (which sends from a client), this originates from the broker itself.
+
+#### MQTT_BROKER_LIST -- List All Brokers
+
+```iecst
+brokers := MQTT_BROKER_LIST();
+(* Returns: 'edge,secure' — comma-separated names *)
+```
+
+Returns the names of all configured broker instances.
+
 ---
 
 ## 4. Complete Examples
@@ -969,6 +1015,10 @@ END_IF;
 | `MQTT_BROKER_DELETE` | `(name)` | BOOL |
 | `MQTT_BROKER_STATS` | `(name)` | STRING (JSON) |
 | `MQTT_BROKER_CLIENTS` | `(name)` | STRING (JSON) |
+| `MQTT_BROKER_IS_RUNNING` | `(name)` | BOOL |
+| `MQTT_BROKER_KICK` | `(name, client_id)` | BOOL |
+| `MQTT_BROKER_PUBLISH` | `(name, topic, payload)` | BOOL |
+| `MQTT_BROKER_LIST` | `()` | STRING |
 
 ---
 

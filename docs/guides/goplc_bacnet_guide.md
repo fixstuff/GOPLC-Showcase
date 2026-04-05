@@ -65,7 +65,7 @@ BACnet organizes all data into typed objects, each with a set of properties. The
 | **Binary Value** | `BACNET_OBJECT_BV` | Mode flags: occupied/unoccupied, auto/manual, enable/disable |
 | **Multi-State Input** | `BACNET_OBJECT_MSI` | Enumerated status: operating mode, fault code |
 | **Multi-State Output** | `BACNET_OBJECT_MSO` | Enumerated commands: speed stage, mode select |
-| **Multi-State Value** | `BACnetObjectType_MultiStateValue` | Enumerated setpoints: schedule mode, season |
+| **Multi-State Value** | `BACNET_OBJECT_MSV` | Enumerated setpoints: schedule mode, season |
 
 ### BACnet Property Constants
 
@@ -73,12 +73,12 @@ Every BACnet object has properties. GoPLC provides constants for the most common
 
 | Constant | Description |
 |----------|-------------|
-| `BACnetProperty_PresentValue` | Current value of the object — the most-read property |
-| `BACnetProperty_ObjectName` | Human-readable name string |
-| `BACnetProperty_Description` | Free-text description |
-| `BACnetProperty_Units` | Engineering units (degrees-F, PSI, CFM, etc.) |
-| `BACnetProperty_PriorityArray` | 16-level command priority array (outputs only) |
-| `BACnetProperty_RelinquishDefault` | Value used when all priority slots are NULL |
+| `BACNET_PROP_PRESENT_VALUE` | Current value of the object — the most-read property |
+| `BACNET_PROP_OBJECT_NAME` | Human-readable name string |
+| `BACNET_PROP_DESCRIPTION` | Free-text description |
+| `BACNET_PROP_UNITS` | Engineering units (degrees-F, PSI, CFM, etc.) |
+| `BACNET_PROP_PRIORITY_ARRAY` | 16-level command priority array (outputs only) |
+| `BACNET_PROP_RELINQUISH_DEFAULT` | Value used when all priority slots are NULL |
 
 > **Priority Array:** BACnet outputs (AO, BO, MSO) use a 16-level priority scheme. Priority 1 is highest (life safety), priority 16 is lowest (default). When you write to an output, you specify which priority slot to claim. The device uses the highest-priority non-NULL value. This prevents a scheduling override from fighting a life-safety shutdown.
 
@@ -222,25 +222,25 @@ Returns: `ANY` — Value type depends on the property.
 (* Read the present value of Analog Input 1 *)
 temp := BACNET_READ_PROPERTY('ahu1',
     BACNET_OBJECT_AI, 1,
-    BACnetProperty_PresentValue);
+    BACNET_PROP_PRESENT_VALUE);
 (* Returns: 72.5 *)
 
 (* Read the object name *)
 name := BACNET_READ_PROPERTY('ahu1',
     BACNET_OBJECT_AI, 1,
-    BACnetProperty_ObjectName);
+    BACNET_PROP_OBJECT_NAME);
 (* Returns: 'ZN-T' *)
 
 (* Read the engineering units *)
 units := BACNET_READ_PROPERTY('ahu1',
     BACNET_OBJECT_AI, 1,
-    BACnetProperty_Units);
+    BACNET_PROP_UNITS);
 (* Returns: 64  (degrees-Fahrenheit) *)
 
 (* Read the priority array of an Analog Output *)
 priorities := BACNET_READ_PROPERTY('ahu1',
     BACNET_OBJECT_AO, 1,
-    BACnetProperty_PriorityArray);
+    BACNET_PROP_PRIORITY_ARRAY);
 (* Returns: [NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,72.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL] *)
 ```
 
@@ -260,7 +260,7 @@ Returns: `BOOL` — TRUE if the write was acknowledged.
 (* Write a description *)
 ok := BACNET_WRITE_PROPERTY('ahu1',
     BACNET_OBJECT_AV, 5,
-    BACnetProperty_Description, 'Cooling setpoint offset');
+    BACNET_PROP_DESCRIPTION, 'Cooling setpoint offset');
 ```
 
 > **Present Value Writes:** For writing present values to outputs with priority, use `BACNET_WRITE_PRIORITY` instead. Direct writes to PresentValue via `BACNET_WRITE_PROPERTY` go to priority 16 (lowest) and may be overridden by higher-priority commands.
@@ -278,7 +278,7 @@ Returns: `ANY` — Current present value of the object.
 ```iecst
 (* These two calls are equivalent *)
 temp := BACNET_READ_PRESENT_VALUE('ahu1', BACNET_OBJECT_AI, 1);
-temp := BACNET_READ_PROPERTY('ahu1', BACNET_OBJECT_AI, 1, BACnetProperty_PresentValue);
+temp := BACNET_READ_PROPERTY('ahu1', BACNET_OBJECT_AI, 1, BACNET_PROP_PRESENT_VALUE);
 ```
 
 #### BACNET_WRITE_PRESENT_VALUE — Write Present Value (Shorthand)
@@ -476,7 +476,7 @@ ok := BACNET_WRITE_BO('ahu1', 1, TRUE);
 ok := BACNET_WRITE_BV('ahu1', 5, TRUE);
 ```
 
-> **No Write for AI/BI:** Analog Inputs and Binary Inputs are read-only by definition. There is no `BACnetWriteAI` or `BACnetWriteBI`. If you need a writable analog point, use Analog Value (AV). If you need a writable binary point, use Binary Value (BV).
+> **No Write for AI/BI:** Analog Inputs and Binary Inputs are read-only by definition. There is no `BACNET_WRITE_AI` or `BACNET_WRITE_BI`. If you need a writable analog point, use Analog Value (AV). If you need a writable binary point, use Binary Value (BV).
 
 ---
 
@@ -1257,18 +1257,18 @@ These are conventions, not standards — always verify with the integrator:
 | `BACNET_OBJECT_BV` | Mode flags and enables |
 | `BACNET_OBJECT_MSI` | Enumerated status |
 | `BACNET_OBJECT_MSO` | Enumerated commands |
-| `BACnetObjectType_MultiStateValue` | Enumerated setpoints |
+| `BACNET_OBJECT_MSV` | Enumerated setpoints |
 
 ### Property Constants
 
 | Constant | Description |
 |----------|-------------|
-| `BACnetProperty_PresentValue` | Current value of the object |
-| `BACnetProperty_ObjectName` | Human-readable name |
-| `BACnetProperty_Description` | Free-text description |
-| `BACnetProperty_Units` | Engineering units |
-| `BACnetProperty_PriorityArray` | 16-level command priority array |
-| `BACnetProperty_RelinquishDefault` | Default value when all priorities are NULL |
+| `BACNET_PROP_PRESENT_VALUE` | Current value of the object |
+| `BACNET_PROP_OBJECT_NAME` | Human-readable name |
+| `BACNET_PROP_DESCRIPTION` | Free-text description |
+| `BACNET_PROP_UNITS` | Engineering units |
+| `BACNET_PROP_PRIORITY_ARRAY` | 16-level command priority array |
+| `BACNET_PROP_RELINQUISH_DEFAULT` | Default value when all priorities are NULL |
 
 ---
 

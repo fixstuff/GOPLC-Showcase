@@ -143,6 +143,8 @@ ok := S7_CLIENT_DISCONNECT('plc1');
 
 Returns: `BOOL` — TRUE if the S7 session is active.
 
+Alias: `S7_IS_CONNECTED('plc1')` does the same thing.
+
 ```iecst
 IF NOT S7_CLIENT_IS_CONNECTED('plc1') THEN
     S7_CLIENT_CONNECT('plc1');
