@@ -57,14 +57,14 @@ BACnet organizes all data into typed objects, each with a set of properties. The
 
 | Object Type | Constant | Typical Use |
 |-------------|----------|-------------|
-| **Analog Input** | `BACNET_OBJ_ANALOG_INPUT` | Sensor readings: temperature, pressure, humidity, flow |
-| **Analog Output** | `BACNET_OBJ_ANALOG_OUTPUT` | Control outputs: valve position, damper command, VFD speed |
-| **Analog Value** | `BACNET_OBJ_ANALOG_VALUE` | Setpoints, tuning parameters, calculated values |
-| **Binary Input** | `BACNET_OBJ_BINARY_INPUT` | Status signals: fan running, filter alarm, occupancy |
-| **Binary Output** | `BACNET_OBJ_BINARY_OUTPUT` | On/off commands: fan start, pump enable, lighting relay |
-| **Binary Value** | `BACNET_OBJ_BINARY_VALUE` | Mode flags: occupied/unoccupied, auto/manual, enable/disable |
-| **Multi-State Input** | `BACNET_OBJ_MULTI_STATE_INPUT` | Enumerated status: operating mode, fault code |
-| **Multi-State Output** | `BACNET_OBJ_MULTI_STATE_OUTPUT` | Enumerated commands: speed stage, mode select |
+| **Analog Input** | `BACNET_OBJECT_AI` | Sensor readings: temperature, pressure, humidity, flow |
+| **Analog Output** | `BACNET_OBJECT_AO` | Control outputs: valve position, damper command, VFD speed |
+| **Analog Value** | `BACNET_OBJECT_AV` | Setpoints, tuning parameters, calculated values |
+| **Binary Input** | `BACNET_OBJECT_BI` | Status signals: fan running, filter alarm, occupancy |
+| **Binary Output** | `BACNET_OBJECT_BO` | On/off commands: fan start, pump enable, lighting relay |
+| **Binary Value** | `BACNET_OBJECT_BV` | Mode flags: occupied/unoccupied, auto/manual, enable/disable |
+| **Multi-State Input** | `BACNET_OBJECT_MSI` | Enumerated status: operating mode, fault code |
+| **Multi-State Output** | `BACNET_OBJECT_MSO` | Enumerated commands: speed stage, mode select |
 | **Multi-State Value** | `BACnetObjectType_MultiStateValue` | Enumerated setpoints: schedule mode, season |
 
 ### BACnet Property Constants
@@ -221,25 +221,25 @@ Returns: `ANY` — Value type depends on the property.
 ```iecst
 (* Read the present value of Analog Input 1 *)
 temp := BACNET_READ_PROPERTY('ahu1',
-    BACNET_OBJ_ANALOG_INPUT, 1,
+    BACNET_OBJECT_AI, 1,
     BACnetProperty_PresentValue);
 (* Returns: 72.5 *)
 
 (* Read the object name *)
 name := BACNET_READ_PROPERTY('ahu1',
-    BACNET_OBJ_ANALOG_INPUT, 1,
+    BACNET_OBJECT_AI, 1,
     BACnetProperty_ObjectName);
 (* Returns: 'ZN-T' *)
 
 (* Read the engineering units *)
 units := BACNET_READ_PROPERTY('ahu1',
-    BACNET_OBJ_ANALOG_INPUT, 1,
+    BACNET_OBJECT_AI, 1,
     BACnetProperty_Units);
 (* Returns: 64  (degrees-Fahrenheit) *)
 
 (* Read the priority array of an Analog Output *)
 priorities := BACNET_READ_PROPERTY('ahu1',
-    BACNET_OBJ_ANALOG_OUTPUT, 1,
+    BACNET_OBJECT_AO, 1,
     BACnetProperty_PriorityArray);
 (* Returns: [NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,72.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL] *)
 ```
@@ -259,7 +259,7 @@ Returns: `BOOL` — TRUE if the write was acknowledged.
 ```iecst
 (* Write a description *)
 ok := BACNET_WRITE_PROPERTY('ahu1',
-    BACNET_OBJ_ANALOG_VALUE, 5,
+    BACNET_OBJECT_AV, 5,
     BACnetProperty_Description, 'Cooling setpoint offset');
 ```
 
@@ -277,8 +277,8 @@ Returns: `ANY` — Current present value of the object.
 
 ```iecst
 (* These two calls are equivalent *)
-temp := BACNET_READ_PRESENT_VALUE('ahu1', BACNET_OBJ_ANALOG_INPUT, 1);
-temp := BACNET_READ_PROPERTY('ahu1', BACNET_OBJ_ANALOG_INPUT, 1, BACnetProperty_PresentValue);
+temp := BACNET_READ_PRESENT_VALUE('ahu1', BACNET_OBJECT_AI, 1);
+temp := BACNET_READ_PROPERTY('ahu1', BACNET_OBJECT_AI, 1, BACnetProperty_PresentValue);
 ```
 
 #### BACNET_WRITE_PRESENT_VALUE — Write Present Value (Shorthand)
@@ -293,7 +293,7 @@ temp := BACNET_READ_PROPERTY('ahu1', BACNET_OBJ_ANALOG_INPUT, 1, BACnetProperty_
 Returns: `BOOL` — TRUE if acknowledged.
 
 ```iecst
-ok := BACNET_WRITE_PRESENT_VALUE('ahu1', BACNET_OBJ_ANALOG_VALUE, 5, 72.0);
+ok := BACNET_WRITE_PRESENT_VALUE('ahu1', BACNET_OBJECT_AV, 5, 72.0);
 ```
 
 ---
@@ -338,17 +338,17 @@ Returns: `BOOL` — TRUE if acknowledged.
 ```iecst
 (* Write cooling valve to 75% at priority 8 (operator override) *)
 ok := BACNET_WRITE_PRIORITY('ahu1',
-    BACNET_OBJ_ANALOG_OUTPUT, 1,
+    BACNET_OBJECT_AO, 1,
     75.0, 8);
 
 (* Write fan command ON at priority 5 (critical equipment) *)
 ok := BACNET_WRITE_PRIORITY('ahu1',
-    BACNET_OBJ_BINARY_OUTPUT, 1,
+    BACNET_OBJECT_BO, 1,
     TRUE, 5);
 
 (* Write occupied cooling setpoint at priority 16 (scheduling) *)
 ok := BACNET_WRITE_PRIORITY('ahu1',
-    BACNET_OBJ_ANALOG_VALUE, 10,
+    BACNET_OBJECT_AV, 10,
     72.0, 16);
 ```
 
@@ -368,7 +368,7 @@ When you relinquish a priority slot, it becomes NULL. The device then uses the n
 ```iecst
 (* Release the operator override — control returns to scheduling *)
 ok := BACNET_RELINQUISH('ahu1',
-    BACNET_OBJ_ANALOG_OUTPUT, 1,
+    BACNET_OBJECT_AO, 1,
     8);
 ```
 
@@ -389,14 +389,14 @@ IF override_active THEN
     IF override_timer >= override_duration THEN
         (* Time expired — relinquish override *)
         ok := BACNET_RELINQUISH('ahu1',
-            BACNET_OBJ_ANALOG_OUTPUT, 1, 8);
+            BACNET_OBJECT_AO, 1, 8);
         override_active := FALSE;
         override_timer := 0;
     END_IF;
 ELSE
     (* Normal operation — write at priority 16 *)
     ok := BACNET_WRITE_PRIORITY('ahu1',
-        BACNET_OBJ_ANALOG_OUTPUT, 1,
+        BACNET_OBJECT_AO, 1,
         pid_output, 16);
 END_IF;
 END_PROGRAM
@@ -573,12 +573,12 @@ Returns: `INT` — Subscription ID (used for unsubscribe), or -1 on failure.
 ```iecst
 (* Subscribe to zone temperature changes — 1 hour lifetime *)
 sub_id := BACNET_SUBSCRIBE_COV('vav3',
-    BACNET_OBJ_ANALOG_INPUT, 1,
+    BACNET_OBJECT_AI, 1,
     3600);
 
 (* Subscribe indefinitely to fan status *)
 sub_id2 := BACNET_SUBSCRIBE_COV('ahu1',
-    BACNET_OBJ_BINARY_INPUT, 1,
+    BACNET_OBJECT_BI, 1,
     0);
 ```
 
@@ -616,9 +616,9 @@ END_VAR
 CASE state OF
     0: (* Subscribe to critical points *)
         sub_temp := BACNET_SUBSCRIBE_COV('ahu1',
-            BACNET_OBJ_ANALOG_INPUT, 1, 0);
+            BACNET_OBJECT_AI, 1, 0);
         sub_fan := BACNET_SUBSCRIBE_COV('ahu1',
-            BACNET_OBJ_BINARY_INPUT, 1, 0);
+            BACNET_OBJECT_BI, 1, 0);
         IF sub_temp >= 0 AND sub_fan >= 0 THEN
             state := 10;
         END_IF;
@@ -632,12 +632,12 @@ CASE state OF
             alarm_active := TRUE;
             (* Force fan ON at high priority *)
             BACNET_WRITE_PRIORITY('ahu1',
-                BACNET_OBJ_BINARY_OUTPUT, 1,
+                BACNET_OBJECT_BO, 1,
                 TRUE, 5);
         ELSIF zone_temp < (high_temp_limit - 2.0) THEN
             IF alarm_active THEN
                 BACNET_RELINQUISH('ahu1',
-                    BACNET_OBJ_BINARY_OUTPUT, 1, 5);
+                    BACNET_OBJECT_BO, 1, 5);
                 alarm_active := FALSE;
             END_IF;
         END_IF;
@@ -965,7 +965,7 @@ CASE state OF
 
         (* Write damper command at priority 8 *)
         ok := BACNET_WRITE_PRIORITY('vav_b1',
-            BACNET_OBJ_ANALOG_OUTPUT, 1,
+            BACNET_OBJECT_AO, 1,
             damper_cmd, 8);
 
         (* Reconnect if lost *)
@@ -1011,11 +1011,11 @@ CASE state OF
 
     1: (* Subscribe to chiller status via COV *)
         sub_ch1_status := BACNET_SUBSCRIBE_COV('ch1',
-            BACNET_OBJ_BINARY_INPUT, 1, 0);
+            BACNET_OBJECT_BI, 1, 0);
         sub_ch2_status := BACNET_SUBSCRIBE_COV('ch2',
-            BACNET_OBJ_BINARY_INPUT, 1, 0);
+            BACNET_OBJECT_BI, 1, 0);
         sub_load := BACNET_SUBSCRIBE_COV('ch1',
-            BACNET_OBJ_ANALOG_INPUT, 10, 0);
+            BACNET_OBJECT_AI, 10, 0);
         state := 10;
 
     10: (* Staging logic — COV keeps values current *)
@@ -1026,14 +1026,14 @@ CASE state OF
         (* Stage up: start chiller 2 when load exceeds threshold *)
         IF plant_load > stage_up_sp AND NOT ch2_running THEN
             BACNET_WRITE_PRIORITY('ch2',
-                BACNET_OBJ_BINARY_OUTPUT, 1,
+                BACNET_OBJECT_BO, 1,
                 TRUE, 8);
         END_IF;
 
         (* Stage down: stop chiller 2 when load drops *)
         IF plant_load < stage_down_sp AND ch2_running AND ch1_running THEN
             BACNET_WRITE_PRIORITY('ch2',
-                BACNET_OBJ_BINARY_OUTPUT, 1,
+                BACNET_OBJECT_BO, 1,
                 FALSE, 8);
         END_IF;
 
@@ -1249,14 +1249,14 @@ These are conventions, not standards — always verify with the integrator:
 
 | Constant | Description |
 |----------|-------------|
-| `BACNET_OBJ_ANALOG_INPUT` | Sensor readings (read-only) |
-| `BACNET_OBJ_ANALOG_OUTPUT` | Analog control outputs (commandable) |
-| `BACNET_OBJ_ANALOG_VALUE` | Setpoints and calculated values |
-| `BACNET_OBJ_BINARY_INPUT` | Status signals (read-only) |
-| `BACNET_OBJ_BINARY_OUTPUT` | On/off commands (commandable) |
-| `BACNET_OBJ_BINARY_VALUE` | Mode flags and enables |
-| `BACNET_OBJ_MULTI_STATE_INPUT` | Enumerated status |
-| `BACNET_OBJ_MULTI_STATE_OUTPUT` | Enumerated commands |
+| `BACNET_OBJECT_AI` | Sensor readings (read-only) |
+| `BACNET_OBJECT_AO` | Analog control outputs (commandable) |
+| `BACNET_OBJECT_AV` | Setpoints and calculated values |
+| `BACNET_OBJECT_BI` | Status signals (read-only) |
+| `BACNET_OBJECT_BO` | On/off commands (commandable) |
+| `BACNET_OBJECT_BV` | Mode flags and enables |
+| `BACNET_OBJECT_MSI` | Enumerated status |
+| `BACNET_OBJECT_MSO` | Enumerated commands |
 | `BACnetObjectType_MultiStateValue` | Enumerated setpoints |
 
 ### Property Constants
