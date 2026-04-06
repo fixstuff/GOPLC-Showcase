@@ -66,6 +66,7 @@ Built-in functions callable from Structured Text — data processing, integratio
 | **[Motion Control](goplc_motion_guide.md)** | PLCopen MC | 23 | Create axes, trapezoidal profiles, absolute/relative/velocity moves, homing, jog, PLCopen state machine. |
 | **[CSV & INI](goplc_csv_ini_guide.md)** | File Formats | 20 | CSV parse/query/modify/export + INI file read/write/parse. Recipe management, config files. |
 | **[Regular Expressions](goplc_regex_guide.md)** | Pattern Matching | 13 | Match, find, replace, split, capture groups, count, validate. RE2 engine, RE_* aliases. |
+| **[Cryptography](goplc_crypto_guide.md)** | Security | ~55 | SHA/MD5 hashing, HMAC, AES (CBC/GCM), RSA encrypt/sign, Base64, JWT auth, CRC checksums. |
 
 ## Platform
 
