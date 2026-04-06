@@ -63,6 +63,7 @@ Built-in functions callable from Structured Text — data processing, integratio
 | **[Data Structures](goplc_datastructures_guide.md)** | Collections | ~160 | ARRAY, MAP, LIST, QUEUE, STACK, DEQUE, SET, HEAP/PQUEUE. |
 | **[Resilience & Caching](goplc_resilience_guide.md)** | Fault Tolerance | 35 | Cache, circuit breaker, rate limiter, throttle, debounce, bulkhead, hysteresis. |
 | **[Debug & Logging](goplc_debug_guide.md)** | Diagnostics | 36 | Multi-target logging: file, SQLite, PostgreSQL, InfluxDB, syslog, console. Per-module levels. |
+| **[Motion Control](goplc_motion_guide.md)** | PLCopen MC | 23 | Create axes, trapezoidal profiles, absolute/relative/velocity moves, homing, jog, PLCopen state machine. |
 
 ## Platform
 
