@@ -72,6 +72,7 @@ Built-in functions callable from Structured Text — data processing, integratio
 | **[NMEA & GPS](goplc_nmea_gps_guide.md)** | Geospatial | 26 | Parse GPS sentences, extract position/speed/altitude, geofencing, distance/bearing calculations. |
 | **[Entertainment](goplc_entertainment_guide.md)** | Show Control | 40 | Art-Net DMX (7), sACN/E1.31 (7), MIDI (14), OSC (12) — stage lighting, sound, installations. |
 | **[Utilities](goplc_utilities_guide.md)** | Specialized | 83 | KNX, M-Bus, ZPL labels, barcode, URL, TLV/BER, GSV/SSV, ctrlX EtherCAT, directory ops. |
+| **[OSCAT Library](goplc_oscat_guide.md)** | ST Library | 550 | Open-source IEC 61131-3 library. Complex math, PID, signal processing, sensors, date/time, scheduling. |
 
 ## Platform
 
