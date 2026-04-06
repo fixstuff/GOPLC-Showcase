@@ -80,11 +80,21 @@ curl http://localhost:8082/api/libraries
 # Should show: [{"name": "oscat", "path": "lib/oscat/LIB_Oscat.st", ...}]
 ```
 
-### Builtin vs OSCAT Overlap
+### Builtin vs OSCAT Overlap — Important
 
-97 of 550 OSCAT functions have identical names in GoPLC's built-in function library (e.g., SINH, CEIL, TRIM, C_TO_F, DAY_OF_YEAR). When OSCAT is loaded, **OSCAT's version takes priority** — user-defined/library functions are resolved before builtins. This means the interpreted ST version runs instead of the compiled Go version.
+97 of 550 OSCAT functions have identical names as GoPLC's built-in functions (e.g., SINH, CEIL, TRIM, C_TO_F, DAY_OF_YEAR). When OSCAT is loaded, **OSCAT's version takes priority** — library functions are resolved before builtins. This has two consequences:
 
-If you want the faster builtin version for overlapping functions, don't load OSCAT — or load only the specific OSCAT categories you need by extracting them into a smaller library file.
+1. **Performance:** The 97 overlapping functions run as interpreted ST instead of compiled Go. For math-heavy programs calling SINH or CEIL thousands of times per scan, this matters.
+
+2. **Behavior:** If an OSCAT implementation has a bug, limitation, or different behavior than the GoPLC builtin, the OSCAT version wins silently. You won't know unless you unload the library and compare.
+
+**Recommendations:**
+
+- **If you only need a few OSCAT functions** (e.g., sensor linearization, complex math), extract just those into a smaller `.st` file rather than loading the full 550-function library.
+- **If performance is critical**, be aware that loading OSCAT downgrades 97 functions from compiled Go to interpreted ST.
+- **If something behaves unexpectedly**, try unloading OSCAT to see if the builtin version works differently.
+
+> **Future:** A planned fix will give builtins priority over library functions for overlapping names, so loading OSCAT won't degrade performance on functions GoPLC already implements natively.
 
 ---
 
