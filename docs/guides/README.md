@@ -49,6 +49,7 @@ First-class client and server implementations for every major automation protoco
 | **[JSON](goplc_json_guide.md)** | JSON Functions | 22 | Parse, build, query, modify JSON from ST. Dot-path access, typed getters, JSONPath. |
 | **[HTTP Client](goplc_http_guide.md)** | HTTP Functions | 16 | GET/POST/PUT/DELETE from ST. Response maps, custom headers, JSON auto-parse, webhooks. |
 | **[File I/O](goplc_fileio_guide.md)** | File Functions | 15 | Read/write/append files, line-by-line processing, CSV logging, recipe management. Sandboxed. |
+| **[Database](goplc_database_guide.md)** | DB Functions | 18 | SQLite, PostgreSQL, MySQL from ST. Query, insert, transactions, schema management. |
 
 ## Platform
 
