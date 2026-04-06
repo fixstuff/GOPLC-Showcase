@@ -68,6 +68,10 @@ Built-in functions callable from Structured Text — data processing, integratio
 | **[Regular Expressions](goplc_regex_guide.md)** | Pattern Matching | 13 | Match, find, replace, split, capture groups, count, validate. RE2 engine, RE_* aliases. |
 | **[Cryptography](goplc_crypto_guide.md)** | Security | ~55 | SHA/MD5 hashing, HMAC, AES (CBC/GCM), RSA encrypt/sign, Base64, JWT auth, CRC checksums. |
 | **[SMTP Email](goplc_smtp_guide.md)** | Email | 4 | Send plain text, HTML, authenticated, and TLS-encrypted email from ST. Alarm notifications. |
+| **[Analyzer & Store-Forward](goplc_analyzer_storeforward_guide.md)** | Diagnostics | 22 | Protocol packet capture, decode, PCAP export + offline message queuing with SQLite persistence. |
+| **[NMEA & GPS](goplc_nmea_gps_guide.md)** | Geospatial | 26 | Parse GPS sentences, extract position/speed/altitude, geofencing, distance/bearing calculations. |
+| **[Entertainment](goplc_entertainment_guide.md)** | Show Control | 40 | Art-Net DMX (7), sACN/E1.31 (7), MIDI (14), OSC (12) — stage lighting, sound, installations. |
+| **[Utilities](goplc_utilities_guide.md)** | Specialized | 83 | KNX, M-Bus, ZPL labels, barcode, URL, TLV/BER, GSV/SSV, ctrlX EtherCAT, directory ops. |
 
 ## Platform
 
