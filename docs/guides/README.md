@@ -81,6 +81,7 @@ Core development tools, distributed execution, and visual programming.
 |-------|-------|-------------|
 | **[IDE & Runtime](goplc_ide_runtime_guide.md)** | Development Environment | Browser IDE, task scheduler, debugger with breakpoints + stepping, HMI builder, project files, protocol analyzer, store-and-forward. |
 | **[AI Assistant](goplc_ai_guide.md)** | Built-in AI | Chat + autonomous control mode, 13 runtime tools, Claude/OpenAI/Ollama providers, code/HMI/flow generation, voice input. |
+| **[REST API & Swagger](goplc_api_guide.md)** | API Reference | All 254 endpoints by group, Swagger UI, WebSocket, authentication, common patterns. |
 | **[Configuration](goplc_config_guide.md)** | YAML Reference | Every config field documented: tasks, protocols, I/O mapping, DataLayer, AI, Node-RED, real-time, fleet, security, ctrlX. |
 | **[Clustering](goplc_clustering_guide.md)** | Distributed Execution | Boss/minion architecture, DataLayer pub/sub, fleet management, tested to 500 minions. |
 | **[Node-RED](goplc_nodered_guide.md)** | Flow Programming | 7 custom GoPLC nodes, Dashboard 2.0, AI-generated flows. |
