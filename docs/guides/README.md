@@ -45,6 +45,7 @@ First-class client and server implementations for every major automation protoco
 | **[SNMP](goplc_snmp_guide.md)** | SNMPv1/v2c/v3 | 36+ | Client + agent + trap receiver, OID helpers, datacenter monitoring. |
 | **[DF1](goplc_df1_guide.md)** | DF1 (AB serial) | 16 | Client, SLC 500 / MicroLogix, N7/F8/B3 file addressing. |
 | **[Sparkplug B](goplc_sparkplug_guide.md)** | Sparkplug B / MQTT | 16 | Edge node, NBIRTH/NDATA lifecycle, Ignition integration. |
+| **[SEL Relay](goplc_sel_guide.md)** | SEL Fast Message | 54 | Client + server + meter. Mirrored bits, SER, oscillography, COMTRADE, settings. |
 | **[InfluxDB](goplc_influxdb_guide.md)** | InfluxDB v1/v2 | 16 | Write + batch, line protocol, Grafana dashboards. |
 
 ## ST Language & Libraries
