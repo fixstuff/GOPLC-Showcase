@@ -67,6 +67,7 @@ Built-in functions callable from Structured Text — data processing, integratio
 | **[CSV & INI](goplc_csv_ini_guide.md)** | File Formats | 20 | CSV parse/query/modify/export + INI file read/write/parse. Recipe management, config files. |
 | **[Regular Expressions](goplc_regex_guide.md)** | Pattern Matching | 13 | Match, find, replace, split, capture groups, count, validate. RE2 engine, RE_* aliases. |
 | **[Cryptography](goplc_crypto_guide.md)** | Security | ~55 | SHA/MD5 hashing, HMAC, AES (CBC/GCM), RSA encrypt/sign, Base64, JWT auth, CRC checksums. |
+| **[SMTP Email](goplc_smtp_guide.md)** | Email | 4 | Send plain text, HTML, authenticated, and TLS-encrypted email from ST. Alarm notifications. |
 
 ## Platform
 
