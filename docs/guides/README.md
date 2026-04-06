@@ -62,6 +62,7 @@ Built-in functions callable from Structured Text — data processing, integratio
 | **[Database](goplc_database_guide.md)** | Persistence | 18 | SQLite, PostgreSQL, MySQL. Query, insert, transactions, schema management. |
 | **[Data Structures](goplc_datastructures_guide.md)** | Collections | ~160 | ARRAY, MAP, LIST, QUEUE, STACK, DEQUE, SET, HEAP/PQUEUE. |
 | **[Resilience & Caching](goplc_resilience_guide.md)** | Fault Tolerance | 35 | Cache, circuit breaker, rate limiter, throttle, debounce, bulkhead, hysteresis. |
+| **[Debug & Logging](goplc_debug_guide.md)** | Diagnostics | 36 | Multi-target logging: file, SQLite, PostgreSQL, InfluxDB, syslog, console. Per-module levels. |
 
 ## Platform
 
