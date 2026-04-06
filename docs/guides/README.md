@@ -50,6 +50,7 @@ First-class client and server implementations for every major automation protoco
 | **[HTTP Client](goplc_http_guide.md)** | HTTP Functions | 16 | GET/POST/PUT/DELETE from ST. Response maps, custom headers, JSON auto-parse, webhooks. |
 | **[File I/O](goplc_fileio_guide.md)** | File Functions | 15 | Read/write/append files, line-by-line processing, CSV logging, recipe management. Sandboxed. |
 | **[Database](goplc_database_guide.md)** | DB Functions | 18 | SQLite, PostgreSQL, MySQL from ST. Query, insert, transactions, schema management. |
+| **[Data Structures](goplc_datastructures_guide.md)** | Collections | ~160 | ARRAY, MAP, LIST, QUEUE, STACK, DEQUE, SET, HEAP/PQUEUE. Handle-based, thread-safe. |
 
 ## Platform
 
