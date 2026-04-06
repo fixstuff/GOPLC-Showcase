@@ -46,12 +46,21 @@ First-class client and server implementations for every major automation protoco
 | **[DF1](goplc_df1_guide.md)** | DF1 (AB serial) | 16 | Client, SLC 500 / MicroLogix, N7/F8/B3 file addressing. |
 | **[Sparkplug B](goplc_sparkplug_guide.md)** | Sparkplug B / MQTT | 16 | Edge node, NBIRTH/NDATA lifecycle, Ignition integration. |
 | **[InfluxDB](goplc_influxdb_guide.md)** | InfluxDB v1/v2 | 16 | Write + batch, line protocol, Grafana dashboards. |
-| **[JSON](goplc_json_guide.md)** | JSON Functions | 22 | Parse, build, query, modify JSON from ST. Dot-path access, typed getters, JSONPath. |
-| **[HTTP Client](goplc_http_guide.md)** | HTTP Functions | 16 | GET/POST/PUT/DELETE from ST. Response maps, custom headers, JSON auto-parse, webhooks. |
-| **[File I/O](goplc_fileio_guide.md)** | File Functions | 15 | Read/write/append files, line-by-line processing, CSV logging, recipe management. Sandboxed. |
-| **[Database](goplc_database_guide.md)** | DB Functions | 18 | SQLite, PostgreSQL, MySQL from ST. Query, insert, transactions, schema management. |
-| **[Data Structures](goplc_datastructures_guide.md)** | Collections | ~160 | ARRAY, MAP, LIST, QUEUE, STACK, DEQUE, SET, HEAP/PQUEUE. Handle-based, thread-safe. |
-| **[Resilience & Caching](goplc_resilience_guide.md)** | Fault Tolerance | 35 | Cache (TTL/LRU), circuit breaker, rate limiter, throttle, debounce, bulkhead, fallback, hysteresis. |
+
+## ST Language & Libraries
+
+Built-in functions callable from Structured Text — data processing, integration, and fault tolerance.
+
+| Guide | Category | Functions | Description |
+|-------|----------|:---------:|-------------|
+| **[Timers, Counters & FBs](goplc_timers_counters_guide.md)** | Function Blocks | 14 | TON, TOF, TP, RTO, CTU, CTD, CTUD, SR, RS, R_TRIG, F_TRIG, PID, PIDE. |
+| **[Math, String & Conversion](goplc_math_string_guide.md)** | IEC Standard + Extensions | 150+ | Trig, rounding, statistics, EMA/SMA, string ops, type conversions, bitwise, unit conversions. |
+| **[JSON](goplc_json_guide.md)** | Data Interchange | 22 | Parse, build, query, modify JSON. Dot-path access, typed getters, JSONPath. |
+| **[HTTP Client](goplc_http_guide.md)** | Web Integration | 16 | GET/POST/PUT/DELETE from ST. Response maps, custom headers, webhooks. |
+| **[File I/O](goplc_fileio_guide.md)** | File System | 15 | Read/write/append files, line-by-line processing, CSV logging. Sandboxed. |
+| **[Database](goplc_database_guide.md)** | Persistence | 18 | SQLite, PostgreSQL, MySQL. Query, insert, transactions, schema management. |
+| **[Data Structures](goplc_datastructures_guide.md)** | Collections | ~160 | ARRAY, MAP, LIST, QUEUE, STACK, DEQUE, SET, HEAP/PQUEUE. |
+| **[Resilience & Caching](goplc_resilience_guide.md)** | Fault Tolerance | 35 | Cache, circuit breaker, rate limiter, throttle, debounce, bulkhead, hysteresis. |
 
 ## Platform
 
@@ -61,7 +70,6 @@ Core development tools, distributed execution, and visual programming.
 |-------|-------|-------------|
 | **[IDE & Runtime](goplc_ide_runtime_guide.md)** | Development Environment | Browser IDE, task scheduler, debugger with breakpoints + stepping, HMI builder, project files, protocol analyzer, store-and-forward. |
 | **[AI Assistant](goplc_ai_guide.md)** | Built-in AI | Chat + autonomous control mode, 13 runtime tools, Claude/OpenAI/Ollama providers, code/HMI/flow generation, voice input. |
-| **[Timers, Counters & FBs](goplc_timers_counters_guide.md)** | Function Blocks | TON, TOF, TP, RTO, CTU, CTD, CTUD, SR, RS, R_TRIG, F_TRIG, PID, PIDE — 14 IEC 61131-3 FBs with timing diagrams. |
 | **[Configuration](goplc_config_guide.md)** | YAML Reference | Every config field documented: tasks, protocols, I/O mapping, DataLayer, AI, Node-RED, real-time, fleet, security, ctrlX. |
 | **[Clustering](goplc_clustering_guide.md)** | Distributed Execution | Boss/minion architecture, DataLayer pub/sub, fleet management, tested to 500 minions. |
 | **[Node-RED](goplc_nodered_guide.md)** | Flow Programming | 7 custom GoPLC nodes, Dashboard 2.0, AI-generated flows. |
