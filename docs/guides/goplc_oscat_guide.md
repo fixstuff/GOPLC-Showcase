@@ -82,19 +82,13 @@ curl http://localhost:8082/api/libraries
 
 ### Builtin vs OSCAT Overlap — Important
 
-97 of 550 OSCAT functions have identical names as GoPLC's built-in functions (e.g., SINH, CEIL, TRIM, C_TO_F, DAY_OF_YEAR). When OSCAT is loaded, **OSCAT's version takes priority** — library functions are resolved before builtins. This has two consequences:
+97 of 550 OSCAT functions have identical names as GoPLC's built-in functions (e.g., SINH, CEIL, TRIM, C_TO_F, DAY_OF_YEAR). **GoPLC builtins always win** — the compiled Go version runs regardless of whether OSCAT is loaded. This means:
 
-1. **Performance:** The 97 overlapping functions run as interpreted ST instead of compiled Go. For math-heavy programs calling SINH or CEIL thousands of times per scan, this matters.
+- No performance penalty for the 97 overlapping functions
+- The remaining 453 OSCAT-only functions run as interpreted ST
+- You get the best of both: fast builtins + OSCAT's unique capabilities
 
-2. **Behavior:** If an OSCAT implementation has a bug, limitation, or different behavior than the GoPLC builtin, the OSCAT version wins silently. You won't know unless you unload the library and compare.
-
-**Recommendations:**
-
-- **If you only need a few OSCAT functions** (e.g., sensor linearization, complex math), extract just those into a smaller `.st` file rather than loading the full 550-function library.
-- **If performance is critical**, be aware that loading OSCAT downgrades 97 functions from compiled Go to interpreted ST.
-- **If something behaves unexpectedly**, try unloading OSCAT to see if the builtin version works differently.
-
-> **Future:** A planned fix will give builtins priority over library functions for overlapping names, so loading OSCAT won't degrade performance on functions GoPLC already implements natively.
+This is transparent — you call `SINH(x)` and get the Go builtin whether OSCAT is loaded or not.
 
 ---
 
