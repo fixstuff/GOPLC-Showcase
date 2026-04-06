@@ -82,7 +82,9 @@ curl http://localhost:8082/api/libraries
 
 ### Builtin vs OSCAT Overlap
 
-97 of 550 OSCAT functions have identical names in GoPLC's built-in function library (e.g., SINH, CEIL, TRIM, C_TO_F, DAY_OF_YEAR). When both exist, the **builtin version runs** (compiled Go is faster than interpreted ST). This is transparent — you call the same function name and get the faster implementation automatically.
+97 of 550 OSCAT functions have identical names in GoPLC's built-in function library (e.g., SINH, CEIL, TRIM, C_TO_F, DAY_OF_YEAR). When OSCAT is loaded, **OSCAT's version takes priority** — user-defined/library functions are resolved before builtins. This means the interpreted ST version runs instead of the compiled Go version.
+
+If you want the faster builtin version for overlapping functions, don't load OSCAT — or load only the specific OSCAT categories you need by extracting them into a smaller library file.
 
 ---
 
