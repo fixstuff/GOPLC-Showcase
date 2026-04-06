@@ -51,6 +51,7 @@ First-class client and server implementations for every major automation protoco
 | **[File I/O](goplc_fileio_guide.md)** | File Functions | 15 | Read/write/append files, line-by-line processing, CSV logging, recipe management. Sandboxed. |
 | **[Database](goplc_database_guide.md)** | DB Functions | 18 | SQLite, PostgreSQL, MySQL from ST. Query, insert, transactions, schema management. |
 | **[Data Structures](goplc_datastructures_guide.md)** | Collections | ~160 | ARRAY, MAP, LIST, QUEUE, STACK, DEQUE, SET, HEAP/PQUEUE. Handle-based, thread-safe. |
+| **[Resilience & Caching](goplc_resilience_guide.md)** | Fault Tolerance | 35 | Cache (TTL/LRU), circuit breaker, rate limiter, throttle, debounce, bulkhead, fallback, hysteresis. |
 
 ## Platform
 
