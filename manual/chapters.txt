@@ -1,0 +1,83 @@
+# GoPLC Manual — chapter order
+#
+# Format: one source file path per line, relative to the GOPLC-Showcase repo root.
+# Lines starting with '#' are comments. Blank lines are ignored.
+# Part dividers (## Part Name) are injected as level-0 headings by build-pdf.sh.
+
+## Part I: Getting Started
+docs/guides/getting-started.md
+docs/guides/home-automation.md
+docs/guides/washing-machine-controller.md
+
+## Part II: Platform
+docs/guides/goplc_ide_runtime_guide.md
+docs/guides/goplc_config_guide.md
+docs/guides/goplc_api_guide.md
+docs/ARCHITECTURE.md
+docs/guides/goplc_ai_guide.md
+docs/guides/goplc_nodered_guide.md
+docs/guides/goplc_clustering_guide.md
+docs/guides/goplc_mcp_guide.md
+docs/guides/goplc_mcp_gateway_guide.md
+
+## Part III: Programming
+docs/guides/goplc_timers_counters_guide.md
+docs/guides/goplc_math_string_guide.md
+docs/guides/goplc_datastructures_guide.md
+docs/guides/goplc_json_guide.md
+docs/guides/goplc_debug_guide.md
+docs/guides/goplc_regex_guide.md
+docs/guides/goplc_fileio_guide.md
+docs/guides/goplc_database_guide.md
+docs/guides/goplc_http_guide.md
+docs/guides/goplc_csv_ini_guide.md
+docs/guides/goplc_crypto_guide.md
+docs/guides/goplc_motion_guide.md
+docs/guides/goplc_resilience_guide.md
+docs/guides/goplc_smtp_guide.md
+docs/guides/goplc_oscat_guide.md
+
+## Part IV: Hardware
+docs/guides/goplc_hal_guide.md
+docs/guides/goplc_p2_guide.md
+docs/guides/goplc_arduino_guide.md
+docs/guides/goplc_teensy_guide.md
+docs/guides/goplc_flipper_guide.md
+docs/guides/goplc_rp2040_guide.md
+docs/guides/goplc_esp32_hmi_guide.md
+docs/guides/goplc_phidgets_guide.md
+
+## Part V: Protocols
+docs/guides/goplc_modbus_tcp_guide.md
+docs/guides/goplc_modbus_rtu_guide.md
+docs/guides/goplc_enip_guide.md
+docs/guides/goplc_s7_guide.md
+docs/guides/goplc_opcua_guide.md
+docs/guides/goplc_mqtt_guide.md
+docs/guides/goplc_fins_guide.md
+docs/guides/goplc_dnp3_guide.md
+docs/guides/goplc_iec104_guide.md
+docs/guides/goplc_bacnet_guide.md
+docs/guides/goplc_snmp_guide.md
+docs/guides/goplc_df1_guide.md
+docs/guides/goplc_sparkplug_guide.md
+docs/guides/goplc_sel_guide.md
+docs/guides/goplc_influxdb_guide.md
+docs/guides/goplc_gcode_guide.md
+docs/guides/goplc_analyzer_storeforward_guide.md
+docs/guides/goplc_nmea_gps_guide.md
+docs/guides/goplc_entertainment_guide.md
+docs/guides/goplc_utilities_guide.md
+
+## Part VI: Events & Integration
+docs/guides/goplc_events_guide.md
+
+## Part VII: Whitepapers
+docs/whitepaper-clustering.md
+docs/whitepaper-datacenter-gateway.md
+docs/WHITEPAPER_DC_SIMULATION_HARDWARE.md
+docs/WHITEPAPER_DC_SIMULATION_VIRTUAL.md
+docs/WHITEPAPER_HUMANOID_ROBOTICS.md
+docs/WHITEPAPER_OPERATORS_REVENGE.md
+docs/WHITEPAPER_PLANETARY_SCALE.md
+docs/WTP_Performance_Report.md

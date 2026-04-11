@@ -1,0 +1,193 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1800" font-family="'SF Mono', 'Fira Code', 'Cascadia Code', monospace">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0e17"/>
+      <stop offset="100%" style="stop-color:#111827"/>
+    </linearGradient>
+    <linearGradient id="piGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981"/>
+      <stop offset="100%" style="stop-color:#059669"/>
+    </linearGradient>
+    <linearGradient id="plcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#2563eb"/>
+    </linearGradient>
+    <linearGradient id="claudeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#d97706"/>
+      <stop offset="100%" style="stop-color:#b45309"/>
+    </linearGradient>
+    <linearGradient id="termGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e293b"/>
+      <stop offset="100%" style="stop-color:#0f172a"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="1800" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5" opacity="0.4"/>
+  </pattern>
+  <rect width="1200" height="1800" fill="url(#grid)"/>
+
+  <!-- ═══════════ TITLE ═══════════ -->
+  <text x="600" y="60" text-anchor="middle" fill="#10b981" font-size="16" font-weight="bold" letter-spacing="6" opacity="0.8">GOPLC</text>
+  <text x="600" y="100" text-anchor="middle" fill="#f1f5f9" font-size="36" font-weight="bold" font-family="'Inter', 'Helvetica Neue', sans-serif">One Pi. Every PLC. Controlled by AI.</text>
+  <text x="600" y="130" text-anchor="middle" fill="#94a3b8" font-size="15" font-family="'Inter', 'Helvetica Neue', sans-serif">80 MCP tools. Zero cloud. $35 gateway.</text>
+
+  <!-- ═══════════ ARCHITECTURE DIAGRAM ═══════════ -->
+
+  <!-- Claude Code box -->
+  <rect x="420" y="170" width="360" height="70" rx="12" fill="none" stroke="url(#claudeGrad)" stroke-width="2" opacity="0.9"/>
+  <rect x="420" y="170" width="360" height="70" rx="12" fill="#d97706" opacity="0.08"/>
+  <circle cx="450" cy="205" r="8" fill="#d97706" opacity="0.9"/>
+  <text x="470" y="200" fill="#fbbf24" font-size="11" font-weight="bold">AI ASSISTANT</text>
+  <text x="470" y="218" fill="#94a3b8" font-size="12">Claude Code / Cursor / Windsurf</text>
+
+  <!-- stdio line -->
+  <line x1="600" y1="240" x2="600" y2="290" stroke="#10b981" stroke-width="2" stroke-dasharray="6,4" opacity="0.6"/>
+  <text x="620" y="270" fill="#6ee7b7" font-size="10" opacity="0.7">stdio</text>
+
+  <!-- Pi Gateway box -->
+  <rect x="380" y="290" width="440" height="80" rx="12" fill="none" stroke="url(#piGrad)" stroke-width="2.5" filter="url(#glow)"/>
+  <rect x="380" y="290" width="440" height="80" rx="12" fill="#10b981" opacity="0.08"/>
+  <text x="600" y="318" text-anchor="middle" fill="#10b981" font-size="13" font-weight="bold">PI GATEWAY</text>
+  <text x="600" y="338" text-anchor="middle" fill="#6ee7b7" font-size="11">./goplc mcp</text>
+  <text x="600" y="358" text-anchor="middle" fill="#64748b" font-size="10">Raspberry Pi 3B+ | Network Closet | 10.0.0.170</text>
+
+  <!-- HTTP lines to PLCs -->
+  <line x1="460" y1="370" x2="200" y2="430" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.5"/>
+  <line x1="600" y1="370" x2="600" y2="430" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.5"/>
+  <line x1="740" y1="370" x2="1000" y2="430" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.5"/>
+  <text x="310" y="400" fill="#60a5fa" font-size="9" opacity="0.6" transform="rotate(-15,310,400)">HTTP</text>
+  <text x="615" y="405" fill="#60a5fa" font-size="9" opacity="0.6">HTTP</text>
+  <text x="870" y="400" fill="#60a5fa" font-size="9" opacity="0.6" transform="rotate(15,870,400)">HTTP</text>
+
+  <!-- PLC 1: Pi -->
+  <rect x="80" y="430" width="240" height="70" rx="10" fill="none" stroke="url(#plcGrad)" stroke-width="1.5"/>
+  <rect x="80" y="430" width="240" height="70" rx="10" fill="#3b82f6" opacity="0.06"/>
+  <text x="200" y="455" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold">HVAC Controller</text>
+  <text x="200" y="472" text-anchor="middle" fill="#94a3b8" font-size="10">Pi Zero 2W | 10.0.0.171:8082</text>
+  <text x="200" y="489" text-anchor="middle" fill="#64748b" font-size="9">host="171"</text>
+
+  <!-- PLC 2: Workshop -->
+  <rect x="480" y="430" width="240" height="70" rx="10" fill="none" stroke="url(#plcGrad)" stroke-width="1.5"/>
+  <rect x="480" y="430" width="240" height="70" rx="10" fill="#3b82f6" opacity="0.06"/>
+  <text x="600" y="455" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold">Workshop CNC</text>
+  <text x="600" y="472" text-anchor="middle" fill="#94a3b8" font-size="10">Pi 4 | 10.0.0.172:8082</text>
+  <text x="600" y="489" text-anchor="middle" fill="#64748b" font-size="9">host="172"</text>
+
+  <!-- PLC 3: Garage -->
+  <rect x="880" y="430" width="240" height="70" rx="10" fill="none" stroke="url(#plcGrad)" stroke-width="1.5"/>
+  <rect x="880" y="430" width="240" height="70" rx="10" fill="#3b82f6" opacity="0.06"/>
+  <text x="1000" y="455" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold">Garage + Lighting</text>
+  <text x="1000" y="472" text-anchor="middle" fill="#94a3b8" font-size="10">Windows PC | 10.0.0.31:8082</text>
+  <text x="1000" y="489" text-anchor="middle" fill="#64748b" font-size="9">host="31"</text>
+
+  <!-- ═══════════ TERMINAL: SETUP ═══════════ -->
+  <rect x="60" y="540" width="1080" height="80" rx="10" fill="url(#termGrad)" stroke="#334155" stroke-width="1"/>
+  <circle cx="82" cy="558" r="5" fill="#ef4444" opacity="0.8"/>
+  <circle cx="98" cy="558" r="5" fill="#eab308" opacity="0.8"/>
+  <circle cx="114" cy="558" r="5" fill="#22c55e" opacity="0.8"/>
+  <text x="200" y="559" fill="#64748b" font-size="11">Setup (one command)</text>
+  <text x="80" y="590" fill="#94a3b8" font-size="13">$</text>
+  <text x="98" y="590" fill="#f1f5f9" font-size="13">claude mcp add goplc -- ssh pi@10.0.0.170 ~/goplc/goplc mcp</text>
+  <text x="80" y="608" fill="#10b981" font-size="11">MCP server "goplc" added. Restart Claude Code to activate.</text>
+
+  <!-- ═══════════ TERMINAL: FLEET DISCOVER ═══════════ -->
+  <rect x="60" y="645" width="1080" height="220" rx="10" fill="url(#termGrad)" stroke="#334155" stroke-width="1"/>
+  <circle cx="82" cy="663" r="5" fill="#ef4444" opacity="0.8"/>
+  <circle cx="98" cy="663" r="5" fill="#eab308" opacity="0.8"/>
+  <circle cx="114" cy="663" r="5" fill="#22c55e" opacity="0.8"/>
+  <text x="200" y="664" fill="#64748b" font-size="11">Fleet Discovery</text>
+
+  <text x="80" y="695" fill="#d97706" font-size="13" font-weight="bold">You:</text>
+  <text x="125" y="695" fill="#f1f5f9" font-size="13">"Show me every GoPLC on my network"</text>
+
+  <text x="80" y="720" fill="#10b981" font-size="11">goplc_fleet_discover(host="170", port=8082)</text>
+
+  <text x="80" y="748" fill="#60a5fa" font-size="12">Found 3 instances:</text>
+  <text x="80" y="770" fill="#94a3b8" font-size="12">  10.0.0.171:8082  v1.0.541  HVAC_Controller     running  3 tasks   12 vars</text>
+  <text x="80" y="790" fill="#94a3b8" font-size="12">  10.0.0.172:8082  v1.0.541  Workshop_CNC        running  2 tasks    8 vars</text>
+  <text x="80" y="810" fill="#94a3b8" font-size="12">  10.0.0.31:8082   v1.0.541  Garage_Lighting     running  1 task     5 vars</text>
+
+  <text x="80" y="840" fill="#6ee7b7" font-size="11">3 instances discovered. You can address each by last octet: "171", "172", "31"</text>
+  <rect x="75" y="848" width="160" height="3" rx="1" fill="#10b981" opacity="0.3"/>
+
+  <!-- ═══════════ TERMINAL: DEPLOY TO ALL ═══════════ -->
+  <rect x="60" y="890" width="1080" height="240" rx="10" fill="url(#termGrad)" stroke="#334155" stroke-width="1"/>
+  <circle cx="82" cy="908" r="5" fill="#ef4444" opacity="0.8"/>
+  <circle cx="98" cy="908" r="5" fill="#eab308" opacity="0.8"/>
+  <circle cx="114" cy="908" r="5" fill="#22c55e" opacity="0.8"/>
+  <text x="200" y="909" fill="#64748b" font-size="11">Fleet Deploy</text>
+
+  <text x="80" y="940" fill="#d97706" font-size="13" font-weight="bold">You:</text>
+  <text x="125" y="940" fill="#f1f5f9" font-size="13">"Deploy this safety interlock to all three PLCs"</text>
+
+  <text x="80" y="970" fill="#10b981" font-size="11">goplc_deploy(host="171", port=8082, task="SafetyTask", programs=[...])</text>
+  <text x="80" y="990" fill="#22c55e" font-size="11">  Deployed to 10.0.0.171 (HVAC_Controller) - 0 errors, task reloaded</text>
+
+  <text x="80" y="1015" fill="#10b981" font-size="11">goplc_deploy(host="172", port=8082, task="SafetyTask", programs=[...])</text>
+  <text x="80" y="1035" fill="#22c55e" font-size="11">  Deployed to 10.0.0.172 (Workshop_CNC) - 0 errors, task reloaded</text>
+
+  <text x="80" y="1060" fill="#10b981" font-size="11">goplc_deploy(host="31", port=8082, task="SafetyTask", programs=[...])</text>
+  <text x="80" y="1080" fill="#22c55e" font-size="11">  Deployed to 10.0.0.31 (Garage_Lighting) - 0 errors, task reloaded</text>
+
+  <text x="80" y="1110" fill="#6ee7b7" font-size="11">Safety interlock deployed to all 3 instances. All tasks running.</text>
+
+  <!-- ═══════════ TERMINAL: COMPARE READINGS ═══════════ -->
+  <rect x="60" y="1155" width="1080" height="210" rx="10" fill="url(#termGrad)" stroke="#334155" stroke-width="1"/>
+  <circle cx="82" cy="1173" r="5" fill="#ef4444" opacity="0.8"/>
+  <circle cx="98" cy="1173" r="5" fill="#eab308" opacity="0.8"/>
+  <circle cx="114" cy="1173" r="5" fill="#22c55e" opacity="0.8"/>
+  <text x="200" y="1174" fill="#64748b" font-size="11">Cross-Instance Diagnostics</text>
+
+  <text x="80" y="1205" fill="#d97706" font-size="13" font-weight="bold">You:</text>
+  <text x="125" y="1205" fill="#f1f5f9" font-size="13">"Compare the pressure readings between 171 and 172"</text>
+
+  <text x="80" y="1235" fill="#10b981" font-size="11">goplc_variable_get(host="171", port=8082, name="GVL_Process.pressure_psi")</text>
+  <text x="80" y="1255" fill="#94a3b8" font-size="12">  171 (HVAC):     pressure_psi = 42.7 PSI</text>
+
+  <text x="80" y="1280" fill="#10b981" font-size="11">goplc_variable_get(host="172", port=8082, name="GVL_Process.pressure_psi")</text>
+  <text x="80" y="1300" fill="#94a3b8" font-size="12">  172 (Workshop): pressure_psi = 38.2 PSI</text>
+
+  <text x="80" y="1330" fill="#fbbf24" font-size="11">Workshop pressure is 4.5 PSI below HVAC. Both within normal range (35-50 PSI).</text>
+  <text x="80" y="1348" fill="#64748b" font-size="11">Delta is consistent with the 50ft pipe run between buildings.</text>
+
+  <!-- ═══════════ TERMINAL: BUILD HMI ═══════════ -->
+  <rect x="60" y="1390" width="1080" height="170" rx="10" fill="url(#termGrad)" stroke="#334155" stroke-width="1"/>
+  <circle cx="82" cy="1408" r="5" fill="#ef4444" opacity="0.8"/>
+  <circle cx="98" cy="1408" r="5" fill="#eab308" opacity="0.8"/>
+  <circle cx="114" cy="1408" r="5" fill="#22c55e" opacity="0.8"/>
+  <text x="200" y="1409" fill="#64748b" font-size="11">Remote HMI Build</text>
+
+  <text x="80" y="1440" fill="#d97706" font-size="13" font-weight="bold">You:</text>
+  <text x="125" y="1440" fill="#f1f5f9" font-size="13">"Build me an HMI dashboard for the workshop CNC"</text>
+
+  <text x="80" y="1470" fill="#10b981" font-size="11">goplc_variable_list(host="172", port=8082)</text>
+  <text x="80" y="1488" fill="#94a3b8" font-size="11">  Found 8 vars: spindle_rpm, feed_rate, tool_number, x_pos, y_pos, z_pos, coolant_on, estop</text>
+
+  <text x="80" y="1513" fill="#10b981" font-size="11">goplc_hmi_create(host="172", port=8082, name="cnc_dashboard", html="...")</text>
+  <text x="80" y="1533" fill="#22c55e" font-size="11">  HMI page created. Live at http://10.0.0.172:8082/hmi/cnc_dashboard</text>
+
+  <text x="80" y="1548" fill="#6ee7b7" font-size="11">Dashboard is live with real-time spindle RPM gauge, axis positions, and E-stop indicator.</text>
+
+  <!-- ═══════════ BOTTOM TAGLINE ═══════════ -->
+  <rect x="60" y="1600" width="1080" height="2" rx="1" fill="#10b981" opacity="0.2"/>
+
+  <text x="600" y="1650" text-anchor="middle" fill="#f1f5f9" font-size="22" font-weight="bold" font-family="'Inter', 'Helvetica Neue', sans-serif">No cloud. No broker. No config files.</text>
+  <text x="600" y="1680" text-anchor="middle" fill="#94a3b8" font-size="15" font-family="'Inter', 'Helvetica Neue', sans-serif">Just a $35 Pi, a single binary, and natural language.</text>
+
+  <rect x="450" y="1710" width="300" height="44" rx="22" fill="url(#piGrad)" opacity="0.9"/>
+  <text x="600" y="1738" text-anchor="middle" fill="#ffffff" font-size="15" font-weight="bold" font-family="'Inter', 'Helvetica Neue', sans-serif">Back on Indiegogo</text>
+
+</svg>

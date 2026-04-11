@@ -961,4 +961,4 @@ sudo chmod 666 /dev/ttyUSB0
 *Supports: RS-485 serial, USB-serial adapters, RTU-over-TCP*
 
 *(c) 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

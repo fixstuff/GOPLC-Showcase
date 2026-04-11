@@ -505,4 +505,4 @@ GoPLC ships OSCAT version **3.31** (30,514 lines, 550 functions/FBs).
 *OSCAT is an independent open-source project — not affiliated with JMB Technical Services LLC.*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

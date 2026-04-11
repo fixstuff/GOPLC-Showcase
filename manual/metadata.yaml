@@ -1,0 +1,47 @@
+title: "The GoPLC Manual"
+subtitle: "Comprehensive Reference for the GoPLC Industrial Runtime"
+author: "JMB Technical Services"
+date: "April 2026"
+rights: "© 2026 JMB Technical Services LLC. All rights reserved."
+
+documentclass: scrbook
+classoption:
+  - oneside
+  - 10pt
+  - DIV=14
+  - parskip=half-
+  - open=any
+  - headings=small
+geometry:
+  - margin=0.85in
+  - headheight=14pt
+
+mainfont: "DejaVu Serif"
+sansfont: "DejaVu Sans"
+monofont: "DejaVu Sans Mono"
+fontsize: 10pt
+linestretch: 1.05
+
+colorlinks: true
+linkcolor: "MidnightBlue"
+urlcolor: "MidnightBlue"
+toccolor: "MidnightBlue"
+
+toc: true
+toc-depth: 2
+numbersections: true
+top-level-division: chapter
+highlight-style: tango
+
+header-includes:
+  - \usepackage{fancyhdr}
+  - \pagestyle{fancy}
+  - \fancyhead[LE,RO]{\nouppercase{\leftmark}}
+  - \fancyhead[LO,RE]{The GoPLC Manual}
+  - \fancyfoot[C]{\thepage}
+  - \setlength{\parskip}{4pt plus 1pt}
+  - \setlength{\parindent}{0pt}
+  - \DeclareTOCStyleEntry[numwidth=3em]{tocline}{chapter}
+  - \DeclareTOCStyleEntry[numwidth=4em,indent=3em]{tocline}{section}
+  - \DeclareTOCStyleEntry[numwidth=5em,indent=7em]{tocline}{subsection}
+  - \DeclareTOCStyleEntry[numwidth=6em,indent=12em]{tocline}{subsubsection}

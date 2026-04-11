@@ -490,4 +490,4 @@ curl http://localhost:8082/api/diagnostics
 *GoPLC v1.0.535 | 254 REST Endpoints | Swagger UI | WebSocket Real-Time*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

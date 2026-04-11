@@ -15,7 +15,7 @@ There are **two modes** of operation:
 | Mode | Interface | Best For |
 |------|-----------|----------|
 | **ST Functions** | `GCODE_CONNECT` / `GCODE_SEND_CMD` | Full control — parse files, modify G-code on the fly, coordinate with sensors and I/O |
-| **CLI Streaming** | `./goplc --gcode file.gcode --target ...` | Quick jobs — stream a file to a machine with no ST code required (free, no license) |
+| **CLI Streaming** | `./goplc --gcode file.gcode --target ...` | Quick jobs — stream a file to a machine with no ST code required (no separate license required) |
 
 ### Supported Transports
 
@@ -669,4 +669,4 @@ END_PROGRAM
 *GoPLC v1.0.533 | Transports: xTool HTTP, GRBL serial, Marlin serial*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

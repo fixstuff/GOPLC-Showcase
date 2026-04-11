@@ -307,4 +307,4 @@ esp32-hmi/
 *WiFi + mDNS Auto-Discovery | USB Mass Storage | ST7789 172x320 Display*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

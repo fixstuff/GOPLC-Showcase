@@ -192,4 +192,4 @@ OSC_SEND_BUNDLE('10.0.0.100:8000',
 *GoPLC v1.0.535 | Art-Net (7) + sACN (7) + MIDI (14) + OSC (12) | Entertainment & Show Control*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

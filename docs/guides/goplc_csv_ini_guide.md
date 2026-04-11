@@ -338,4 +338,4 @@ END_PROGRAM
 *GoPLC v1.0.535 | 20 CSV & INI Functions | Data Import/Export & Configuration*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

@@ -712,4 +712,4 @@ The Flipper is not a real-time I/O device. USB serial latency is 2-5 ms minimum,
 *31 ST functions across 7 subsystems: Connection, GPIO, NFC, RFID, Sub-GHz, IR, iButton*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

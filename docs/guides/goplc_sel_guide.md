@@ -442,4 +442,4 @@ END_PROGRAM
 *GoPLC v1.0.535 | SEL Fast Message + ASCII Protocol | 54 Functions | Protective Relay Integration*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

@@ -116,4 +116,4 @@ dd := GPS_DMS_TO_DD(48, 7, 2.28, 'N'); (* 48.1173 *)
 *GoPLC v1.0.535 | 26 NMEA/GPS Functions | GPS Parsing, Geofencing, Geodesic Math*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

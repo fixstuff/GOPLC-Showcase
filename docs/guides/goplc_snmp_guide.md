@@ -1070,4 +1070,4 @@ END_PROGRAM
 *Client: ~18 functions | Trap Receiver: 7 functions | Agent: ~11 functions*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

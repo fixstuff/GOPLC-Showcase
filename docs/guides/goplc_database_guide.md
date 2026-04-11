@@ -418,4 +418,4 @@ END_PROGRAM
 *GoPLC v1.0.535 | 18 Database Functions | SQLite, PostgreSQL, MySQL/MariaDB*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

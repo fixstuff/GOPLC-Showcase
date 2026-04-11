@@ -524,4 +524,4 @@ END_PROGRAM
 *GoPLC v1.0.533 | Phidgets USB Sensor/Actuator Interface*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

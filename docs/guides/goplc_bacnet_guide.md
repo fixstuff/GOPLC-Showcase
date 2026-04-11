@@ -1276,4 +1276,4 @@ These are conventions, not standards — always verify with the integrator:
 *Client: ~27 functions | Server: ~12 functions*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

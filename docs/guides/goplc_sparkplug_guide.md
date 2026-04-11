@@ -567,4 +567,4 @@ GoPLC handles all Protobuf encoding/decoding automatically. You work with native
 *GoPLC v1.0.533 | Sparkplug B v3.0 | Eclipse Tahu Protobuf + MQTT 3.1.1*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

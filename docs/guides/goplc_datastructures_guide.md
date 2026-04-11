@@ -525,4 +525,4 @@ END_PROGRAM
 *GoPLC v1.0.535 | ~160 Data Structure Functions | ARRAY, MAP, LIST, QUEUE, STACK, DEQUE, SET, HEAP/PQUEUE*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

@@ -360,4 +360,4 @@ DIR_DELETE('/data/temp');                 (* Empty directories only *)
 *GoPLC v1.0.535 | KNX, M-Bus, ZPL, Barcode, URL, TLV, GSV/SSV, ctrlX EtherCAT, DIR*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

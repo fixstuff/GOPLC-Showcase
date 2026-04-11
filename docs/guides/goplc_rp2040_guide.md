@@ -575,4 +575,4 @@ The RP2040 has a 12-bit ADC (0-4095) but the firmware scales to 16-bit (0-65535)
 *Protocol: Binary frame (CRC-16) over USB CDC*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

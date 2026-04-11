@@ -445,4 +445,4 @@ Returns the system prompt length, function count, and knowledge topics -- useful
 *GoPLC v1.0.533 | AI Assistant: Claude, OpenAI, Ollama | Chat + Autonomous Control*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

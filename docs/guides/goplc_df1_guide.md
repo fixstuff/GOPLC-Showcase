@@ -525,4 +525,4 @@ You never build frames manually — GoPLC handles all framing, byte stuffing, CR
 *GoPLC v1.0.533 | Allen-Bradley DF1 Full-Duplex | RS-232 Serial Client*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

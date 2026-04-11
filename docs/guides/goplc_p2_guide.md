@@ -1280,4 +1280,4 @@ All convenience functions are thin wrappers over `P2_CMD`. They take the device 
 *Schema source of truth: go-p2/firmware/p2_commands.json (44 commands)*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

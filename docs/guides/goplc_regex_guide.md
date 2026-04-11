@@ -344,4 +344,4 @@ All functions have `RE_*` aliases (e.g., `RE_MATCH` = `REGEX_MATCH`).
 *GoPLC v1.0.535 | 13 Regex Functions (RE2 Engine) | Pattern Matching from ST*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

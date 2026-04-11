@@ -1128,4 +1128,4 @@ stats := SF_STATS('telemetry');
 *GoPLC v1.0.533 | 254 REST endpoints | WebSocket real-time | IEC 61131-3 Structured Text*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

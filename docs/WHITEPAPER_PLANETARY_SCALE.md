@@ -111,6 +111,8 @@ These are not add-on features requiring separate licenses or external infrastruc
 
 ## 3. Edge: The P2 Tier
 
+> **Note on the Parallax P2.** The Parallax Propeller 2 is not a household name in industrial automation — and that is exactly the blind spot this whitepaper aims to close. The P2 packs architectural properties that remain rare or absent in mainstream industrial MCUs: eight fully independent deterministic cores with no interrupts, no OS, and no scheduler; per-pin hardware state machines ("smart pins") that can become PWM, ADC, DAC, UART, SPI, I2C, or encoder counters on demand; live Forth-based reconfiguration with no compile-flash cycle; and sub-microsecond reflex loops that share no state between cores. Industrial designers accustomed to STM32, NXP, or Renesas part numbers should read this section less as a vendor endorsement and more as a demonstration of what becomes possible when all of these properties exist on one die. The P2 is not an experiment — it is a production-shipping CMOS part that has been quietly solving problems the rest of the industry still treats as hard, and the edge-tier architecture described here is a direct consequence of taking those capabilities seriously.
+
 ### 3.1 Eight Cores, Eight Runtimes
 
 The Parallax Propeller 2 is an 8-core microcontroller where each core (cog) runs a dedicated spin loop at a fixed clock rate with no operating system, no interrupts, and no scheduling jitter. Each cog is an independent deterministic processor.
@@ -906,6 +908,6 @@ This is not a PLC runtime that got big. It is a deterministic computing platform
 
 ---
 
-*GOPLC is open source. Source code, documentation, and benchmarking tools are available at github.com/fixstuff/GOPLC.*
+*GOPLC is available at goplc.app. Downloads, documentation, and benchmarking tools are all there.*
 
 *White Paper Version 1.0 | March 2026*

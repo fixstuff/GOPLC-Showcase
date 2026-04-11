@@ -468,4 +468,4 @@ END_PROGRAM
 *GoPLC v1.0.535 | 22 JSON Functions | Parse, Build, Query, Modify*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

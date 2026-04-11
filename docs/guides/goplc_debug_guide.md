@@ -403,4 +403,4 @@ END_PROGRAM
 *GoPLC v1.0.535 | 36 Debug & Logging Functions | File, SQLite, PostgreSQL, InfluxDB, Syslog, Console*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

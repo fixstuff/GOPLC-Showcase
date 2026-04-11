@@ -191,4 +191,4 @@ END_PROGRAM
 *GoPLC v1.0.535 | Protocol Analyzer (12) + Store-and-Forward (10) | Packet Capture & Offline Queuing*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

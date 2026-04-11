@@ -883,4 +883,4 @@ The Arduino Servo library supports a maximum of 12 servos, but the GoPLC firmwar
 *Protocol: Binary frame (SYNC+SEQ+CMD+LEN+PAYLOAD+CRC16) over USB CDC @ 115200 baud*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

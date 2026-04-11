@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" font-family="'SF Mono', 'Fira Code', 'Cascadia Code', monospace">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0e17"/>
+      <stop offset="100%" style="stop-color:#111827"/>
+    </linearGradient>
+    <linearGradient id="piGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981"/>
+      <stop offset="100%" style="stop-color:#059669"/>
+    </linearGradient>
+    <linearGradient id="plcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#2563eb"/>
+    </linearGradient>
+    <linearGradient id="claudeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#d97706"/>
+      <stop offset="100%" style="stop-color:#b45309"/>
+    </linearGradient>
+    <linearGradient id="lineGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:0.2"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="700" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5" opacity="0.3"/>
+  </pattern>
+  <rect width="1200" height="700" fill="url(#grid)"/>
+
+  <!-- ═══════════ AI ASSISTANT ═══════════ -->
+  <rect x="440" y="60" width="320" height="72" rx="14" fill="none" stroke="url(#claudeGrad)" stroke-width="2.5" filter="url(#glow)"/>
+  <rect x="440" y="60" width="320" height="72" rx="14" fill="#d97706" opacity="0.07"/>
+  <!-- Sparkle icon -->
+  <path d="M468 88 L472 80 L476 88 L484 92 L476 96 L472 104 L468 96 L460 92 Z" fill="#fbbf24" opacity="0.9"/>
+  <text x="496" y="90" fill="#fbbf24" font-size="14" font-weight="bold">AI Assistant</text>
+  <text x="496" y="110" fill="#94a3b8" font-size="11">Claude Code / Cursor / Windsurf</text>
+
+  <!-- stdio connection -->
+  <line x1="600" y1="132" x2="600" y2="200" stroke="#10b981" stroke-width="2.5" stroke-dasharray="8,5" opacity="0.5" filter="url(#glow)"/>
+  <text x="618" y="172" fill="#6ee7b7" font-size="10" opacity="0.6">stdio</text>
+
+  <!-- ═══════════ PI GATEWAY ═══════════ -->
+  <rect x="370" y="200" width="460" height="90" rx="16" fill="none" stroke="url(#piGrad)" stroke-width="3" filter="url(#glow)"/>
+  <rect x="370" y="200" width="460" height="90" rx="16" fill="#10b981" opacity="0.06"/>
+  <!-- Pi icon (circle with pi symbol) -->
+  <circle cx="410" cy="245" r="16" fill="none" stroke="#10b981" stroke-width="2" opacity="0.8"/>
+  <text x="410" y="251" text-anchor="middle" fill="#10b981" font-size="16" font-weight="bold" font-family="serif">&#960;</text>
+  <text x="440" y="235" fill="#10b981" font-size="16" font-weight="bold">Pi Gateway</text>
+  <text x="440" y="255" fill="#6ee7b7" font-size="12">./goplc mcp</text>
+  <text x="440" y="275" fill="#475569" font-size="10">Raspberry Pi 3B+ | 10.0.0.170</text>
+
+  <!-- ═══════════ HTTP LINES TO PLCs ═══════════ -->
+  <!-- Left line -->
+  <path d="M 460 290 Q 460 340 200 370" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-dasharray="6,4" opacity="0.4"/>
+  <!-- Center line -->
+  <line x1="600" y1="290" x2="600" y2="370" stroke="#3b82f6" stroke-width="1.8" stroke-dasharray="6,4" opacity="0.4"/>
+  <!-- Right line -->
+  <path d="M 740 290 Q 740 340 1000 370" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-dasharray="6,4" opacity="0.4"/>
+
+  <!-- HTTP labels on lines -->
+  <text x="305" y="332" fill="#60a5fa" font-size="9" opacity="0.5" transform="rotate(-12,305,332)">HTTP</text>
+  <text x="614" y="335" fill="#60a5fa" font-size="9" opacity="0.5">HTTP</text>
+  <text x="880" y="332" fill="#60a5fa" font-size="9" opacity="0.5" transform="rotate(12,880,332)">HTTP</text>
+
+  <!-- ═══════════ PLC NODES ═══════════ -->
+
+  <!-- PLC 1 -->
+  <rect x="60" y="370" width="280" height="90" rx="12" fill="none" stroke="url(#plcGrad)" stroke-width="1.8"/>
+  <rect x="60" y="370" width="280" height="90" rx="12" fill="#3b82f6" opacity="0.05"/>
+  <!-- Status dot -->
+  <circle cx="90" cy="395" r="5" fill="#22c55e" filter="url(#glow)"/>
+  <text x="105" y="399" fill="#60a5fa" font-size="13" font-weight="bold">HVAC Controller</text>
+  <text x="90" y="420" fill="#94a3b8" font-size="11">Pi Zero 2W | 10.0.0.171:8082</text>
+  <text x="90" y="440" fill="#475569" font-size="10">3 tasks | 12 variables | v1.0.541</text>
+
+  <!-- PLC 2 -->
+  <rect x="460" y="370" width="280" height="90" rx="12" fill="none" stroke="url(#plcGrad)" stroke-width="1.8"/>
+  <rect x="460" y="370" width="280" height="90" rx="12" fill="#3b82f6" opacity="0.05"/>
+  <circle cx="490" cy="395" r="5" fill="#22c55e" filter="url(#glow)"/>
+  <text x="505" y="399" fill="#60a5fa" font-size="13" font-weight="bold">Workshop CNC</text>
+  <text x="490" y="420" fill="#94a3b8" font-size="11">Pi 4 | 10.0.0.172:8082</text>
+  <text x="490" y="440" fill="#475569" font-size="10">2 tasks | 8 variables | v1.0.541</text>
+
+  <!-- PLC 3 -->
+  <rect x="860" y="370" width="280" height="90" rx="12" fill="none" stroke="url(#plcGrad)" stroke-width="1.8"/>
+  <rect x="860" y="370" width="280" height="90" rx="12" fill="#3b82f6" opacity="0.05"/>
+  <circle cx="890" cy="395" r="5" fill="#22c55e" filter="url(#glow)"/>
+  <text x="905" y="399" fill="#60a5fa" font-size="13" font-weight="bold">Garage + Lighting</text>
+  <text x="890" y="420" fill="#94a3b8" font-size="11">Windows PC | 10.0.0.31:8082</text>
+  <text x="890" y="440" fill="#475569" font-size="10">1 task | 5 variables | v1.0.541</text>
+
+  <!-- ═══════════ COMMAND BAR ═══════════ -->
+  <rect x="200" y="500" width="800" height="44" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="220" y="527" fill="#64748b" font-size="12">$</text>
+  <text x="238" y="527" fill="#e2e8f0" font-size="12">claude mcp add goplc -- ssh pi@10.0.0.170 ~/goplc/goplc mcp</text>
+
+  <!-- ═══════════ TAGLINE ═══════════ -->
+  <text x="600" y="600" text-anchor="middle" fill="#f1f5f9" font-size="28" font-weight="bold" font-family="'Inter', 'Helvetica Neue', sans-serif">One Pi. One command. Every PLC on your network.</text>
+  <text x="600" y="635" text-anchor="middle" fill="#94a3b8" font-size="15" font-family="'Inter', 'Helvetica Neue', sans-serif">80 AI tools. Zero cloud. Zero config.</text>
+
+  <!-- Accent line -->
+  <rect x="500" y="660" width="200" height="2" rx="1" fill="url(#piGrad)" opacity="0.4"/>
+</svg>

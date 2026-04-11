@@ -377,7 +377,7 @@ curl -s $NEW:8083/api/tasks | jq '.[] | .name, .state'
 # Zero downtime. Zero truck rolls. Zero prayer.
 ```
 
-### 8.2 Version Control Is Free
+### 8.2 Version Control Via Git
 
 Every project is a JSON file. Every program is a text file. Git handles the rest:
 
@@ -483,12 +483,12 @@ Determinism where it matters. Flexibility everywhere else. One binary.
 | Traditional Product | License Cost | GOPLC Equivalent |
 |-------------------|-------------|-----------------|
 | PLC hardware (×N) | $3,000-50,000 each | Commodity server |
-| Programming software | $5,000-7,000/seat | Browser (free) |
+| Programming software | $5,000-7,000/seat | Browser (included) |
 | Protocol gateways | $500-2,000 each | Built into binary |
 | OPC UA server | $800/device | Built into binary |
 | MQTT broker | $0-5,000 (infrastructure cost) | Built into binary |
 | SCADA software | $3,000-50,000 | API + web IDE |
-| Historian | $15,000-100,000 | InfluxDB via ST (free) |
+| Historian | $15,000-100,000 | InfluxDB via ST (included) |
 | Fleet management | $10,000-50,000 | Built into every runtime |
 | AI integration | Does not exist | MCP server + AI assistant |
 | Redundancy hardware | Match every PLC | One extra server |
@@ -516,7 +516,7 @@ GOPLC:       Copy binary → Run → Open browser → Write code →
 Every feature in GOPLC exists because its creator experienced the pain of the alternative and decided no one should suffer through it again.
 
 Proprietary programming cable? **Browser.**
-$5,000 IDE license? **Free, built in.**
+$5,000 IDE license? **Included.**
 Download stops the runtime? **Hot reload per-task.**
 Can't debug without vendor tools? **Debug in every function.**
 No API, no integration path? **API-first, everything.**
@@ -533,6 +533,6 @@ This is not a feature list. This is a revenge list.
 
 ---
 
-*GOPLC is open source. Source code, documentation, and benchmarking tools are available at github.com/fixstuff/GOPLC.*
+*GOPLC is available at goplc.app. Downloads, documentation, and benchmarking tools are all there.*
 
 *White Paper Version 1.0 | March 2026*

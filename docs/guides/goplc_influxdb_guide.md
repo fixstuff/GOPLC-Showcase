@@ -554,4 +554,4 @@ For guaranteed delivery, combine with GoPLC's MQTT client to buffer data on a lo
 *GoPLC v1.0.533 | InfluxDB v1 + v2 | HTTP Line Protocol Writer*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

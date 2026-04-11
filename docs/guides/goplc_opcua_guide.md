@@ -1039,4 +1039,4 @@ RIGHT:  'ns=2;s=Temperature'                     (* string uses 's=' *)
 *Security: None, Basic256Sha256 (Sign, SignAndEncrypt)*
 
 *(c) 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

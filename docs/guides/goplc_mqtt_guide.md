@@ -1025,4 +1025,4 @@ END_IF;
 *GoPLC v1.0.533 | MQTT 3.1.1 | Built-in Paho client + Mochi broker*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*

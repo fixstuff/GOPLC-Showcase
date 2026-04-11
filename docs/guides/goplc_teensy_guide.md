@@ -1189,4 +1189,4 @@ The key insight: **time-critical operations run in the Teensy firmware or hardwa
 *47 ST functions | Command opcodes 0xC0-0xFF*
 
 *© 2026 JMB Technical Services LLC. All rights reserved.*
-*[Back to White Papers](https://jmbtechnical.com/whitepapers/)*
+*[Back to All Guides](/docs/guides/)*
