@@ -16,6 +16,7 @@ This script rewrites one file to stdout with:
 
 from __future__ import annotations
 
+import argparse
 import re
 import sys
 from pathlib import Path
@@ -117,13 +118,46 @@ def strip_heading_numbers(lines: list[str]) -> list[str]:
     return out
 
 
-def process(path: Path) -> str:
+# Match a markdown ATX heading at the start of a line. Skip lines inside fenced
+# code blocks so we don't accidentally rewrite shell prompts or comments.
+_HEADING_RE = re.compile(r"^(#{1,6})(\s.*)?$")
+
+
+def demote_headings(lines: list[str], levels: int) -> list[str]:
+    if levels <= 0:
+        return lines
+    out: list[str] = []
+    in_fence = False
+    for line in lines:
+        stripped = line.lstrip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            out.append(line)
+            continue
+        if in_fence:
+            out.append(line)
+            continue
+        m = _HEADING_RE.match(line.rstrip("\n"))
+        if m:
+            current = len(m.group(1))
+            new_level = min(current + levels, 6)
+            trailing = "\n" if line.endswith("\n") else ""
+            rest = m.group(2) or ""
+            out.append(f"{'#' * new_level}{rest}{trailing}")
+        else:
+            out.append(line)
+    return out
+
+
+def process(path: Path, demote: int = 0) -> str:
     raw = path.read_text(encoding="utf-8")
     # Normalize line endings so splitlines + rejoin is lossless
     lines = raw.splitlines(keepends=True)
     lines = strip_header(lines)
     lines = strip_footer(lines)
     lines = strip_heading_numbers(lines)
+    if demote > 0:
+        lines = demote_headings(lines, demote)
     out = "".join(lines)
     out = replace_emoji(out)
     # Ensure a trailing newline so chapters don't concatenate on the same line
@@ -133,10 +167,16 @@ def process(path: Path) -> str:
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("usage: preprocess.py <path-to-md>", file=sys.stderr)
-        return 2
-    sys.stdout.write(process(Path(sys.argv[1])))
+    parser = argparse.ArgumentParser(description="Preprocess a GoPLC guide for the bound manual.")
+    parser.add_argument("path", help="Path to the source markdown file")
+    parser.add_argument(
+        "--demote",
+        type=int,
+        default=0,
+        help="Shift every ATX heading down N levels (capped at h6). Default 0.",
+    )
+    args = parser.parse_args()
+    sys.stdout.write(process(Path(args.path), demote=args.demote))
     return 0
 
 

@@ -71,13 +71,3 @@ docs/guides/goplc_utilities_guide.md
 
 ## Part VI: Events & Integration
 docs/guides/goplc_events_guide.md
-
-## Part VII: Whitepapers
-docs/whitepaper-clustering.md
-docs/whitepaper-datacenter-gateway.md
-docs/WHITEPAPER_DC_SIMULATION_HARDWARE.md
-docs/WHITEPAPER_DC_SIMULATION_VIRTUAL.md
-docs/WHITEPAPER_HUMANOID_ROBOTICS.md
-docs/WHITEPAPER_OPERATORS_REVENGE.md
-docs/WHITEPAPER_PLANETARY_SCALE.md
-docs/WTP_Performance_Report.md
