@@ -67,6 +67,8 @@ while IFS= read -r line; do
   echo >> "$OUTPUT"
 done < "$CHAPTERS"
 
+python3 "$MANUAL_DIR/inject-toc.py" "$OUTPUT"
+
 LINES=$(wc -l < "$OUTPUT")
 BYTES=$(wc -c < "$OUTPUT")
 WORDS=$(wc -w < "$OUTPUT")
