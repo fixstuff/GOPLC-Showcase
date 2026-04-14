@@ -3334,6 +3334,289 @@ stats := SF_STATS('telemetry');
 ```
 
 
+### GoPLC Visual Ladder Diagram Editor
+
+
+GoPLC ships with a browser-based visual ladder diagram (LD) editor that compiles IEC 61131-3 ladder logic into the same ST code the runtime executes. Drag contacts and coils onto rungs, wire timers in line, click **Compile**, and the generated ST appears in a panel below the canvas. Click **Deploy** and the rung goes live on the PLC in under a second — no file uploads, no rebuild step. Click **Online** and every contact and coil turns into a live-state indicator with click-to-force, giving you a runtime-accurate ladder view that an Allen-Bradley technician can read without explanation.
+
+#### What It Is (and What It Isn't)
+
+This is a **rung-based** ladder editor. Elements auto-place onto horizontal rungs: contacts flow left-to-right from the left power rail, coils and function blocks anchor to the right rail with a symmetric gap, and the canvas grows a new empty rung every time you drop an element onto the bottom rung. There is no free-form canvas, no pan and zoom, no drag-drop-anywhere — every element has a rung and a position on that rung, and the layout is enforced.
+
+That constraint is deliberate. Free-form ladder canvases are the reason 90 % of visual PLC editors look like mind-maps by the third page of logic. A strict rung layout keeps the diagram readable, the compiled ST deterministic, and the online-mode overlay easy to reason about.
+
+**Use the visual LD editor when:**
+
+- You want to prototype logic quickly with contacts, coils, and timers
+- You want to hand a running program to someone who reads ladder but not ST
+- You're teaching IEC 61131-3 and want students to see the contact/coil metaphor translate to structured text in real time
+- You're iterating on a small state machine and want one-click deploy + online visualization
+
+**Don't use it for:**
+
+- Large programs (more than ~20 rungs per file — it works, but you'll be happier in ST)
+- Parallel branches, counters, or any logic that isn't pure contacts / coils / timers (the current palette has XIC, XIO, OTE, OTL, OTU, TON, TOF, TP and nothing else)
+- Round-trip editing of hand-written ST — the editor does not parse ST back into rungs, so once you leave the visual editor for a program, it stays in ST
+
+#### Opening the Editor
+
+The editor is served from the same web server that hosts the main IDE:
+
+```
+http://<host>:<port>/visual-test.html
+```
+
+For a standard dev instance on port 8302: `http://localhost:8302/visual-test.html`. For a deployed runtime with the IDE on the snap channel: `http://goplc.local:8082/visual-test.html`. There is no authentication gate on this URL today — if your runtime requires login, drop the editor behind the same reverse proxy that gates the rest of `/ide/`.
+
+The page loads with an empty LD canvas, a palette on the left, a generated-ST panel on the right, and a toolbar across the top.
+
+#### Mode Selection
+
+The dropdown in the top toolbar toggles between two visual languages:
+
+| Mode | What it builds | When to use it |
+|---|---|---|
+| **LD** | Ladder diagram with contacts, coils, and timer blocks | Combinational logic, timers, basic state transitions |
+| **SFC** | Sequential function chart with steps, transitions, actions, divergences, convergences | Multi-phase sequences, recipe control, sequential machine logic |
+
+SFC is outside the scope of this guide — it's a separate visual language with its own palette and semantics. This document covers LD only. If you dropped an SFC step into an LD file by accident, delete it and switch the mode selector; the palette filters by mode automatically.
+
+#### The LD Palette
+
+Six element types:
+
+| Palette entry | Symbol | Compiles to | Typical use |
+|---|---|---|---|
+| **Contact (XIC)** | `─┤ ├─` | `varname` | Normally open input — true when the variable is true |
+| **Contact (XIO)** | `─┤/├─` | `NOT varname` | Normally closed input — true when the variable is false |
+| **Coil (OTE)** | `─( )─` | `varname := <rung>;` | Output coil — drives the variable with the rung state |
+| **Coil (OTL set)** | `─(L)─` | `IF <rung> THEN varname := TRUE; END_IF;` | Latch — sets the variable and leaves it set |
+| **Coil (OTU rst)** | `─(U)─` | `IF <rung> THEN varname := FALSE; END_IF;` | Unlatch — resets a previously-set latch |
+| **Timer (TON)** / **TOF** / **TP** | `┤TON├` | `instance(IN := <rung>, PT := T#250ms);` | Delay-on / delay-off / pulse timer |
+
+Each element is a draggable tile in the palette sidebar. Drop one into the canvas and it attaches to the nearest rung. Click it to set the variable name or (for timers) the instance name and preset time.
+
+#### Building a Rung
+
+The canvas starts with two empty rungs, a left power rail, and a right power rail. To build the classic "start/stop with motor output" rung:
+
+1. Drag **Contact (XIC)** onto rung 1. Click it, type `start_btn` in the Variable Name field.
+2. Drag **Contact (XIO)** onto rung 1. Click it, type `stop_btn`.
+3. Drag **Coil (OTE)** onto rung 1. Click it, type `motor_run`.
+4. Click **Compile to ST** in the toolbar.
+
+The generated ST panel shows:
+
+```
+motor_run := start_btn AND NOT stop_btn;
+```
+
+The compiler reads contacts in rung order from the left rail, ANDs them together for the rung state expression, and assigns the expression to whatever coil sits at the right rail.
+
+##### Adding a seal-in
+
+To make the motor stay on after `start_btn` is released, add a seal-in contact. Drag a second **Contact (XIC)** onto rung 1 and set its variable to `motor_run` — the motor's own state becomes a hold-in. The visual editor does not render parallel branches (that's a known limitation), so you'd normally write:
+
+```iec
+motor_run := (start_btn OR motor_run) AND NOT stop_btn;
+```
+
+In the current visual editor you would express this by using two rungs — one for the OR and one for the AND — or by hand-editing the generated ST. The roadmap includes parallel branch support; until it lands, single-path rungs are the supported pattern.
+
+##### Adding a timer
+
+Drag **Timer (TON)** onto rung 2. Click it to set:
+
+- **Instance name**: `MotorDelay` (each timer needs a unique instance name — TON is a function block)
+- **PT preset**: `T#500ms`
+
+Drop an XIC upstream of the timer and set it to `start_btn`. Compile again:
+
+```iec
+MotorDelay(IN := start_btn, PT := T#500ms);
+```
+
+To use the timer's output, add another rung that references `MotorDelay.Q` as an XIC contact driving a coil.
+
+#### Compile, Validate, Deploy
+
+The toolbar has four action buttons:
+
+| Button | What it does |
+|---|---|
+| **Compile to ST** | Runs the LD → ST translator in the browser, shows output in the ST panel |
+| **Validate** | Sends the generated ST to `POST /api/programs/validate` on the target runtime |
+| **Deploy** | Creates (or updates) the program on the target, assigns it to MainTask, reloads, and starts the runtime |
+| **Online** | Enters live mode — contacts and coils become runtime-state indicators |
+
+The target host and port default to the page URL. If you load the editor from `http://10.0.0.12:8302/visual-test.html`, the deploy target is `10.0.0.12:8302`. To deploy to a different target, use the target selector in the toolbar.
+
+##### Deploy internals
+
+The **Deploy** button runs a short sequence of REST calls you can reproduce with `curl` if you want to script it:
+
+```bash
+# 1. Create or update the program
+curl -X POST -H 'Content-Type: application/json' \
+     -d '{"name":"Pulser","source":"...","mode":"st","task":"MainTask"}' \
+     http://localhost:8302/api/programs
+
+# 2. Assign it to MainTask (or create MainTask if it doesn't exist)
+curl -X PUT -H 'Content-Type: application/json' \
+     -d '{"programs":["Pulser"]}' \
+     http://localhost:8302/api/tasks/MainTask/programs
+
+# 3. Reload the task so the new source is compiled and running
+curl -X POST http://localhost:8302/api/tasks/MainTask/reload
+
+# 4. Make sure the runtime is actually running
+curl -X POST http://localhost:8302/api/runtime/start
+```
+
+Every step is idempotent. If the program already exists, step 1 falls back to `PUT /api/programs/:name` to update it in place. If `MainTask` doesn't exist yet, step 2's failure triggers a `POST /api/tasks` with scan time 25 ms. The whole sequence typically runs in under 200 ms end-to-end.
+
+Once the deploy completes, the status line shows `DEPLOYED + RELOADED: "<name>" running on MainTask` and the generated ST is live on the PLC.
+
+#### Online Mode
+
+Click **Online** and the canvas changes in four visible ways:
+
+1. **Power rails turn green.** They're always green in online mode — a visual reminder that you're looking at live state, not edit state.
+2. **Contacts fill.** An XIC contact with an energized variable fills its gap with solid green. XIO does the opposite — it fills when the variable is false.
+3. **Coils fill and glow.** An active OTE / OTL / OTU coil fills its circle with green.
+4. **Click-to-force.** Clicking any contact or coil issues `PUT /api/variables/<name>` with the inverted value — instant manual forcing with no dialog, no selection, no intermediate step.
+
+The state polling runs at about 10 Hz, so you see discrete state transitions clearly. The energized rung path is implied by the adjacency of filled contacts — there are no explicit "wire" animations, because in a single-path rung any contact that's filled is on the energized path up to the next unfilled contact.
+
+To exit online mode, click **Online** again. The rails return to dim and the editor goes back to edit mode.
+
+##### Use case: commissioning
+
+Online mode's click-to-force is the single most useful feature in the editor. During commissioning you can:
+
+1. Deploy the logic
+2. Enter online mode
+3. Click an XIC contact representing an input to simulate a sensor closing
+4. Watch the downstream coil energize
+5. Click the XIC again to release the simulated input
+6. Verify the coil deenergizes
+
+You get a complete input-to-output trace without wiring up the actual sensors — exactly the workflow you'd get from a real PLC's forcing panel, but in a browser tab.
+
+#### The Built-In Demo
+
+Click **Load Demo** in the toolbar to drop a pre-built two-TON ping-pong oscillator onto the canvas. The demo builds two rungs:
+
+```
+Rung 1:  ─[/PulseOFF.Q]──┤TON PulseON  PT=T#100ms├─
+Rung 2:  ─[ PulseON.Q ]──┤TON PulseOFF PT=T#900ms├─
+```
+
+Compiled ST:
+
+```iec
+PulseON(IN := NOT PulseOFF.Q, PT := T#100ms);
+PulseOFF(IN := PulseON.Q,     PT := T#900ms);
+```
+
+Deploy it, go online, and watch `PulseON.Q` pulse high for 100 ms every second. The demo is useful for three things: sanity-checking that the editor talks to your target, verifying that online mode correctly reflects timer state, and teaching the LD → ST translation with a minimal example that still does something interesting.
+
+`PulseON.Q` is the signal to watch — it's high for 100 ms out of every 1000 ms. `PulseOFF.Q` is high only for the single scan where `PulseON` resets, so you won't see it in the live variables feed unless your poll rate is fast enough.
+
+#### LD to ST Translation Reference
+
+The in-browser compiler is a one-to-one translator from visual rungs to ST. Understanding the translation helps when you need to hand-edit the generated ST or debug a rung that isn't behaving as expected.
+
+##### Contacts (inputs)
+
+A contact's position on the rung determines its logical role — contacts flow left-to-right and AND together to form the rung state expression.
+
+| Rung | Compiled ST fragment |
+|---|---|
+| `─┤ A ├──────┤ B ├──` | `A AND B` |
+| `─┤/A ├──────┤ B ├──` | `NOT A AND B` |
+| `─┤ A ├──────┤/B ├──` | `A AND NOT B` |
+
+##### Coils (outputs)
+
+A coil anchored at the right rail assigns the rung state expression to its variable. Latch and unlatch coils guard the assignment behind an `IF`.
+
+| Rung | Compiled ST |
+|---|---|
+| `─┤ A ├──( M )─` | `M := A;` |
+| `─┤ A ├──(L M )─` | `IF A THEN M := TRUE; END_IF;` |
+| `─┤ A ├──(U M )─` | `IF A THEN M := FALSE; END_IF;` |
+
+##### Timers (function block calls)
+
+Timer blocks take the rung state as their `IN` parameter and produce a standard IEC 61131-3 function block instance call. The instance name is the variable name you set on the block; the PT preset comes from the timer's **PT** field.
+
+| Rung | Compiled ST |
+|---|---|
+| `─┤ start ├──┤ TON T1 PT=T#500ms ├─` | `T1(IN := start, PT := T#500ms);` |
+| `─┤ active ├──┤ TOF T2 PT=T#1s ├─` | `T2(IN := active, PT := T#1s);` |
+| `─┤ trig ├────┤ TP  T3 PT=T#200ms ├─` | `T3(IN := trig, PT := T#200ms);` |
+
+After the call, any downstream rung can reference `T1.Q`, `T1.ET`, `T1.DN`, etc. as input contacts — the runtime exposes timer function block members as addressable variables, and the FB struct expansion in the main IDE's Live Variables panel shows them automatically.
+
+#### Variables and Scope
+
+The editor creates one program per visual file, named in the page title bar (default `SFC_Program`, overridable via the properties panel). Every contact, coil, and timer you drop onto the canvas adds an implicit variable declaration to the generated ST program header:
+
+```iec
+PROGRAM Pulser
+VAR
+    PulseON  : TON;
+    PulseOFF : TON;
+END_VAR
+
+PulseON(IN := NOT PulseOFF.Q, PT := T#100ms);
+PulseOFF(IN := PulseON.Q,     PT := T#900ms);
+END_PROGRAM
+```
+
+For BOOL contacts and coils you typically want the variables declared at the global level (so other programs can read/write them) — use the properties panel's **VAR section** field to paste in your own declarations, or leave the field empty and let the editor auto-declare everything local. Timers should always be local — TON / TOF / TP instances have internal state that doesn't survive moving between programs.
+
+#### Known Limitations
+
+This editor is a work in progress. Current gaps, tracked against the ladder roadmap:
+
+- **No parallel branches.** Every rung is a single series path. OR logic must be split across multiple rungs or hand-edited in ST.
+- **No counters.** CTU / CTD / CTUD are not yet in the palette. Use ST for counting.
+- **No comparison blocks.** `GEQ`, `LEQ`, `EQU` etc. are not in the palette. Use ST for numeric comparisons and reference the result as a BOOL contact.
+- **No round-trip parser.** The editor compiles LD → ST one-way. Hand-edited ST cannot be re-opened in the visual editor — the rung layout is lost the moment you leave.
+- **Task assignment is hardcoded to MainTask.** The Deploy button always targets `MainTask`. To deploy into a different task, edit the generated ST in the main IDE and assign it there.
+- **No main IDE integration.** The visual editor is a standalone page, not yet embedded in the primary IDE's program list. You reach it via the `/visual-test.html` URL.
+- **Demo models use hardcoded coordinates.** The built-in LD demo bypasses the rung auto-layout because it was written before rung mode existed. Custom programs you build from scratch use the rung system.
+
+The roadmap for the next visual LD iteration includes parallel branches, CTU/CTD/CTUD, a compare-block palette, main IDE integration, and — eventually — round-trip parsing so ST generated by the editor can be re-opened visually.
+
+#### Tips
+
+**Keep programs small.** The editor scales to about 20 rungs per file before the canvas gets unwieldy. Split large logic into multiple programs and call them from a coordinating ST program.
+
+**Use timer instance names that describe purpose, not hardware.** `HeaterOffDelay` is better than `TON1`. The FB struct expansion in the IDE's Live Variables panel shows the instance name verbatim, and `HeaterOffDelay.ET` is self-documenting; `TON1.ET` is not.
+
+**Deploy often.** The round trip is fast (< 200 ms) and the runtime reloads the task in place without disrupting other tasks. Don't batch changes — deploy after every visible edit and catch errors early.
+
+**Use online mode as a smoke test.** Every new program deserves one full click-to-force cycle in online mode before you trust it on a real machine. Energize each input path, watch the output respond, and unwind. Five minutes of online-mode testing saves an hour of hardware debugging later.
+
+**Generate the ST first, then switch to the main IDE for heavy edits.** The visual editor is for prototyping and visualizing simple ladder logic. Once a program exceeds what the rung-based layout can express cleanly, compile it to ST once and move it into the main IDE — don't try to force ladder patterns onto logic that wants to be imperative code.
+
+#### What's Next
+
+The visual ladder editor is the first of several visual languages on the GoPLC roadmap. Shipping order:
+
+1. **LD rung editor** (shipped — this guide)
+2. **Parallel branches** (in progress — branches and OR networks)
+3. **CTU / CTD / CTUD counters** (planned)
+4. **Compare blocks** (`>`, `<`, `=`, `>=`, `<=`, `<>` — planned)
+5. **SFC step editor** (separate mode — in progress)
+6. **FBD canvas** (function block diagram — future)
+7. **Round-trip ST parser** (LD ↔ ST bidirectional — future)
+
+Everything compiles to ST under the hood, so a program authored in any visual language runs on the same interpreter as hand-written ST and interoperates with the full ST function library — all 1600+ built-ins, every protocol driver, every subsystem covered by the other guides in this directory.
+
 ### GoPLC Configuration Reference
 
 
@@ -6382,6 +6665,2773 @@ Or from the IDE Config tab.
 7. **Keep flows in version control** -- Export flows from Node-RED (Menu > Export > All Flows) and save the JSON alongside your `.goplc` project files.
 
 8. **Use the AI to bootstrap** -- Ask the AI assistant to generate a starter flow, then customize in the Node-RED editor. It is faster than building from scratch.
+
+### GoPLC Authentication, RBAC, Audit Trail, and Electronic Signatures
+
+
+GoPLC ships an opt-in authentication stack with four built-in roles, a route-level role matrix enforced by middleware, a bcrypt-hashed user database persisted to SQLite, JWT bearer tokens signed with HMAC-SHA256, cookie-based browser fallback for IDE navigation, and a 21 CFR Part 11-style electronic signature layer that re-authenticates the user and forces a reason string before critical actions execute. Every auth event (login, failed login, user created/deleted, password changed, signature verified, signature failed) flows through the same event bus as alarms and protocols, so the audit trail is queryable through the `GET /api/events` endpoint, subscribable over MQTT and WebSocket, and routable to Slack, Teams, or PagerDuty without any extra code. Plus transparent pass-through to a ctrlX Identity Manager for plants that already have a single sign-on directory.
+
+#### Architecture
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                      GoPLC HTTP API                          │
+│                                                              │
+│  Request ─► Middleware chain (gin)                           │
+│             │                                                │
+│             ▼                                                │
+│  ┌──────────────────────┐                                    │
+│  │  auth.Middleware     │  JWT bearer / cookie / trust_proxy │
+│  │  pkg/auth/middleware │  ctrlX IDM fallback                │
+│  └──────────┬───────────┘  sets auth_username + auth_role    │
+│             │                                                │
+│             ▼                                                │
+│  ┌──────────────────────┐                                    │
+│  │  auth.RBACMiddleware │  matches method + path against     │
+│  │  pkg/auth/roles.go   │  permissionRules → min role check  │
+│  └──────────┬───────────┘                                    │
+│             │                                                │
+│             ▼                                                │
+│  ┌──────────────────────┐                                    │
+│  │  ESignatureMiddleware│  critical actions require          │
+│  │  pkg/auth/signature  │  X-Signature-User / Password /     │
+│  │                      │  Reason → re-verify + emit event   │
+│  └──────────┬───────────┘                                    │
+│             │                                                │
+│             ▼                                                │
+│         Handler (protected by all three)                     │
+│             │                                                │
+│             └───► auth events fan out via pkg/events.Bus ───►│
+│                     auth.login                               │
+│                     auth.failed                              │
+│                     auth.user_created / deleted              │
+│                     auth.password_changed                    │
+│                     auth.signature_verified / failed         │
+│                     config.change                            │
+└──────────────────────────────────────────────────────────────┘
+```
+
+Three middlewares, strictly ordered:
+
+1. **`auth.Middleware`** validates the JWT (or the cookie, or the `X-Forwarded-For` when `trust_proxy` is on) and writes `auth_username` and `auth_role` into the Gin context. Public paths — HMI, login, health — are allowed through without auth. If the request is a browser page load (`Accept: text/html`) it gets redirected to `/login?redirect=<path>`; API calls get a `401`.
+2. **`RBACMiddleware`** reads `auth_role` and compares it against the minimum role required by the first matching rule in `permissionRules`. Returns `403 forbidden` with `role` + `required` in the body if the user is underprivileged.
+3. **`ESignatureMiddleware`** catches the configured critical-action routes, requires the three `X-Signature-*` headers, re-verifies the password against the bcrypt hash, and emits `auth.signature_verified` or `auth.signature_failed`. Only after all three pass does the request reach the handler.
+
+All four subsystems (JWT, RBAC, e-signature, audit) are optional and independent. You can run with auth on but RBAC off (single role for everyone), or RBAC on without e-signatures (no re-auth for critical actions), or the ctrlX Identity Manager forwarding mode without any local users at all.
+
+#### Roles and privilege levels
+
+Four built-in roles, ordered by privilege:
+
+| Role | Level | Can do |
+|------|-------|--------|
+| `viewer` | 0 | Read any `GET` endpoint. No writes, no control. Audit log reader. |
+| `operator` | 1 | Everything viewer can + acknowledge alarms, write variables and tags, flush RETAIN. |
+| `engineer` | 2 | Everything operator can + create/update/delete programs and tasks, runtime start/stop/reload, debug endpoints, project deploy/import, read config. |
+| `admin` | 3 | Everything engineer can + user management, system shutdown/restart, license management, config writes (`POST` / `PUT` / `DELETE /api/config`). |
+
+The hierarchy is linear — a higher role can always do everything a lower role can. You cannot customize role names, add a fifth role, or rewire the privilege levels at runtime; these are compiled into `pkg/auth/auth.go` and `pkg/auth/roles.go`.
+
+#### The route permission matrix
+
+`RBACMiddleware` walks `permissionRules` top to bottom and uses the **first matching** rule's minimum level. More-specific rules live earlier in the list. Unmatched `GET` requests fall through to the final "`GET /api/` → viewer" catch-all; unmatched non-GET requests fall through to viewer as well (0), but since no handler allows viewer to write, they'll simply 404 out of the handler.
+
+| Method + path prefix | Minimum role | Notes |
+|----------------------|--------------|-------|
+| `/api/auth/login`, `/api/auth/status`, `/api/auth/refresh`, `/api/auth/logout` | viewer | These are also in `isPublicPath` so unauthenticated requests reach them. |
+| `* /api/auth/users` | admin | User management. |
+| `POST /api/system/shutdown`, `POST /api/system/restart`, `POST /api/license` | admin | Destructive system operations. |
+| `POST / PUT / DELETE /api/config` | admin | Config writes. |
+| `GET /api/config` | engineer | Reading the full config can reveal JWT secrets, DB paths, etc. |
+| `POST / PUT / DELETE /api/programs` | engineer | Program CRUD. |
+| `POST / PUT / DELETE /api/tasks` | engineer | Task CRUD. |
+| `POST /api/runtime` | engineer | Runtime start/stop/reload. |
+| `POST / GET /api/debug` | engineer | Breakpoints, single-step, watches. |
+| `POST /api/project` | engineer | Project deploy/import. |
+| `POST /api/alarms` | operator | Acknowledge, shelve, enable, disable. Does not cover `DELETE /api/alarms/:name` — that's engineer-only implicitly via the final rule. |
+| `POST / PUT /api/variables`, `POST / PUT /api/tags` | operator | HMI setpoint writes. |
+| `POST /api/system/retain` | operator | RETAIN flush. |
+| `GET /api/...` (catch-all) | viewer | Everything else readable. |
+
+The catch-all at the bottom deliberately gives viewer access to every unmapped `GET`. When you add a new read-only endpoint in a new feature, it's automatically viewer-accessible without touching `roles.go`. When you add a new write endpoint, you must add an explicit rule — otherwise it silently falls through to viewer and becomes an unauthenticated-level vulnerability.
+
+#### Configuration
+
+Three blocks live under `auth:` in `config.yaml`. All three are optional; omitting the block entirely is equivalent to `enabled: true` with RBAC and e-sig off.
+
+```yaml
+auth:
+  enabled: true
+  token_expiry_hours: 24           # JWT lifetime — default 24 h
+  jwt_secret: ""                    # HMAC-SHA256 secret — autogenerated if empty (tokens don't survive restart)
+  trust_proxy: false                # when true, X-Forwarded-For requests bypass auth as "proxy" / admin
+  ctrlx_auth: false                 # when true, fall through to ctrlX Identity Manager on local auth failure
+  ctrlx_url: "https://localhost"    # ctrlX IDM base URL
+  users: []                          # optional seed list (migrated into SQLite on first run, then edited via API)
+
+  rbac:
+    enabled: true                    # turn on the role matrix — off = all authenticated users are effectively admin
+    default_role: viewer             # role assigned to users created without an explicit role
+
+  electronic_signatures:
+    enabled: true
+    critical_actions:                # only routes on this list require the e-sig headers
+      - runtime_stop
+      - runtime_start
+      - program_delete
+      - config_change
+      - user_delete
+      - system_shutdown
+      - system_restart
+      - task_delete
+```
+
+Four things about this block:
+
+**JWT secret.** An empty `jwt_secret` makes the manager generate a random 32-byte secret at boot. Tokens signed with the boot-time secret die on the next restart. For multi-node deployments or production sites, set a fixed secret from a key store or vault — you can generate one with `goplc auth gen-secret` (the built-in subcommand calls `GenerateRandomSecret()`).
+
+**trust_proxy.** Turn this on when running behind a ctrlX Caddy proxy or any other reverse proxy that has already authenticated the user. Any request bearing an `X-Forwarded-For` header is accepted as the pseudo-user `"proxy"` with role `admin`. Do *not* turn this on if the PLC is directly reachable on the network — the header is trivial to forge.
+
+**ctrlX fallback.** Set `ctrlx_auth: true` to forward local auth failures to the ctrlX Identity Manager at `<ctrlx_url>/identity-manager/api/v2/auth/token`. GoPLC uses `tls.Config.InsecureSkipVerify` to tolerate the ctrlX self-signed cert. A successful ctrlX auth mints a GoPLC-signed JWT with role `operator` — the user doesn't get persisted locally.
+
+**Config-seeded users.** Any user listed under `auth.users` gets migrated into SQLite (`data/auth.db`) with role `admin` on first boot. After that, the config list is ignored — subsequent edits go through the API. If no users are configured and `ctrlx_auth` is off, GoPLC creates a default admin user `goplc` / `goplc` and logs the action. **Change this immediately** on any deployed system.
+
+#### Users, bcrypt, persistence
+
+Users are stored in `<data_dir>/auth.db` — a WAL-mode SQLite database in the runtime's data directory. The schema:
+
+```sql
+CREATE TABLE users (
+    id          INTEGER PRIMARY KEY,
+    username    TEXT UNIQUE NOT NULL,
+    password    TEXT NOT NULL,       -- bcrypt hash, cost 10 (bcrypt.DefaultCost)
+    role        TEXT NOT NULL DEFAULT 'viewer',
+    email       TEXT DEFAULT '',
+    created_at  TEXT DEFAULT (datetime('now')),
+    created_by  TEXT DEFAULT '',
+    locked      INTEGER DEFAULT 0,
+    last_login  TEXT
+);
+```
+
+Passwords are never stored in plaintext, never logged, and never returned from the API. The in-memory cache (`users map[string]*userEntry`) holds the bcrypt hash and the role — that's it. If the runtime cannot open `auth.db` at boot (permissions, disk full), it falls back to an in-memory-only mode and prints a warning; user changes in that mode are lost at shutdown.
+
+The `locked` column and the `email` column are surfaced in `GET /api/auth/users` but not yet enforced by the authenticator — they are admin metadata for now. A `locked: true` user can still log in until the lockout policy spec lands.
+
+#### REST API — login, users, refresh, logout
+
+All auth routes live under `/api/auth/*`. The login, status, refresh, and logout routes are on the public path list, so unauthenticated requests can reach them. User management requires authentication.
+
+##### Login
+
+```bash
+curl -X POST http://host:port/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"alice","password":"s3cret"}'
+```
+
+Response:
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIi...",
+  "expires_at": "2026-04-14T12:00:00Z",
+  "username": "alice",
+  "role": "engineer"
+}
+```
+
+A failed login emits an `auth.failed` event at `warning` severity with the username, client IP, and the underlying reason string. A successful login emits `auth.login` at `info` severity with the username, client IP, and the token expiry time. Both events include the client IP as reported by `c.ClientIP()`, which honors `X-Forwarded-For` when `trust_proxy` is on.
+
+##### Status — "am I logged in?"
+
+```bash
+curl -H 'Authorization: Bearer <token>' http://host:port/api/auth/status
+```
+
+Returns:
+
+```json
+{
+  "enabled": true,
+  "authenticated": true,
+  "username": "alice",
+  "role": "engineer"
+}
+```
+
+When auth is disabled entirely, `enabled: false` and `authenticated: false`. When the token is missing or expired, `authenticated: false` with an empty username. The status endpoint also accepts the token via a cookie named `goplc_token` — that's the path the browser-based IDE uses for page navigation.
+
+##### Refresh
+
+```bash
+curl -X POST \
+  -H 'Authorization: Bearer <old-token>' \
+  http://host:port/api/auth/refresh
+```
+
+Returns a new token with a fresh 24-hour expiry (or whatever `token_expiry_hours` is configured to). The refresh endpoint is authentication-protected — an expired token cannot refresh itself. Clients that want sliding sessions should refresh a few minutes before expiry, not on `401`.
+
+##### Logout
+
+```bash
+curl -X POST \
+  -H 'Authorization: Bearer <token>' \
+  http://host:port/api/auth/logout
+```
+
+JWT is stateless, so logout is a client-side operation — the server just acknowledges. Web clients clear `localStorage` and the `goplc_token` cookie. The token remains valid until its expiry; if you need immediate invalidation across the fleet (user termination, credential compromise), rotate `jwt_secret` and restart all runtimes.
+
+##### User management
+
+```bash
+# List users (admin only)
+curl -H 'Authorization: Bearer <admin-token>' http://host:port/api/auth/users
+
+# Create a user
+curl -X POST -H 'Authorization: Bearer <admin-token>' \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"bob","password":"t3mp!"}' \
+  http://host:port/api/auth/users
+
+# Change a password
+curl -X PUT -H 'Authorization: Bearer <admin-token>' \
+  -H 'Content-Type: application/json' \
+  -d '{"password":"n3w-s3cret"}' \
+  http://host:port/api/auth/users/bob/password
+
+# Delete a user
+curl -X DELETE -H 'Authorization: Bearer <admin-token>' \
+  http://host:port/api/auth/users/bob
+```
+
+Every user-management mutation emits a corresponding bus event:
+
+- `POST /api/auth/users` → `auth.user_created` at `info`
+- `PUT /api/auth/users/:username/password` → `auth.password_changed` at `info`
+- `DELETE /api/auth/users/:username` → `auth.user_deleted` at `warning`
+
+All three events include the acting admin's username (from the JWT), the target username, and the client IP in the event payload. The event is emitted after the mutation commits, so a failed delete does not produce a `user_deleted` event.
+
+Note that `AddUser` via the API creates the user with role `viewer` regardless of the `default_role` config setting. To create a user with a different role, either set the role post-create via `SetUserRole` (currently only exposed via the Go API, not the REST API), or use the CLI.
+
+#### Electronic signatures (21 CFR Part 11)
+
+`ESignatureMiddleware` intercepts configured critical actions and requires three HTTP headers on top of the normal JWT. Failing the check returns `403` and emits `auth.signature_failed`; passing emits `auth.signature_verified`.
+
+##### Which actions are critical
+
+Only the actions listed under `auth.electronic_signatures.critical_actions` get the e-sig check. The mapping from action name to method + path prefix is compiled into `signature.go` and cannot be changed at runtime:
+
+| Action name | HTTP method | Path prefix |
+|-------------|-------------|-------------|
+| `runtime_stop` | POST | `/api/runtime/stop` |
+| `runtime_start` | POST | `/api/runtime/start` |
+| `program_delete` | DELETE | `/api/programs/` |
+| `config_change` | PUT | `/api/config/` |
+| `user_delete` | DELETE | `/api/auth/users/` |
+| `system_shutdown` | POST | `/api/system/shutdown` |
+| `system_restart` | POST | `/api/system/restart` |
+| `task_delete` | DELETE | `/api/tasks/` |
+
+If you omit an action from the config list, that route is *not* subject to the e-sig check — it goes straight through the RBAC gate to the handler. This means disabling e-sig for a single action is a config edit, not a code change.
+
+Note that the e-sig middleware does not cover every destructive operation. It is designed for the narrow set of "user intent must be positively re-verified" actions mandated by 21 CFR Part 11, not as a general-purpose confirmation layer. The alarm acknowledge path, for example, is deliberately not on the list — every ack already carries the authenticated user as the `acked_by` field, which is sufficient for audit.
+
+##### The three required headers
+
+```bash
+curl -X DELETE \
+  -H 'Authorization: Bearer <engineer-jwt>' \
+  -H 'X-Signature-Username: alice' \
+  -H 'X-Signature-Password: her-real-password' \
+  -H 'X-Signature-Reason: Removing deprecated Program3 per CR-2026-118' \
+  http://host:port/api/programs/Program3
+```
+
+| Header | Meaning |
+|--------|---------|
+| `X-Signature-Username` | The user who is signing. Does **not** have to be the same as the JWT subject — this is the "second person" sign-off pattern. A supervisor can authorize an engineer's deletion. |
+| `X-Signature-Password` | The signing user's password, re-verified against their bcrypt hash. |
+| `X-Signature-Reason` | Free-text reason. Stored in the audit event payload verbatim. Required — an empty string fails the check. |
+
+The re-verification uses the same bcrypt path as the login flow — it reads the hash from the in-memory cache (backed by SQLite) and calls `bcrypt.CompareHashAndPassword`. There is no rate limit on e-sig attempts; the caller is already authenticated via the JWT.
+
+##### The emitted events
+
+Every e-sig attempt (success or failure) emits a bus event with the action, the signing user, the reason, and the acting user's JWT subject and IP. Success:
+
+```json
+{
+  "id": "...",
+  "timestamp": "2026-04-13T14:22:01.512Z",
+  "type": "auth.signature_verified",
+  "severity": "info",
+  "source": "esig",
+  "message": "e-sig verified: alice authorized program_delete (Removing deprecated Program3 per CR-2026-118)",
+  "data": {
+    "action": "program_delete",
+    "sig_user": "alice",
+    "reason": "Removing deprecated Program3 per CR-2026-118",
+    "path": "/api/programs/Program3",
+    "actor": "alice",
+    "ip": "10.0.0.196"
+  }
+}
+```
+
+Failure looks identical but with `type: auth.signature_failed`, severity `warning`, and a different message. A subscriber can filter for `auth.signature_*` and route all e-sig activity to a tamper-evident log destination — S3 with Object Lock, a write-once compliance archive, or a PagerDuty with `min_severity: warning` to get paged on failures.
+
+#### The audit trail via events
+
+Every authentication-related and config-changing event rides the same bus as alarms and protocol events. There is no separate audit log file, no separate database, no separate API — the audit trail is `GET /api/events?type=auth.*`.
+
+##### Event types
+
+| Type | Severity | Source | Payload highlights |
+|------|----------|--------|-------------------|
+| `auth.login` | info | `auth:login` | `username`, `ip`, `expires_at` |
+| `auth.failed` | warning | `auth:login` | `username`, `ip`, `reason` |
+| `auth.user_created` | info | `auth` | `actor`, `target_user`, `ip` |
+| `auth.user_deleted` | warning | `auth` | `actor`, `target_user`, `ip` |
+| `auth.password_changed` | info | `auth` | `actor`, `target_user`, `ip` |
+| `auth.signature_verified` | info | `esig` | `action`, `sig_user`, `reason`, `path`, `actor`, `ip` |
+| `auth.signature_failed` | warning | `esig` | same as above |
+| `config.change` | info | `config` | `section`, `username`, `ip`, `bytes_before`, `bytes_after` |
+
+`config.change` is not in `pkg/auth/` — it's emitted by `pkg/api/handlers/tasks.go` and other config-mutating handlers. It is included here because it completes the audit picture: every change to task configs, runtime settings, or other reloadable state ends up in the events log as an attributable edit.
+
+##### Querying the audit trail
+
+```bash
+# Last 100 auth events
+curl -H 'Authorization: Bearer <admin>' \
+  'http://host:port/api/events?type=auth.*&limit=100'
+
+# Every failed login in the last 24 hours
+curl -H 'Authorization: Bearer <admin>' \
+  'http://host:port/api/events?type=auth.failed&start=2026-04-12T00:00:00Z'
+
+# Who deleted what
+curl -H 'Authorization: Bearer <admin>' \
+  'http://host:port/api/events?type=auth.user_deleted'
+
+# Every e-sig attempt (success and failure)
+curl -H 'Authorization: Bearer <admin>' \
+  'http://host:port/api/events?type=auth.signature_*'
+
+# Full config-change audit, piped through jq
+curl -s -H 'Authorization: Bearer <admin>' \
+  'http://host:port/api/events?type=config.change&limit=500' | \
+  jq '.events[] | {ts: .timestamp, user: .data.username, section: .data.section, ip: .data.ip}'
+```
+
+The `GET /api/events` endpoint supports `type` with `*` wildcards, `severity`, `min_severity`, `source`, `start`, `end`, and `limit`. It reads from the bus's SQLite store (`events.db`), so results are retained for `events.log.max_age_days` days (default 90). For longer retention, pipe the events into a historian or an external log sink via webhooks.
+
+##### Live streaming audit
+
+```bash
+# Subscribe to every auth event over MQTT
+mosquitto_sub -h 127.0.0.1 -p 1883 -t 'goplc/events/auth.#' -v
+
+# Subscribe to signature events over WebSocket
+wscat -c 'ws://host:port/api/events/stream'
+# … then filter client-side for type starting with "auth.signature_"
+```
+
+The MQTT topic prefix is whatever you configured in `events.mqtt.topic_prefix` (default `goplc/events`). Subscribing to `goplc/events/auth.#` gets all auth events live as they happen.
+
+#### Reacting to auth events from ST
+
+Because auth events are ordinary bus events, ST code can query them with the same builtins you'd use for protocol or alarm events. The typical use case: force a safe state when a critical action is denied or when a suspicious pattern appears in the audit log.
+
+```iec
+PROGRAM SecurityWatch
+VAR
+    recent_failures : DINT;
+    alarm_state     : DINT;
+    lockdown        : BOOL := FALSE;
+END_VAR
+
+    (* Count failed logins in the last 5 minutes *)
+    recent_failures := EVENT_COUNT('auth.failed', 300000);
+
+    IF recent_failures > 10 AND NOT lockdown THEN
+        lockdown := TRUE;
+        (* Trip a BOOL alarm that the HMI banner listens for *)
+        ALARM_CREATE_BOOL('auth_lockdown', 'securitywatch.lockdown', 1);
+        NOTIFY_CRITICAL('More than 10 failed logins in 5 minutes — possible brute force');
+    END_IF;
+END_PROGRAM
+```
+
+Pair that with an alarm definition in YAML so the SCADA banner lights up and a PagerDuty webhook fires. No new auth primitives needed — the events bus is the single ingress and egress.
+
+#### Deployment patterns
+
+##### Small site — local users only
+
+Simplest. No directory server, a handful of users, auth.db persistent across reboots. Start with a seed admin in `config.yaml`, rotate to API-managed users after first boot.
+
+```yaml
+auth:
+  enabled: true
+  jwt_secret: "0f29...7c4a"        # fixed — from a key file checked into ops, not git
+  users:
+    - username: admin
+      password_hash: "$2a$10$..."   # bcrypt, generated by `goplc auth hash-password`
+  rbac:
+    enabled: true
+  electronic_signatures:
+    enabled: false                   # turn on only if compliance requires
+```
+
+##### Compliance-regulated site — e-sig + audit retention
+
+Full 21 CFR Part 11 posture: RBAC on, e-sig on every destructive action, the events log pointed at a long-retention SQLite and fanned out to a write-once archive.
+
+```yaml
+auth:
+  enabled: true
+  jwt_secret: "${GOPLC_JWT_SECRET}"  # from environment
+  rbac:
+    enabled: true
+    default_role: viewer
+  electronic_signatures:
+    enabled: true
+    critical_actions:
+      - runtime_stop
+      - runtime_start
+      - program_delete
+      - config_change
+      - user_delete
+      - system_shutdown
+      - system_restart
+      - task_delete
+
+events:
+  enabled: true
+  log:
+    enabled: true
+    database: "data/events.db"
+    max_age_days: 3650               # 10 years — Part 11 minimum retention
+  webhooks:
+    - name: "compliance-archive"
+      url: "https://s3.internal/goplc-audit/events"
+      format: "generic"
+      secret: "${ARCHIVE_HMAC_SECRET}"
+      event_types: ["auth.*", "config.change", "alarm.ack"]
+      min_severity: "info"
+      retry_count: 10                # never drop a compliance event
+```
+
+The HMAC signing on the archive webhook means the receiver can prove every event came from the PLC and hasn't been tampered with in transit; pair with S3 Object Lock (or equivalent) for at-rest immutability.
+
+##### ctrlX integration — single sign-on via Identity Manager
+
+Running GoPLC as a ctrlX snap on an X3 PLC. The Caddy reverse proxy handles the front-door auth; GoPLC trusts the proxy and enforces RBAC internally.
+
+```yaml
+auth:
+  enabled: true
+  trust_proxy: true                  # accept X-Forwarded-For as pre-authenticated
+  rbac:
+    enabled: false                   # the ctrlX front door does role gating
+```
+
+Or, alternatively, use the local RBAC on top of ctrlX-minted JWTs:
+
+```yaml
+auth:
+  enabled: true
+  ctrlx_auth: true
+  ctrlx_url: "https://localhost"
+  rbac:
+    enabled: true
+```
+
+In this second mode, ctrlX users are authenticated via the `identity-manager/api/v2/auth/token` endpoint; if that succeeds, GoPLC mints its own JWT with role `operator`. They can read everything a viewer can, acknowledge alarms, and write variables — but not edit programs or run `runtime_stop` without re-authentication through a local engineer account.
+
+#### Recipes
+
+##### Browser-based IDE login (the default cookie flow)
+
+The IDE doesn't use the `Authorization: Bearer` header for page navigation — browsers can't inject headers on `window.location.href`. Instead, a successful `POST /api/auth/login` stores the token in a cookie named `goplc_token` (via JavaScript, not a `Set-Cookie` response), and subsequent page loads find the cookie in `auth.Middleware` via `c.Cookie("goplc_token")`.
+
+The login page is at `/login` (public) and redirects to `?redirect=<requested-path>` if the middleware bounces an unauthenticated browser request. The client-side code in `web/login.html` handles the cookie set and the redirect.
+
+##### Scripted API access with a long-lived service account
+
+Create a dedicated service account via the API once, then store the JWT somewhere safe and refresh it nightly:
+
+```bash
+# One-time setup (as an admin)
+curl -X POST -H 'Authorization: Bearer <admin>' \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"deploy-bot","password":"'"$(openssl rand -hex 32)"'"}' \
+  http://host:port/api/auth/users
+
+# Daily refresh from the scripted client
+TOKEN=$(curl -sX POST http://host:port/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"deploy-bot","password":"'"$BOT_PASSWORD"'"}' \
+  | jq -r .token)
+
+# Then use $TOKEN on subsequent calls
+curl -H "Authorization: Bearer $TOKEN" http://host:port/api/variables/
+```
+
+Raise the service account to `engineer` or `admin` via `SetUserRole` (Go API or a future `PUT /api/auth/users/:username/role` endpoint — currently only settable via the CLI). The default role after `AddUser` is `viewer`, which is read-only.
+
+##### Executing a critical action with e-sig
+
+```bash
+# Required: the caller's JWT + the signer's re-auth + a reason
+curl -X POST http://host:port/api/runtime/stop \
+  -H 'Authorization: Bearer <engineer-jwt>' \
+  -H 'X-Signature-Username: supervisor' \
+  -H 'X-Signature-Password: '"$SUPERVISOR_PASSWORD"'' \
+  -H 'X-Signature-Reason: Emergency shutdown for unscheduled PM on pump 3'
+```
+
+The acting engineer is the JWT subject; the signing supervisor is the `X-Signature-Username`. Both are recorded in the `auth.signature_verified` event under `actor` and `sig_user` respectively. The reason is attached verbatim.
+
+##### Rotating the JWT secret without downtime
+
+Not possible. JWT is stateless — all existing tokens would be invalidated at the moment of rotation, and the handler has no way to re-sign them. The rotation procedure is:
+
+1. Push the new secret to config.
+2. Restart the runtime (on a single-node site) or restart nodes one at a time (on a cluster) to pick up the new secret.
+3. Every user re-logs in, picking up a freshly-signed token.
+
+If you need hot rotation, run a key-store-backed JWT library; the in-tree implementation is deliberately simple and deployment-scale-appropriate.
+
+#### Security notes
+
+- **Passwords are bcrypt, not PBKDF2 or Argon2.** Cost factor 10 (the `bcrypt.DefaultCost` constant). This is adequate for modern hardware; if you need to raise the cost factor, it's a one-line change in `pkg/auth/auth.go` but requires re-hashing every user's password on their next login.
+- **JWT uses HS256, not RS256.** The secret is shared between all middleware instances; there is no public/private key split. Good enough for a single runtime or a small cluster, not appropriate for a multi-tenant federation.
+- **`X-Forwarded-For` is trusted without verification when `trust_proxy` is on.** Only enable this when the PLC is physically behind a reverse proxy on a trusted network. Any client that can reach the PLC directly can forge the header.
+- **ctrlX fallback uses `InsecureSkipVerify: true`** — the TLS cert from the local ctrlX IDM is not validated. This is appropriate only inside the ctrlX snap environment where the target is `https://localhost`. Never set `ctrlx_url` to a remote host.
+- **The `goplc` / `goplc` default user** is created on first boot when no users are configured and `ctrlx_auth` is off. Log message warns. Change it before exposing the API to anything.
+- **Failed e-sig attempts are logged but not counted.** There is no lockout after N failures. A rate limit is a backlog item; for now, pair with an upstream WAF or fail2ban if you need rate limiting.
+- **JWT secrets in config.yaml are readable by anyone with `GET /api/config`** — and `/api/config` is engineer-gated, not admin. Consider either raising the rule to admin or pulling the secret from an environment variable and leaving the YAML field empty.
+
+#### Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| Every request returns `401 unauthorized` after a runtime restart | `jwt_secret` was empty and got regenerated | Set a fixed `jwt_secret` in config so tokens survive restarts, or have clients re-login on 401. |
+| `auth.login` event fires but subsequent API call returns `401` | JWT secret differs between the login handler and the middleware | Should be impossible; if you see this, clock skew between host and client is a possible cause — check the `iat` vs `exp` in the token. |
+| User created via `POST /api/auth/users` is always `viewer` even though `default_role: engineer` | `AddUser` hardcodes `RoleViewer` | Use `SetUserRole` after creation, or wait for the role-aware create endpoint. |
+| Logins succeed locally but ctrlX fallback never fires | The local username exists (even locked), so the fallback branch is skipped | Delete the local entry, or rename it so the login name only matches ctrlX. |
+| `trust_proxy` mode not honoring role from the proxy | Headers with role aren't consumed — only `X-Forwarded-For` presence is checked | The pseudo-user `proxy` gets role `admin`. If you need granular roles via the proxy, emit your own JWT upstream and use the bearer path. |
+| e-sig fails with "electronic_signature_failed" even though password is right | Wrong field name on the header — it's `X-Signature-Password` not `X-ESig-Password` | Use the exact headers: `X-Signature-Username`, `X-Signature-Password`, `X-Signature-Reason`. |
+| Audit trail missing `config.change` events for task edits | The task handler emits `config.change`; the alarms handler does not | Expected — alarms emit their own `alarm.*` events instead of `config.change`. Filter accordingly. |
+| `/api/events?type=auth.*` returns fewer events than expected | Events are subject to the bus's dedup window | Check `events.bus.dedup_window_ms`; set to `0` to disable dedup for audit purposes (at the cost of emission amplification on protocol flap). |
+
+#### Related
+
+- [`goplc_events_guide.md`](goplc_events_guide.md) — the event bus every auth event rides on, plus webhook and MQTT fan-out for audit trail delivery.
+- [`goplc_alarms_guide.md`](goplc_alarms_guide.md) — the alarm engine that surfaces an `auth_lockdown` condition to the HMI banner.
+- [`goplc_api_guide.md`](goplc_api_guide.md) — REST and WebSocket fundamentals, Swagger UI, bearer-token conventions.
+- [`goplc_config_guide.md`](goplc_config_guide.md) — the full `config.yaml` reference including the `auth:` block schema.
+- [`goplc_clustering_guide.md`](goplc_clustering_guide.md) — how JWT secrets and user databases interact in a boss + minions deployment.
+
+### GoPLC System: Hardware Watchdog, Crash-Safe RETAIN, and UPS Monitoring
+
+
+A PLC runtime is supposed to keep running. Not "until the kernel hangs", not "unless someone pulls the power", not "unless a task deadlocks" — always. GoPLC's system layer is the set of mechanisms that make that promise credible on bare metal: a hardware watchdog that resets the board if the Go runtime ever stops scheduling, a RETAIN persistence path that survives abrupt power loss without corrupting files, and a UPS monitor that initiates graceful shutdown before the battery drops below the reserve you specified. All three can be configured from `config.yaml`, inspected from ST, and audited from the REST API.
+
+#### Why This Exists
+
+A PLC is not a desktop application. It runs on a board wedged into a control cabinet, sometimes in a closet the facility forgot about, and it's expected to still be scanning when someone pulls out an OS image from 2029 and asks "what does this do?". There are three failure modes that kill a naive Go service in that environment:
+
+1. **Silent livelock.** The process is alive and the port is open, but a goroutine is spinning or a lock is held and no task has executed a scan in the last 60 seconds. Nothing external notices until a production line trips.
+2. **Power cut mid-write.** RETAIN is meant to survive reboots. If it's saved to a plain JSON file and the power cuts between `write()` and `fsync()`, the file is now half a file, and the next boot loses every retained variable for that task.
+3. **Soft-shutdown timing.** A UPS can keep the board alive for ten minutes, but only if something knows to initiate a clean shutdown with enough runway for the final RETAIN flush.
+
+The features in this guide address each one directly — hardware watchdog for #1, atomic-write RETAIN with rolling backups for #2, and a NUT/apcupsd-driven UPS monitor for #3.
+
+#### Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     GoPLC Runtime                       │
+│                                                         │
+│  Main loop ──► kicks /dev/watchdog every 5s             │
+│                (configurable)                           │
+│                                                         │
+│  Per-task RETAIN ──► flush every 1s if dirty            │
+│                      atomic write (tmp+fsync+rename)    │
+│                      rolling .retain.bak.1 / .bak.2     │
+│                                                         │
+│  UPS poller ──► reads NUT or apcupsd every 5s           │
+│                 emits power.on_battery when AC drops    │
+│                 emits power.low_battery below threshold │
+│                 triggers SYS_SHUTDOWN on low battery    │
+│                                                         │
+│  Shutdown chain ──► stop accepting new tasks            │
+│                     run final flush on every task       │
+│                     magic-close the hardware watchdog   │
+│                     journal sync                        │
+│                     exit(0)                             │
+└─────────────────────────────────────────────────────────┘
+            │                    │                  │
+            ▼                    ▼                  ▼
+      /dev/watchdog       data/*.retain       /var/state/ups
+       (ioctl + heartbeat)   (atomic)          (NUT socket)
+```
+
+Every layer in that diagram is driven from the same event bus that powers the historian, the alarm engine, and the webhook router. A power loss on the UPS does not trigger a shutdown directly — it emits `power.on_battery`, which the RETAIN store subscribes to and reacts to by forcing an immediate flush on every dirty task. The alarm engine subscribes to the same event and annunciates a "system on battery" alarm. The webhook router fans the event out to Slack or PagerDuty. That's why the three components live in one guide: they share a bus and they compose.
+
+#### Hardware Watchdog
+
+The Linux kernel exposes `/dev/watchdog`. When you open it, the kernel starts a countdown timer. If the timer expires before you write anything to the device, the kernel forces a hardware reset — not a panic, not a kernel oops, a full CPU reset. Kick the device (write any byte) and the timer resets. Close the device cleanly with the magic character `V` and the timer is disarmed.
+
+GoPLC's watchdog goroutine opens the device at startup, kicks it on the configured interval (default every 5 seconds), and magic-closes it on clean shutdown so the system doesn't reboot during a software update.
+
+##### Enable it
+
+```yaml
+watchdog:
+  hardware:
+    enabled: true
+    device: "/dev/watchdog"     # default
+    timeout_s: 15               # hardware reboots if not kicked for 15s
+    kick_interval_ms: 5000      # kick every 5s (well inside the 15s window)
+```
+
+##### Permissions
+
+`/dev/watchdog` is root-owned by default. The two clean options are:
+
+```bash
+# Option A: add the goplc user to the watchdog group
+sudo groupadd -f watchdog
+sudo chown root:watchdog /dev/watchdog
+sudo chmod 660 /dev/watchdog
+sudo usermod -aG watchdog goplc
+
+# Option B: udev rule to group-own the device on every boot
+echo 'KERNEL=="watchdog", GROUP="watchdog", MODE="0660"' \
+     | sudo tee /etc/udev/rules.d/60-watchdog.rules
+sudo udevadm control --reload
+```
+
+If GoPLC fails to open the device it logs `watchdog: open /dev/watchdog: permission denied` and continues without hardware watchdog support — the task watchdog still runs, and `SYS_WATCHDOG_STATUS()` returns `"not_available"`.
+
+##### Verifying it works
+
+The safest way to verify the hardware watchdog is to let it actually fire on a test board:
+
+```bash
+# Start GoPLC with hardware watchdog enabled
+# Then freeze the process with SIGSTOP and watch the board reboot ~15s later
+kill -STOP $(pgrep goplc)
+```
+
+On the reboot log you should see your bootloader come back. If the board keeps running, the watchdog is not wired through to the reset line — common on cheap virtual machines and some Pi clones. On real MCP2515 / DCAN / industrial SBCs this always works.
+
+#### Systemd Integration
+
+Once the hardware watchdog is open, the next layer is systemd itself. Type=notify + `WatchdogSec=30` gives you two things for free:
+
+1. **Ready notification.** Systemd considers the service "started" only after GoPLC calls `sd_notify(READY=1)`. Anything `After=goplc.service` can be ordered correctly.
+2. **Software watchdog.** Systemd expects a `WATCHDOG=1` heartbeat every `WatchdogSec / 2`. If GoPLC stops sending them, systemd kills the process and (via `Restart=on-failure`) relaunches it. This is the second line of defense below the kernel watchdog.
+
+##### Enable it in config
+
+```yaml
+watchdog:
+  systemd:
+    notify: true
+    watchdog_usec: 30000000   # 30 seconds
+```
+
+##### Service file
+
+```ini
+# /etc/systemd/system/goplc.service
+[Unit]
+Description=GOPLC IEC 61131-3 PLC Runtime
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+WatchdogSec=30
+ExecStart=/opt/goplc/goplc /opt/goplc/project.goplc --api-port 8082
+WorkingDirectory=/opt/goplc
+Restart=on-failure
+RestartSec=5
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/goplc/data /opt/goplc/projects
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=goplc
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Install and start:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now goplc
+sudo systemctl status goplc
+```
+
+You should see `Status: "Ready"` once GoPLC calls `sd_notify(READY=1)`. If the status sticks on `Status: "Starting..."` the notify call didn't fire — check your config and rebuild against a recent enough release.
+
+#### Crash-Safe RETAIN
+
+RETAIN variables keep their value across restarts. In the default configuration, GoPLC's RETAIN store writes to `projects/<project>.<task>.retain` using a three-step atomic write:
+
+1. Write the new JSON to `<file>.tmp`
+2. `fsync()` the temporary file
+3. `rename()` the temporary file over the real file
+
+On ext4/btrfs/xfs, step 3 is atomic at the filesystem level — either the old file is visible or the new file is visible, never a half-written mix. Combined with periodic fsync and rolling backups, this gives you three lines of defense against power loss:
+
+```yaml
+retain:
+  flush_interval_ms: 1000   # flush every 1s if any variable has changed
+  atomic_write: true        # tmp + fsync + rename (default true)
+  backup_count: 2           # keep .retain.bak.1 and .retain.bak.2 as fallbacks
+```
+
+On a dirty assignment the store marks the task as dirty and resets a timer. When the timer fires, the store flushes everything in one pass. Between flushes, assignments cost a map write and nothing else — no disk I/O per scan.
+
+##### Backups and recovery
+
+With `backup_count: 2` you get `project.task.retain`, `project.task.retain.bak.1`, and `project.task.retain.bak.2`. On a successful flush, `bak.1` gets renamed to `bak.2`, the current file gets copied to `bak.1`, and then the new data is written atomically. If the primary file is corrupt on load, the store falls back to the most recent backup and logs a warning. You can clean up old `.bak.*` files safely — they're not referenced beyond the next flush.
+
+##### Forcing a flush from ST
+
+Any event that happens faster than the flush interval deserves an explicit flush: edge-triggered alarms, one-shot setpoint changes, commissioning sequences. Use `SYS_RETAIN_FLUSH()` to force an immediate save across every dirty task.
+
+```iec
+PROGRAM commissioning
+VAR
+    new_setpoint : REAL;
+    applied      : BOOL;
+    retain_ok    : BOOL;
+END_VAR
+
+IF NOT applied AND new_setpoint > 0.0 THEN
+    (* apply the setpoint, then force it to disk before we acknowledge *)
+    applied := TRUE;
+    retain_ok := SYS_RETAIN_FLUSH();
+    IF NOT retain_ok THEN
+        DEBUG('commissioning', 'retain flush failed');
+    END_IF;
+END_IF;
+END_PROGRAM
+```
+
+##### Inspecting RETAIN state
+
+From the REST API, `GET /api/system/retain` returns a JSON object with one entry per task:
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+     http://localhost:8082/api/system/retain
+```
+
+```json
+{
+  "tasks": [
+    {
+      "name": "MainTask",
+      "path": "projects/ABTest_good.MainTask.retain",
+      "size_bytes": 1248,
+      "dirty": false,
+      "last_save_unix": 1712943210,
+      "backup_count": 2
+    }
+  ]
+}
+```
+
+`POST /api/system/retain/flush` forces an immediate save across every task — useful before a maintenance restart or as a health check.
+
+#### UPS Monitoring
+
+GoPLC supports two UPS backends: **NUT** (Network UPS Tools — the standard Linux UPS stack) and **apcupsd** (APC's own daemon, still widely used on APC-only installations). Either one polls the UPS hardware over USB or serial and makes battery state available via a Unix socket. GoPLC reads that state every 5 seconds.
+
+##### NUT setup
+
+```bash
+sudo apt install nut nut-client nut-server
+# configure /etc/nut/ups.conf, /etc/nut/upsd.conf, /etc/nut/upsd.users
+sudo upsdrvctl start
+sudo systemctl enable --now nut-server
+upsc ups@localhost   # confirm the UPS is visible
+```
+
+##### GoPLC config
+
+```yaml
+power:
+  ups_enabled: true
+  ups_type: "nut"                    # or "apc" for apcupsd
+  ups_name: "ups@localhost"
+  shutdown_on_battery_pct: 20        # initiate shutdown below 20 %
+  shutdown_delay_s: 30               # wait 30s on battery first (ignore brownouts)
+```
+
+##### What happens on AC loss
+
+1. UPS poller detects `ups.status: OB` (on battery) and emits `power.on_battery` on the event bus.
+2. The RETAIN store subscribes to `power.on_battery` and forces an immediate flush on every dirty task. You get a crash-safe snapshot within milliseconds of the power going away.
+3. The alarm engine subscribes to the same event and annunciates `power.on_battery` as a priority-1 alarm.
+4. The webhook router fans the event out to Slack / PagerDuty / MQTT, subject to your event subscription config.
+5. If AC comes back within `shutdown_delay_s`, the poller emits `power.on_ac` and life continues. If AC stays out and the battery drops below `shutdown_on_battery_pct`, the poller emits `power.low_battery` and calls `SYS_SHUTDOWN("battery_low")` internally.
+
+`SYS_SHUTDOWN` runs the same clean-shutdown chain as a SIGTERM: stop accepting new tasks, run final flush on every task, magic-close the hardware watchdog, journal sync, exit.
+
+##### Reading UPS state from ST
+
+```iec
+PROGRAM power_watch
+VAR
+    ups_state  : STRING;
+    battery_pc : REAL;
+    runtime_s  : DINT;
+    on_battery : BOOL;
+END_VAR
+
+ups_state := SYS_UPS_STATUS();    (* "online" | "on_battery" | "low_battery" | "not_available" *)
+battery_pc := SYS_UPS_CHARGE();   (* 0.0 to 100.0 *)
+runtime_s  := SYS_UPS_RUNTIME_S(); (* seconds of estimated runtime remaining *)
+
+on_battery := ups_state = 'on_battery' OR ups_state = 'low_battery';
+
+IF on_battery THEN
+    (* shed non-essential loads, preserve critical state *)
+    DEBUG('power', CONCAT('on battery, charge=', REAL_TO_STRING(battery_pc)));
+END_IF;
+END_PROGRAM
+```
+
+#### Graceful Shutdown
+
+The `SYS_SHUTDOWN(reason)` ST function, the `POST /api/system/shutdown` REST endpoint, a `SIGTERM`, and the UPS low-battery path all converge on the same shutdown chain:
+
+```
+Receive shutdown request
+   │
+   ▼
+Stop accepting new task starts
+   │
+   ▼
+Stop every running task (SaveRetain on each)
+   │
+   ▼
+Final FlushAllRetain() across every task
+   │
+   ▼
+Close protocol drivers (Modbus, MQTT, OPC UA, CAN, ...)
+   │
+   ▼
+Magic-close the hardware watchdog (so the kernel does not reboot)
+   │
+   ▼
+Journal sync + event bus drain
+   │
+   ▼
+exit(0)
+```
+
+Every stage is idempotent and has a 5-second timeout so one wedged driver can't block the whole chain. The shutdown reason is propagated to `runtime.stop` on the event bus so your historian logs it alongside the final snapshot.
+
+To trigger a clean shutdown from outside:
+
+```bash
+curl -X POST -H "Authorization: Bearer $TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"confirm":true}' \
+     http://localhost:8082/api/system/shutdown
+```
+
+From inside ST:
+
+```iec
+VAR
+    need_shutdown : BOOL;
+    ok            : BOOL;
+END_VAR
+
+IF need_shutdown THEN
+    ok := SYS_SHUTDOWN('planned_maintenance');
+END_IF;
+```
+
+The reason string shows up in the journal, the `runtime.stop` event payload, and the audit trail if RBAC is enabled.
+
+#### ST Function Reference
+
+All functions verified against the live GoPLC function registry at v1.0.607.
+
+##### Watchdog
+
+| Function | Purpose |
+|---|---|
+| `SYS_WATCHDOG_KICK() : BOOL` | Manual kick — normally the runtime kicks automatically every `kick_interval_ms` |
+| `SYS_WATCHDOG_STATUS() : STRING` | `"active"`, `"disabled"`, or `"not_available"` |
+
+##### RETAIN
+
+| Function | Purpose |
+|---|---|
+| `SYS_RETAIN_FLUSH() : BOOL` | Force immediate save across every dirty task |
+| `SYS_RETAIN_STATUS() : STRING` | JSON: per-task last save time, size, dirty flag, backup count |
+
+##### UPS / Power
+
+| Function | Purpose |
+|---|---|
+| `SYS_UPS_STATUS() : STRING` | `"online"`, `"on_battery"`, `"low_battery"`, or `"not_available"` |
+| `SYS_UPS_CHARGE() : REAL` | Battery percentage, 0.0 to 100.0 |
+| `SYS_UPS_RUNTIME_S() : DINT` | Estimated seconds of runtime remaining on battery |
+
+##### Shutdown and lifecycle
+
+| Function | Purpose |
+|---|---|
+| `SYS_SHUTDOWN(reason: STRING) : BOOL` | Begin the graceful shutdown chain with a reason string |
+| `SYS_EXIT(exit_code: INT) : BOOL` | Immediate process exit, skipping the shutdown chain — use only for tests |
+| `SYS_CLEAR_ERRORS() : BOOL` | Clear the runtime error counter visible in `CAN_STATUS` and similar |
+
+#### REST API
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/system/watchdog` | Hardware + systemd watchdog status |
+| `GET /api/system/retain` | Per-task RETAIN status (path, size, dirty, last save) |
+| `POST /api/system/retain/flush` | Force immediate flush on every task |
+| `GET /api/system/power` | UPS status, charge percentage, runtime estimate |
+| `POST /api/system/shutdown` | Graceful shutdown — requires `{"confirm":true}` body |
+
+All endpoints require authentication when RBAC is enabled. Example:
+
+```bash
+TOKEN=$(curl -sX POST http://localhost:8082/api/auth/login \
+    -H 'Content-Type: application/json' \
+    -d '{"username":"goplc","password":"goplc"}' \
+    | jq -r .token)
+
+curl -H "Authorization: Bearer $TOKEN" \
+     http://localhost:8082/api/system/watchdog
+```
+
+```json
+{
+  "hardware": {
+    "status": "active",
+    "device": "/dev/watchdog",
+    "timeout_s": 15
+  },
+  "systemd": {
+    "status": "active"
+  }
+}
+```
+
+#### Full YAML Reference
+
+```yaml
+watchdog:
+  hardware:
+    enabled: true                # open /dev/watchdog at startup
+    device: "/dev/watchdog"      # default
+    timeout_s: 15                # kernel reset after 15s of no kicks
+    kick_interval_ms: 5000       # kick every 5 seconds
+  systemd:
+    notify: true                 # call sd_notify(READY=1) + WATCHDOG=1
+    watchdog_usec: 30000000      # 30s systemd software watchdog
+
+retain:
+  flush_interval_ms: 1000        # periodic flush if dirty (default 1s)
+  atomic_write: true             # tmp + fsync + rename (default true)
+  backup_count: 2                # rolling .retain.bak.N count
+
+power:
+  ups_enabled: true
+  ups_type: "nut"                # "nut" or "apc"
+  ups_name: "ups@localhost"
+  shutdown_on_battery_pct: 20    # shutdown below 20 % battery
+  shutdown_delay_s: 30           # wait 30s on battery before shutdown
+```
+
+Every key has a sensible default — you can omit the whole `watchdog:` section and still have task-level software watchdog, or omit `power:` and not run a UPS monitor. The `retain:` section defaults to crash-safe (`atomic_write: true`, `flush_interval_ms: 1000`, `backup_count: 2`), so even projects that never mention retain are durable.
+
+#### Gotchas
+
+**`/dev/watchdog` needs real hardware.** A lot of virtual machines expose `/dev/watchdog` but wire it to nothing — you can open, kick, and close it all day and the VM never resets. Test by actually stopping the process with `SIGSTOP` on the real target. If the board comes back, the watchdog is real. If it just sits there, you're on a soft-watchdog VM and you need systemd's `Restart=on-failure` as your fallback.
+
+**Magic-close is mandatory.** If the runtime exits without writing `V` to `/dev/watchdog`, the kernel will reboot the board `timeout_s` seconds later — even if the exit was clean. GoPLC always magic-closes on SIGTERM/SIGINT/panic-recovery, but if you kill the process with `SIGKILL -9`, you skipped the shutdown chain and the watchdog will fire. Use `systemctl stop goplc` (SIGTERM) not `kill -9`.
+
+**RETAIN files are per-task.** The filename pattern is `projects/<project>.<task>.retain`. If you rename a task, the old RETAIN file is orphaned — GoPLC does not migrate it for you. Copy the file or export/import RETAIN values explicitly via the API before renaming.
+
+**Atomic-write needs an ext-family filesystem.** On ext4/btrfs/xfs, `rename()` is atomic. On FAT32/exFAT (common on SD-card-only SBCs and Windows), rename semantics are weaker and power loss during rename can leave both files or neither. Use ext4 wherever you can, and if you're stuck on FAT, bump `backup_count` to 3 so you have more fallbacks.
+
+**NUT vs apcupsd talks to the same UPS differently.** You cannot run both daemons against one UPS — they fight for the HID / serial handle. Pick one. NUT is the more general choice (supports most brands and has better packaging on Debian/Ubuntu). apcupsd is the easier one if you have an APC-only environment and don't want to touch the NUT config files.
+
+**`SYS_SHUTDOWN` is a one-way door.** There is no `SYS_CANCEL_SHUTDOWN`. Once the chain starts, tasks are stopped and the process is going down. If you want a "are you sure?" gate, build it in ST and call `SYS_SHUTDOWN` only after the gate passes.
+
+**UPS polling is every 5 seconds.** A very short power blip (under 5s) will not emit `power.on_battery`. This is a feature: brownouts would otherwise trigger false alarms and constant RETAIN flushes. If your power quality is bad enough that you care about sub-5s events, instrument the power path with a GPIO brownout detector and emit your own events.
+
+**`shutdown_delay_s` is the brownout guard.** On AC loss, GoPLC waits this many seconds before beginning the shutdown chain. That gives short outages time to resolve and avoids unnecessary restarts, but it also means you need at least `shutdown_delay_s + 30` seconds of battery runway to finish cleanly. Size your UPS accordingly.
+
+#### Putting It Together
+
+A production `config.yaml` fragment for a Pi 4 running GoPLC with a USB-attached APC UPS, a working hardware watchdog, and crash-safe RETAIN:
+
+```yaml
+watchdog:
+  hardware:
+    enabled: true
+    device: "/dev/watchdog"
+    timeout_s: 15
+    kick_interval_ms: 5000
+  systemd:
+    notify: true
+    watchdog_usec: 30000000
+
+retain:
+  flush_interval_ms: 500       # tighter than default — small project, fast disk
+  atomic_write: true
+  backup_count: 3              # extra backup in case the SD card acts up
+
+power:
+  ups_enabled: true
+  ups_type: "nut"
+  ups_name: "apc@localhost"
+  shutdown_on_battery_pct: 25  # slightly conservative
+  shutdown_delay_s: 20         # short brownout guard
+```
+
+Combine this with the systemd service from §4, the udev rule for `/dev/watchdog` from §3, and a properly configured NUT from §6, and you have a runtime that can take a power cut mid-scan and come back with every RETAIN value intact.
+
+For the full event picture — how `power.on_battery`, `runtime.start`, and `runtime.stop` flow to MQTT, Slack, and the historian — see the Events and Historian guides in this directory.
+
+### GoPLC Hot Standby Redundancy
+
+
+GoPLC hot standby is active/standby redundancy with real-time state synchronization, automatic role election, and sub-second failover. Two GoPLC nodes on a network exchange heartbeats and full interpreter state — variables, timers, counters, SFC step indices — at a configurable cadence. One runs as primary and executes the scan; the other runs as standby, ingests state updates, and keeps its shadow interpreter ready for a bumpless takeover. When the primary goes dark, the standby promotes itself within a handful of heartbeat intervals (default ~1 s), starts its own scan, and takes over protocol I/O without dropping accumulated state. A priority-based split-brain resolver catches the case where both nodes survive a partition and come back thinking they're primary. Eight ST builtins and six REST endpoints let you inspect and drive the redundancy pair from programs, HMIs, or deploy scripts.
+
+#### Architecture
+
+```
+┌─────────────────────────┐              ┌─────────────────────────┐
+│     Node A (primary)    │              │    Node B (standby)     │
+│                         │              │                         │
+│  ┌──────────────────┐   │              │   ┌──────────────────┐  │
+│  │ Scan loop        │   │              │   │ Shadow interp    │  │
+│  │ (running)        │   │              │   │ (tasks stopped)  │  │
+│  └────────┬─────────┘   │              │   └────────▲─────────┘  │
+│           │             │              │            │            │
+│           ▼             │              │            │            │
+│  ┌──────────────────┐   │  State sync  │   ┌────────┴─────────┐  │
+│  │ SyncService      │───┼──────────────┼──►│ SyncService       │  │
+│  │  publisher       │   │ UDP + gzip   │   │  receiver         │  │
+│  │  diff + full     │   │ every 10 ms  │   │  apply updates    │  │
+│  └──────────────────┘   │              │   └──────────────────┘  │
+│                         │              │                         │
+│  ┌──────────────────┐   │  Heartbeat   │   ┌──────────────────┐  │
+│  │ HeartbeatService │◄──┼──────────────┼──►│ HeartbeatService │  │
+│  │  emit + observe  │   │ every 100 ms │   │  emit + observe  │  │
+│  └────────┬─────────┘   │              │   └────────┬─────────┘  │
+│           │             │              │            │            │
+│           └────► events.Bus ◄──────────┼────────────┘            │
+│                 cluster.node_join      │                         │
+│                 cluster.node_lost      │                         │
+│                 cluster.failover_*     │                         │
+│                 cluster.split_brain    │                         │
+│                         │              │                         │
+│  ┌──────────────────┐   │              │   ┌──────────────────┐  │
+│  │ Manager          │   │              │   │ Manager          │  │
+│  │  role state      │   │              │   │  role state      │  │
+│  │  machine         │   │              │   │  machine         │  │
+│  └──────────────────┘   │              │   └──────────────────┘  │
+└─────────────────────────┘              └─────────────────────────┘
+```
+
+Three services run on each node:
+
+1. **`HeartbeatService`** — Publishes a heartbeat envelope every `heartbeat.interval_ms` (default 100 ms) and listens for the peer's heartbeats. On transitions (peer disappears, peer appears) it emits `cluster.node_lost` / `cluster.node_join` on the events bus. Also tracks role change history for audit.
+2. **`SyncService`** — On the primary, publishes incremental state updates over UDP every `sync.interval_ms` (default 10 ms). The payload is a diff against the last send — only changed variables are serialized. On connect or force-sync, it sends a full state payload (gzip-compressed if `sync.compress: true`). On the standby, it receives UDP packets and applies them to the shadow interpreter.
+3. **`Manager`** — Subscribes to the bus and runs the role state machine. Reacts to `cluster.node_lost` by promoting (if standby), to `cluster.node_join` by pushing a full sync (if primary) or checking for split-brain, and to manual `Promote` / `Demote` calls from REST or ST.
+
+The scan loop lives in the task scheduler and is gated by role. A `RolePrimary` instance runs its tasks; a `RoleStandby` instance stops them and lets the SyncService mutate the interpreter state directly. A `RoleStandalone` instance (failover disabled or misconfigured) runs tasks like a normal non-redundant GoPLC.
+
+#### Roles and initial election
+
+Three role constants:
+
+| Role | Meaning | Task execution |
+|------|---------|----------------|
+| `primary` | This node owns the scan and writes to physical I/O. | tasks running |
+| `standby` | This node is a hot shadow of the primary. Tasks stopped; state is driven by sync packets. | tasks stopped |
+| `standalone` | Failover not configured, or peer unreachable on boot and no auto election possible. Behaves like a regular non-redundant GoPLC. | tasks running |
+
+You configure `role:` explicitly or set it to `"auto"` (the default) to let the pair negotiate at startup. The auto-election algorithm is:
+
+1. At boot, wait one failover-timeout window (heartbeat interval × timeout multiplier, default 1 s) for a peer heartbeat.
+2. **No peer observed** → become `primary`.
+3. **Peer observed**, peer role is `primary` → become `standby`.
+4. **Peer observed**, both roles are unresolved → compare configured `priority`; lower wins, take `primary`, tie goes to standby.
+
+Because the wait is synchronous, both nodes can boot simultaneously and still land in opposite roles — whoever announces priority first wins the auto election. If you care about which physical machine is canonically primary, give it `priority: 1` and the partner `priority: 2`.
+
+#### Configuration
+
+One top-level `failover:` block covers the entire feature. Every field has a sensible default so a minimal two-node setup fits in ten lines per machine.
+
+##### Minimal — two nodes, auto election
+
+**Node A (`10.0.0.10`):**
+
+```yaml
+failover:
+  enabled: true
+  role: auto
+  priority: 1
+  peer:
+    address: 10.0.0.11
+    port: 8082
+```
+
+**Node B (`10.0.0.11`):**
+
+```yaml
+failover:
+  enabled: true
+  role: auto
+  priority: 2
+  peer:
+    address: 10.0.0.10
+    port: 8082
+```
+
+That's it. 100 ms heartbeat, 1 s failover timeout, 10 ms state sync, gzip compression, priority-based split-brain resolution. Node A takes primary unless it's unavailable at boot; Node B shadows it.
+
+##### Full reference with all knobs
+
+```yaml
+failover:
+  enabled: true
+  role: auto                         # "primary", "standby", "auto" (default: auto)
+  priority: 1                         # lower = preferred primary (default: 1)
+  instance_id: ""                     # unique node ID (default: hostname)
+
+  peer:
+    address: 10.0.0.11                # peer IP or hostname — required
+    port: 8082                        # peer API port (state sync uses port + 10001)
+
+  heartbeat:
+    interval_ms: 100                  # heartbeat period (default: 100)
+    timeout_multiplier: 10            # failover after N missed beats (default: 10 → 1 s)
+    transport: datalayer              # "datalayer" or "mqtt" — heartbeat transport (default: datalayer)
+
+  sync:
+    interval_ms: 10                   # incremental sync period (default: 10)
+    full_sync_on_connect: true        # full transfer when standby connects (default: true)
+    compress: true                    # gzip full-sync payloads (default: true)
+    verify_hash_interval: 100         # verify state hash every N sync cycles (default: 100)
+
+  protocols:
+    mode: cold                        # "cold" (connect on failover) or "warm" (pre-connect read-only)
+
+  split_brain:
+    strategy: priority                # "priority" (default), "witness", "shared_lock"
+    witness_address: ""               # for witness strategy
+    lock_path: ""                     # for shared_lock strategy
+```
+
+Four subsections matter in practice:
+
+**`heartbeat.timeout_multiplier`** controls failover aggressiveness. The effective failover timeout is `interval_ms × multiplier`. The default `100 × 10 = 1000 ms` means the standby promotes ~1 second after the primary disappears. Tight links can go lower (`100 × 5 = 500 ms` works on gigabit LAN); flaky Wi-Fi or congested backhaul links should go higher to avoid false positives during network hiccups. Never set the multiplier below `3` — one dropped packet should not cause failover.
+
+**`sync.interval_ms`** trades CPU and bandwidth against state freshness. At 10 ms (default), the standby is at most 10 ms of scan progress behind the primary — bumpless for any non-cycle-accurate process. Raise it to 50 or 100 for slow processes where state freshness doesn't matter; lower it to 5 if you're on a LAN with CPU headroom and need sub-scan granularity.
+
+**`sync.full_sync_on_connect`** determines what happens when the standby first comes up or reconnects after a partition. When true, the primary does a one-shot full state dump (optionally gzip-compressed) so the standby catches up in one packet. When false, the standby catches up incrementally — fine if state churn is slow, but can leave the shadow out of sync for minutes on a slow process.
+
+**`protocols.mode`** — `cold` means the standby doesn't open any protocol driver connections until it's promoted. Bandwidth-free, but every protocol reconnects on failover, which adds 1–5 seconds of stalled I/O. `warm` has the standby open each driver in read-only mode so the TCP/MQTT session is already up when failover happens — more bandwidth, but failover is bumpless for the protocol layer too. Use `warm` when seconds of protocol stall are unacceptable (safety, interlocks, downstream SCADA expecting a continuous Modbus poll).
+
+##### Split-brain strategies
+
+When both nodes survive a partition and each one becomes primary on its own side, reconnection triggers split-brain detection on the `cluster.node_join` event. The `split_brain.strategy` field decides who wins:
+
+- **`priority`** (default, in-tree): Compare configured `priority` values; lower number wins. Ties keep whichever node was already primary. Emits `cluster.split_brain_detected` at `critical` severity and `cluster.failover_started` on the losing side as it demotes.
+- **`witness`** (spec'd, not yet implemented): Ping a third-party witness node. Whichever side can reach the witness wins. Useful when you don't trust either node's clock or priority to be authoritative.
+- **`shared_lock`** (spec'd, not yet implemented): Acquire an exclusive flock on a shared filesystem path. First to get the lock wins.
+
+As of v1.0.594 only the `priority` strategy is wired into the code. The config accepts the other values and falls back to priority.
+
+#### State sync wire protocol
+
+State sync is a dedicated UDP stream, **not** part of the HTTP API, and **not** the same as the UADP multicast DataLayer (documented separately). The publisher dials `peer.address:peer.port+10001` and sends newline-delimited JSON payloads. The receiver binds the corresponding port and applies the updates.
+
+| Packet type | Contents |
+|-------------|----------|
+| Incremental | Only changed variables since the last send, per task. Tiny (usually 50–500 bytes). |
+| Full | All variables, all timers, all counters, all SFC step indices. Compressed with gzip if `sync.compress: true`. Triggered on startup, on `cluster.node_join` when primary, on `ForceFullSync` REST call, and every `verify_hash_interval` cycles if a hash mismatch is detected. |
+
+Each packet carries a `seq` field (monotonic `uint64`), a task name, and an xxhash of the full state. The receiver uses the hash to verify bit-for-bit agreement every N cycles — if the hash diverges, the receiver requests a full sync on the next cycle. You can see the current sequence and the last observed lag in the status endpoint.
+
+Port math: if your primary is on `8082`, state sync runs on UDP `8082 + 10001 = 18083`. Both nodes need that UDP port open to each other. The heartbeat transport is separate (`datalayer` = UADP multicast on the OPC UA Pub/Sub group; `mqtt` = embedded-broker fan-out).
+
+#### ST Functions
+
+Eight builtins let ST code observe and drive the redundancy pair. All return a safe default when failover is disabled or the global manager isn't running, so guard-free usage from ST programs is safe.
+
+##### Status queries
+
+```iec
+VAR
+    role      : STRING;
+    is_prim   : BOOL;
+    peer      : STRING;
+    uptime_ms : LINT;
+    lag_ms    : LINT;
+END_VAR
+
+role      := FAILOVER_ROLE();           (* 'primary', 'standby', 'standalone' *)
+is_prim   := FAILOVER_IS_PRIMARY();     (* TRUE if role = 'primary' or 'standalone' *)
+peer      := FAILOVER_PEER_STATUS();    (* 'connected', 'disconnected', 'unknown' *)
+uptime_ms := FAILOVER_UPTIME_MS();      (* this instance's failover uptime *)
+lag_ms    := FAILOVER_SYNC_LAG_MS();    (* how far behind primary this standby is *)
+```
+
+`FAILOVER_IS_PRIMARY` returns `TRUE` when the node is either `primary` or `standalone` — the common case of "is this instance the one that should be doing work?" A standby returns `FALSE`; you can use this to gate any side-effecting code that should run only once across the pair:
+
+```iec
+IF FAILOVER_IS_PRIMARY() THEN
+    (* Send the start command to the VFD only once, not twice *)
+    MB_WRITE_REG('plant1', 40001, 1);
+END_IF;
+```
+
+`FAILOVER_SYNC_LAG_MS` is the standby's observed lag behind the primary. On a healthy LAN pair it sits under 10 ms; a persistent lag of hundreds of milliseconds is a symptom of a saturated network path or a CPU-starved standby.
+
+##### Role transitions
+
+```iec
+(* Manual promotion — typically called from a pushbutton or scheduled test *)
+IF manual_switch_button AND NOT was_pressed THEN
+    FAILOVER_PROMOTE();
+END_IF;
+was_pressed := manual_switch_button;
+
+(* Manual demotion — less common, usually for planned maintenance *)
+FAILOVER_DEMOTE();
+
+(* Force a full state resync from primary to standby *)
+FAILOVER_FORCE_SYNC();
+```
+
+`FAILOVER_PROMOTE` returns `TRUE` if the node was not already primary and the transition succeeded. `FAILOVER_DEMOTE` is the reverse. Both log a role-change entry with the reason `"manual: ST program"` and emit `cluster.failover_started` on the bus.
+
+`FAILOVER_FORCE_SYNC` triggers an immediate full state sync from primary to standby. Use it after a deploy or a config reload when you know the interpreter state has diverged and you don't want to wait for the next hash verification cycle. Returns `TRUE` on success, `FALSE` if the sync service isn't running.
+
+#### REST API
+
+Six endpoints under `/api/failover/*`.
+
+##### `GET /api/failover`
+
+```bash
+curl http://host:port/api/failover
+```
+
+Returns the current status:
+
+```json
+{
+  "role": "primary",
+  "instance_id": "plant1-a",
+  "peer_status": "connected",
+  "peer_id": "plant1-b",
+  "peer_address": "10.0.0.11:8082",
+  "sync_lag_ms": 8,
+  "last_heartbeat": "2026-04-13T14:22:18Z",
+  "uptime_ms": 3621540,
+  "sync_sequence": 41256,
+  "state_hash_match": true
+}
+```
+
+- `role` — `primary` / `standby` / `standalone`.
+- `peer_status` — `connected` / `disconnected` / `unknown`.
+- `sync_lag_ms` — how far behind the standby is (from the primary's perspective, or 0 on the primary itself).
+- `sync_sequence` — monotonic counter of sync packets sent/received.
+- `state_hash_match` — whether the last hash verification agreed.
+
+##### `GET /api/failover/history`
+
+```bash
+curl http://host:port/api/failover/history
+```
+
+Returns up to the last N role-change entries:
+
+```json
+[
+  {
+    "timestamp": "2026-04-13T14:22:18Z",
+    "from_role": "standby",
+    "to_role": "primary",
+    "reason": "peer lost"
+  },
+  {
+    "timestamp": "2026-04-13T09:14:02Z",
+    "from_role": "standalone",
+    "to_role": "standby",
+    "reason": "startup"
+  }
+]
+```
+
+Every `setRole` call adds an entry. The history is in-memory — surviving a restart requires pulling it off the bus audit trail.
+
+##### Promote / demote / force sync
+
+```bash
+# Promote the standby (or standalone) to primary
+curl -X POST http://host:port/api/failover/promote
+
+# Demote the primary to standby (for planned maintenance)
+curl -X POST http://host:port/api/failover/demote
+
+# Force an immediate full state resync from primary to standby
+curl -X POST http://host:port/api/failover/sync
+
+# Snapshot-style sync status
+curl http://host:port/api/failover/sync/status
+```
+
+All three mutating endpoints emit a bus event (`cluster.failover_started` with a `reason` field). They are subject to the standard auth/RBAC middleware — promote, demote, and force-sync require `engineer` role if RBAC is enabled.
+
+#### Event bus integration
+
+Failover state transitions fire bus events that can be routed to Slack, PagerDuty, MQTT, or the WebSocket stream for live HMI banners. Subscribe from the events guide patterns.
+
+| Event type | Severity | Emitted when | Source |
+|------------|----------|--------------|--------|
+| `cluster.node_join` | info | Heartbeat service first hears a heartbeat from a new peer | `failover` |
+| `cluster.node_lost` | warning | Peer heartbeat missed for `interval_ms × timeout_multiplier` | `failover` |
+| `cluster.failover_started` | warning | Role transition (auto promotion, manual promote, split-brain demotion) | `failover` |
+| `cluster.split_brain_detected` | critical | Both nodes claim primary at reconnection | `failover` |
+
+A typical ops setup routes all four to Slack at `info` and the `split_brain_detected` to PagerDuty at `critical`:
+
+```yaml
+events:
+  enabled: true
+  webhooks:
+    - name: "ops-slack"
+      url: "https://hooks.slack.com/services/..."
+      format: "slack"
+      event_types:
+        - "cluster.node_join"
+        - "cluster.node_lost"
+        - "cluster.failover_started"
+        - "cluster.split_brain_detected"
+      min_severity: "info"
+
+    - name: "pagerduty-critical"
+      url: "https://events.pagerduty.com/v2/enqueue"
+      format: "pagerduty"
+      routing_key: "R0UTINGKEY..."
+      event_types: ["cluster.split_brain_detected"]
+      min_severity: "critical"
+```
+
+The dedup window (default 1 s) collapses a flapping link into one notification per real transition.
+
+#### What gets synced (and what doesn't)
+
+`StateExporter` — the interface the task scheduler satisfies for the SyncService — exports and imports:
+
+**Synced:**
+- All interpreter variables, across all tasks (via `ExportAllTaskStates` / `ImportTaskVariables`).
+- Timer state: running flag, elapsed, preset, Q output (from `TimerState`). Lets TON/TOF/TP instances resume mid-timer with no visible glitch on promotion.
+- Counter values (`CTU` / `CTD` / `CTUD` accumulators).
+- SFC step indices — which step each state machine is currently in.
+- A state hash (xxhash) for verification.
+
+**Not synced:**
+- Protocol driver connection state. Open TCP sockets, MQTT subscriptions, ENIP explicit-message sessions — none of these live on the shadow side. The standby opens its own connections on promotion (cold mode) or keeps read-only mirrors (warm mode, when implemented per-driver).
+- File descriptors from `FileIO` operations. Any file the primary has open is not visible to the standby.
+- HTTP client state from `HTTP_GET` etc. — these are in-flight requests, not persistent state.
+- In-memory caches that aren't in the interpreter variable map (e.g., JIT regex caches). Not usually a problem — they rebuild on first use.
+- The `GlobalEngine` state for alarms and events. Alarms are reconstructed from config on the new primary; event history lives in the SQLite bus store, which is per-node.
+
+The practical consequence: failover is bumpless for pure control logic but **not** bumpless for I/O-facing subsystems. A VFD driven over Modbus will see the connection drop and a fresh connection ~1 second later. Design interlocks to tolerate this — don't rely on a TCP socket being continuously open across a failover event.
+
+#### Recipes
+
+##### Run once across the pair
+
+The most common pattern: a side-effecting action that must run exactly once even if both nodes are up. Gate on `FAILOVER_IS_PRIMARY`:
+
+```iec
+PROGRAM AlertPump
+VAR
+    pump_fault_bit : BOOL;
+    prev_fault     : BOOL;
+END_VAR
+
+    IF pump_fault_bit AND NOT prev_fault THEN
+        IF FAILOVER_IS_PRIMARY() THEN
+            NOTIFY_CRITICAL('Pump fault — manual reset required');
+        END_IF;
+    END_IF;
+    prev_fault := pump_fault_bit;
+END_PROGRAM
+```
+
+Standby instances evaluate the same ST code (because state sync mirrors variables, including `prev_fault`), but skip the notification. The primary sends exactly one Slack/PagerDuty message per fault rising edge.
+
+##### Alarm on sync lag drift
+
+`FAILOVER_SYNC_LAG_MS` is a scalar you can alarm on. Create a `HI` alarm with a setpoint of 100 ms and a priority of 2 — if the standby starts lagging, operations gets notified before the lag is bad enough to cause a problem:
+
+```yaml
+alarms:
+  enabled: true
+  definitions:
+    - name: "standby_sync_lag"
+      tag: "failover_watchdog.lag_ms"
+      type: HI
+      setpoint: 100.0
+      deadband: 20.0
+      priority: 2
+      delay_ms: 5000
+```
+
+```iec
+PROGRAM FailoverWatchdog
+VAR
+    lag_ms : LINT;
+END_VAR
+
+    lag_ms := FAILOVER_SYNC_LAG_MS();
+END_PROGRAM
+```
+
+One ST variable, one alarm definition, one recipe — the operator gets warned before the redundancy pair drifts far enough to matter.
+
+##### Planned-maintenance demotion
+
+```iec
+PROGRAM MaintDemote
+VAR
+    maint_switch : BOOL;      (* HMI toggle *)
+    prev_switch  : BOOL;
+END_VAR
+
+    IF maint_switch AND NOT prev_switch THEN
+        (* Flip to standby; peer will promote within the heartbeat timeout *)
+        FAILOVER_DEMOTE();
+    END_IF;
+    IF NOT maint_switch AND prev_switch THEN
+        (* Done with maintenance — take primary back *)
+        FAILOVER_PROMOTE();
+    END_IF;
+    prev_switch := maint_switch;
+END_PROGRAM
+```
+
+The `cluster.failover_started` event on both nodes carries the reason `"manual: ST program"`, so you can prove from the audit trail that the demotion was intentional.
+
+##### Split-brain recovery drill
+
+To rehearse the split-brain detection without a real partition, you can force both nodes to primary manually:
+
+```bash
+# On node A
+curl -X POST http://nodeA:8082/api/failover/promote
+
+# On node B (simultaneously)
+curl -X POST http://nodeB:8082/api/failover/promote
+```
+
+Both nodes briefly claim primary; the next heartbeat exchange fires `cluster.split_brain_detected` at `critical` severity, and the priority-based resolver demotes the higher-priority-number node. Watch the bus stream:
+
+```bash
+wscat -c 'ws://nodeA:8082/api/events/stream'
+# … you'll see cluster.split_brain_detected and then cluster.failover_started …
+```
+
+Use this as a smoke test whenever you deploy a new GoPLC version to a redundant pair.
+
+#### Performance and scaling
+
+- **Heartbeat transport cost is negligible**: 100 ms × ~200-byte packets = 2 kB/s total, on either the UADP multicast group or the MQTT broker.
+- **Incremental sync cost is variable**: 10 ms tick × size of diff. For a 100-variable program with maybe 5 variables changing per scan, expect ~2 kB/s. For a 1,000-variable program with significant churn, expect ~50 kB/s.
+- **Full sync cost is one-shot**: at connect, it's the compressed total state. For a typical 1,000-variable project, that's 10–50 kB on the wire.
+- **Failover detection latency** is `heartbeat.interval_ms × timeout_multiplier` (default 1 s). Reduce the multiplier to 5 for 500 ms on a gigabit LAN; never go below 3.
+- **Promotion latency** is dominated by the `StartTasks` call — typically 10–50 ms on a cold instance. The SyncService's shadow state is already warm, so the new primary's first scan executes with fully-caught-up variables.
+- **State sync CPU cost** on the standby is the cost of deserializing the JSON diff and writing back into the interpreter map. Small — expect well under 1% of one core at 10 ms tick rate.
+- **Bandwidth is the limiting factor** on high-variable-churn programs. If you're seeing `sync_lag_ms` climb, check the link bandwidth first, then raise `sync.interval_ms`.
+
+#### Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| Both nodes stay `standalone` | `enabled: false` on one or both, or `peer.address` empty | Check both configs, ensure `enabled: true` and the peer addresses cross-reference. |
+| Failover fires on every small network blip | `timeout_multiplier` too aggressive | Raise to 10 (default) or higher on flaky Wi-Fi. Never lower than 3. |
+| `sync_lag_ms` climbs without bound | Bandwidth saturation or CPU-starved standby | Check `iftop`/`nload` on the link, raise `sync.interval_ms` if link is the bottleneck, or move to a faster interconnect. |
+| Standby never catches up after reconnect | `full_sync_on_connect: false` and state changes too fast for incremental catch-up | Turn `full_sync_on_connect: true`. |
+| `state_hash_match: false` persists | One side has a variable the other doesn't (program version skew) | Redeploy the same project to both nodes. Failover can't reconcile different ST program sets. |
+| Split-brain happens on every cold boot | Both nodes auto-elect primary before the first heartbeat exchange | Set `priority` explicitly on each node; don't rely on tiebreakers. |
+| Protocol drivers stall for several seconds on failover | `protocols.mode: cold` | Switch to `warm` (where supported) or design ST logic to tolerate the reconnect window. |
+| `FAILOVER_PROMOTE` returns `FALSE` from ST | Already primary, or failover manager not initialized | Check `FAILOVER_ROLE()` first; if it returns `standalone`, failover is disabled entirely. |
+| Heartbeat events not appearing in the bus log | Heartbeat transport is `mqtt` but events MQTT broker isn't configured | Either switch transport to `datalayer` or configure `events.mqtt.auto_create: true`. |
+
+#### Related
+
+- [`goplc_events_guide.md`](goplc_events_guide.md) — the bus that carries `cluster.*` events; webhook and PagerDuty fan-out for failover alarms.
+- [`goplc_alarms_guide.md`](goplc_alarms_guide.md) — used in recipe 9.2 to alarm on sync lag drift.
+- [`goplc_clustering_guide.md`](goplc_clustering_guide.md) — boss + minion clustering, which is orthogonal to redundancy (can be combined for both scale-out and hot standby).
+- [`goplc_api_guide.md`](goplc_api_guide.md) — REST and WebSocket fundamentals.
+- [`goplc_debug_guide.md`](goplc_debug_guide.md) — enabling the `failover` debug module to see heartbeat and sync decisions in the log stream.
+
+### GoPLC Alarm Management (ISA-18.2)
+
+
+GoPLC ships an ISA-18.2 alarm management engine that runs beside the scan loop. You declare alarms in YAML or create them at runtime from ST, the engine evaluates the tag condition on its own cadence (default 100 ms), drives each alarm through a four-state machine, and emits every transition onto the event bus as `alarm.active` / `alarm.clear` / `alarm.ack`. Because transitions are bus events, you get Slack, Teams, PagerDuty, MQTT fan-out, SQLite history, and the live WebSocket stream for free — the alarm engine reuses the same pipeline documented in the events guide. Eight alarm types (HI / LO / HIHI / LOLO / DEV / ROC / BOOL / BAND), four priorities, deadband, delay, shelving with expiry, and an auth-aware acknowledgment path round out the feature.
+
+#### Architecture
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  GoPLC Runtime                                               │
+│                                                              │
+│  ┌────────────────────┐     ┌──────────────────────────────┐ │
+│  │  Scan loop         │     │  YAML config                 │ │
+│  │  writes tag values ├────►│  alarms.definitions[]        │ │
+│  │  into executor     │     │  loaded at boot              │ │
+│  └─────────┬──────────┘     └──────────────┬───────────────┘ │
+│            │                               │                 │
+│            │ GetVariable(tag)              │ CreateAlarm()   │
+│            ▼                               ▼                 │
+│  ┌──────────────────────────────────────────────────────────┐│
+│  │                 Alarm Engine (pkg/alarms)                ││
+│  │                                                          ││
+│  │    eval ticker (evaluation_interval_ms, default 100 ms)  ││
+│  │             │                                            ││
+│  │             ▼                                            ││
+│  │    for each alarm:                                       ││
+│  │      read tag → check condition → deadband → delay       ││
+│  │             │                                            ││
+│  │             ▼                                            ││
+│  │    ISA-18.2 state machine                                ││
+│  │    NORM / ACTIVE_UNACK / ACTIVE_ACK / CLEAR_UNACK        ││
+│  │             │                                            ││
+│  │             ▼ on transition                              ││
+│  │    events.Emit("alarm.active"|"clear"|"ack", ...)        ││
+│  │    alarm_history.INSERT (SQLite, indexed user+note)      ││
+│  └────────────────────────────┬─────────────────────────────┘│
+│                               │                              │
+│                               ▼                              │
+│                      pkg/events.Bus                          │
+│                               │                              │
+│              ┌────────────────┼─────────────┬─────────────┐  │
+│              │                │             │             │  │
+│         Webhook            MQTT         SQLite        WebSocket│
+│         (Slack/Teams/      goplc/       events.db    /api/events│
+│          PagerDuty/         events/                  /stream  │
+│          generic)           alarm.*                           │
+└──────────────────────────────────────────────────────────────┘
+```
+
+The alarm engine is a state machine + a bus emitter. Notification routing, MQTT publishing, HMI banner streaming, and the webhook retry / dedup / HMAC / rate-limit pipeline are inherited from `pkg/events/` — the alarm engine does not reimplement any of that. Authoritative alarm history for audit and compliance queries is kept in a dedicated `alarm_history` SQLite table with indexed `user` and `note` columns, separate from the bus's `events.db` store.
+
+#### ISA-18.2 State Machine
+
+Every alarm is always in exactly one of four states:
+
+| State | Meaning | ISA-18.2 label |
+|-------|---------|----------------|
+| `NORM` | Condition clear, acknowledged (or never tripped) | Normal |
+| `ACTIVE_UNACK` | Condition currently true, operator has not acknowledged | Alarm |
+| `ACTIVE_ACK` | Condition currently true, operator acknowledged — still active | Acknowledged |
+| `CLEAR_UNACK` | Condition returned to clear, but operator never acknowledged the original trip | Return-to-normal |
+
+```
+                 ┌──────────┐
+        ┌───────►│  NORM    │◄────────────┐
+        │        └────┬─────┘             │ condition clears
+        │             │ condition true    │ (already acked)
+        │             ▼                   │
+        │   ┌──────────────────┐    ┌─────┴──────────┐
+        │   │  ACTIVE_UNACK    │───►│  ACTIVE_ACK    │
+        │   └────┬─────────────┘ ack└─────┬──────────┘
+        │        │ condition clears       │ condition clears
+        │        ▼                        ▼
+        │   ┌──────────────────┐       NORM
+        └───│  CLEAR_UNACK     │──ack─────►
+            └──────────────────┘
+```
+
+Two consequences matter in practice:
+
+- **An alarm that tripped and cleared while nobody was looking still demands acknowledgment.** `CLEAR_UNACK` exists precisely so that a momentary excursion doesn't silently vanish from the operator's attention.
+- **`ALARM_IS_ACTIVE` returns TRUE for any non-`NORM` state**, not just `ACTIVE_UNACK`. An acknowledged-but-not-yet-cleared alarm (`ACTIVE_ACK`) is still active for banner and HMI purposes; a cleared-but-not-yet-acked alarm (`CLEAR_UNACK`) is still active until someone clears it from the alarm list.
+
+Shelving suppresses an alarm regardless of state. A shelved alarm does not evaluate its condition and does not emit events until unshelved or until the shelve expiry elapses.
+
+#### Alarm Types
+
+| Type | Trigger | Setpoint fields | Use case |
+|------|---------|-----------------|----------|
+| `HI` | `value > setpoint` | `setpoint` | High temperature, over-pressure, upper limit |
+| `LO` | `value < setpoint` | `setpoint` | Low level, under-pressure, lower limit |
+| `HIHI` | `value > setpoint` (critical) | `setpoint` | Emergency high — typically priority 1, second alarm above `HI` |
+| `LOLO` | `value < setpoint` (critical) | `setpoint` | Emergency low — typically priority 1, second alarm below `LO` |
+| `DEV` | `abs(value - setpoint) > deadband` | `setpoint`, `deadband` | PID deviation from target |
+| `ROC` | rate of change > threshold per second | `setpoint` (as rate) | Rapid change detection — runaway process |
+| `BOOL` | `value == TRUE` | (none) | Digital fault bits, trip flags, pump-running inverted for fault |
+| `BAND` | `value < setpoint_lo OR value > setpoint` | `setpoint_lo` (low), `setpoint` (high), `deadband` | Out-of-range for a tolerance window |
+
+`HIHI` and `LOLO` are not separate state machines — they are ordinary `HI` / `LO` alarms with a more aggressive setpoint and a higher priority. You typically create both for the same tag (`high_temp` at 80 °C priority 3, `hihi_temp` at 95 °C priority 1) so the operator gets an early warning before the emergency trip.
+
+Type strings are case-insensitive in both YAML and ST calls; the engine uppercases them internally. Unrecognized types are rejected at creation time.
+
+#### Priority Levels
+
+| Priority | Name | Convention | Behavior |
+|----------|------|------------|----------|
+| 1 | critical | red | Emergency — must be acknowledged by an operator, usually routed to a pager. Cannot be auto-acknowledged. |
+| 2 | high | orange | Notification within seconds. Routes to Slack / Teams / operator console. |
+| 3 | medium | yellow | Logged and banner-displayed, no push notification by default. |
+| 4 | low | blue | Informational. Auto-acknowledge is available via `auto_ack_priority`. |
+
+The engine does not itself choose which priorities get notified — that's a bus-level decision configured per webhook (see the events guide's §6 Filtering). A typical setup is a PagerDuty webhook with `min_severity: critical`, a Slack webhook with `min_severity: warning`, and an MQTT fan-out of everything.
+
+Priority is a `DINT` field on every alarm definition. It defaults to `3` (medium) if unset. The `auto_ack_priority` config knob suppresses the `ACTIVE_UNACK` state for alarms at or below (numerically greater than) that priority — a value of `4` auto-acks all low-priority alarms, `0` disables auto-ack entirely.
+
+#### Configuration
+
+The alarm engine is driven by the `alarms:` block in your GoPLC YAML config. Nothing in the engine turns on until `enabled: true`.
+
+```yaml
+alarms:
+  enabled: true
+  history_db: "data/alarms.db"         # SQLite path for alarm_definitions + alarm_history
+  max_history_days: 365                 # auto-prune older rows (default: 365)
+  evaluation_interval_ms: 100           # how often the eval loop runs (default: 100)
+  default_deadband: 1.0                 # applied when an alarm has no deadband set
+  auto_ack_priority: 4                  # alarms with priority >= 4 auto-acknowledge (0 disables)
+
+  # Declarative alarm definitions — alternative to ALARM_CREATE from ST.
+  # These load at boot. You can still create/delete alarms at runtime from ST or the REST API.
+  definitions:
+    - name: "high_temp"
+      tag: "main_task.boiler_temp_c"
+      type: HI
+      setpoint: 80.0
+      deadband: 1.0                     # trip at 80.0, clear at 79.0
+      priority: 3                       # medium
+      delay_ms: 2000                    # must be >80.0 for 2 seconds before tripping
+
+    - name: "hihi_temp"
+      tag: "main_task.boiler_temp_c"
+      type: HI
+      setpoint: 95.0
+      priority: 1                       # critical
+      delay_ms: 500
+
+    - name: "pump_fault"
+      tag: "main_task.pump_fault_bit"
+      type: BOOL
+      priority: 1
+
+    - name: "pressure_band"
+      tag: "main_task.header_pressure"
+      type: BAND
+      setpoint_lo: 3.2                  # trip if < 3.2
+      setpoint: 4.8                     # trip if > 4.8
+      deadband: 0.1
+      priority: 2
+```
+
+All time fields are milliseconds. `tag` is the lowercase scoped variable name — the same string you would pass to `GET /api/variables/:name`. The scheduler normalizes variable names to lowercase internally, so `MainTask.BoilerTempC` and `maintask.boilertempc` resolve to the same tag, but the lowercase form is the one the alarm engine logs and returns in API responses.
+
+Changing `alarms.definitions` and reloading the config rebuilds the declarative definitions only — runtime-created alarms (from ST or POST /api/alarms) are preserved. If you want to remove a declarative alarm, delete it from the config *and* either restart the engine or call `ALARM_DELETE` / `DELETE /api/alarms/:name`.
+
+#### Deadband, Delay, and Chatter Suppression
+
+Three independent mechanisms keep a noisy signal from flooding the alarm list with repeat transitions:
+
+**Deadband** changes the clear threshold. A `HI` alarm with `setpoint: 80, deadband: 1.0` trips at `value > 80` and clears at `value < 79`. Without a deadband, a value oscillating within a sensor tick of 80.0 would flap every scan. The default deadband from `default_deadband` is applied when a per-alarm deadband is zero.
+
+**Delay** (`delay_ms`) forces the condition to hold continuously for the specified duration before the alarm transitions out of `NORM`. A `delay_ms: 5000` on a `HI` alarm requires the value to stay above the setpoint for five seconds — any dip below the setpoint in that window resets the delay timer. Delay is applied on the trip edge only; clears are immediate.
+
+**Bus dedup bypass.** The event bus's dedup window (default 1 second, configurable) would coalesce back-to-back `alarm.active` emissions for the same alarm if the engine emitted them with an identical `(type, source)` key. The engine sidesteps this by putting a monotonic sequence counter into the event source: `alarm:high_temp:seq=42`, `alarm:high_temp:seq=43`, … This makes each transition a distinct key so the bus dedup can still catch true duplicates from a code bug while letting legitimate re-trips through.
+
+If despite all three you still see an alarm chattering, the root cause is almost always sensor noise below the deadband. Widen the deadband first, lengthen the delay second, and bump the evaluation interval last (slower eval = lower CPU but also slower first-detection of real trips).
+
+#### ST Functions
+
+Nineteen builtins let ST code create, manage, query, and retrieve alarm state. They all return quickly — the engine's eval loop runs on its own goroutine, so these calls only touch the alarm registry map (`RLock` for reads, `Lock` for writes), never blocking on I/O. All functions return `FALSE` / `0` / `'[]'` silently if the alarm engine isn't enabled, so guard-free usage is safe.
+
+##### Creation
+
+###### `ALARM_CREATE(name, tag, type, setpoint, deadband, priority, delay_ms) : BOOL`
+
+```iec
+(* High-temperature alarm, priority 3, 2 s delay, 1 °C deadband *)
+ok := ALARM_CREATE('high_temp', 'main_task.boiler_temp_c', 'HI',
+                   80.0, 1.0, 3, 2000);
+
+(* Minimum args — type + setpoint only *)
+ALARM_CREATE('low_level', 'main_task.tank_level', 'LO', 10.0);
+```
+
+Creates a scalar alarm (HI, LO, HIHI, LOLO, DEV, ROC). `deadband`, `priority`, and `delay_ms` are optional; omitted values default to `0`, `3` (medium), and `0`. Returns `TRUE` if the alarm was created, `FALSE` if the name already exists or the engine is disabled.
+
+Create alarms once per name — typically in a "first scan" guard. Calling `ALARM_CREATE` with a name that already exists returns `FALSE`; it does not update the existing alarm. To change parameters, delete and recreate:
+
+```iec
+IF NOT alarm_created THEN
+    ALARM_DELETE('high_temp');
+    ALARM_CREATE('high_temp', 'main_task.boiler_temp_c', 'HI', 80.0, 1.0, 3, 2000);
+    alarm_created := TRUE;
+END_IF;
+```
+
+###### `ALARM_CREATE_BOOL(name, tag, priority) : BOOL`
+
+```iec
+ALARM_CREATE_BOOL('pump_fault', 'main_task.pump_fault_bit', 1);
+```
+
+Creates a digital alarm that trips when the tag is `TRUE`. `priority` is optional and defaults to `3`. For the inverse ("trip when FALSE"), mirror the bit into a BOOL variable in your scan and alarm on the mirror.
+
+###### `ALARM_CREATE_BAND(name, tag, lo, hi, deadband, priority) : BOOL`
+
+```iec
+ALARM_CREATE_BAND('pressure_band', 'main_task.header_pressure',
+                  3.2, 4.8, 0.1, 2);
+```
+
+Creates a band alarm that trips when the value is outside `[lo, hi]`. `deadband` and `priority` are optional.
+
+###### `ALARM_DELETE(name) : BOOL`
+
+```iec
+ALARM_DELETE('high_temp');
+```
+
+Removes the alarm from the registry and deletes its row from `alarm_definitions`. History rows in `alarm_history` are preserved — deleting an alarm does not wipe its audit trail.
+
+##### Management
+
+###### `ALARM_ACK(name) : BOOL`
+
+```iec
+IF op_pressed_ack_button THEN
+    ALARM_ACK('high_temp');
+END_IF;
+```
+
+Acknowledges a single alarm. Transitions `ACTIVE_UNACK` → `ACTIVE_ACK` or `CLEAR_UNACK` → `NORM`. The user field in the alarm history row is `'st_program'` when acked from ST; API acks record the authenticated username.
+
+###### `ALARM_ACK_ALL() : DINT`
+
+```iec
+acked := ALARM_ACK_ALL();   (* returns count of alarms transitioned *)
+```
+
+Acknowledges every unacknowledged alarm. Returns the number of alarms that changed state.
+
+###### `ALARM_SHELVE(name, duration_s) : BOOL`
+
+```iec
+(* Suppress during known maintenance window — 2 hours *)
+ALARM_SHELVE('compressor_vibration', 7200);
+```
+
+Shelves an alarm for `duration_s` seconds. A shelved alarm is not evaluated and emits no events. When the expiry elapses, the next eval cycle automatically unshelves it. Shelving resets condition tracking — a shelved alarm that unshelves onto a still-active condition re-tests delay from scratch.
+
+###### `ALARM_UNSHELVE(name) : BOOL`
+
+```iec
+ALARM_UNSHELVE('compressor_vibration');
+```
+
+Explicit unshelve. Same effect as waiting for the expiry.
+
+###### `ALARM_ENABLE(name) : BOOL` / `ALARM_DISABLE(name) : BOOL`
+
+```iec
+ALARM_DISABLE('hihi_temp');   (* temporarily — maintenance override *)
+(* ... later ... *)
+ALARM_ENABLE('hihi_temp');
+```
+
+Enable is the default state for a newly-created alarm. Disabled alarms are preserved in `alarm_definitions` but not evaluated; they emit no events until re-enabled. Use disable for long-term overrides and shelve for bounded maintenance windows.
+
+##### Status queries
+
+```iec
+VAR
+    state       : DINT;
+    is_active   : BOOL;
+    is_shelved  : BOOL;
+    priority    : DINT;
+    active_n    : DINT;
+    unacked_n   : DINT;
+END_VAR
+
+state      := ALARM_STATE('high_temp');
+    (* 0 = NORM, 1 = ACTIVE_UNACK, 2 = ACTIVE_ACK, 3 = CLEAR_UNACK, -1 = unknown *)
+is_active  := ALARM_IS_ACTIVE('high_temp');    (* TRUE for any non-NORM state unless shelved *)
+is_shelved := ALARM_IS_SHELVED('high_temp');
+priority   := ALARM_PRIORITY('high_temp');     (* 1..4, or 0 if not found *)
+active_n   := ALARM_ACTIVE_COUNT();
+unacked_n  := ALARM_UNACK_COUNT();
+```
+
+`ALARM_STATE` returns `-1` when the alarm does not exist, so you can distinguish "alarm not found" from "alarm is in NORM". `ALARM_PRIORITY` returns `0` for unknown alarms.
+
+##### Information / history
+
+```iec
+VAR
+    active_json  : STRING;
+    shelved_json : STRING;
+    history_json : STRING;
+END_VAR
+
+active_json  := ALARM_LIST_ACTIVE();            (* JSON array of ActiveAlarm records *)
+shelved_json := ALARM_LIST_SHELVED();
+history_json := ALARM_HISTORY('high_temp', 20); (* last 20 transitions *)
+```
+
+All three return JSON strings. `ALARM_HISTORY` with an empty name (`''`) returns history across every alarm.
+
+You can feed these straight into the JSON parser if you need to drive a decision from the current alarm list:
+
+```iec
+count := JSON_ARRAY_LENGTH(ALARM_LIST_ACTIVE());
+IF count > 5 THEN
+    EVENT_EMIT('control.shed_load', 'warning',
+               'More than 5 active alarms — shedding non-critical load');
+END_IF;
+```
+
+#### REST API
+
+Fifteen endpoints, all under `/api/alarms/*`. All return JSON. `GET` endpoints require read permission; mutating endpoints require `alarms:admin` or `alarms:ack` depending on the action, once RBAC is enabled (see the auth guide).
+
+##### Listing
+
+```bash
+# Every alarm, any state
+curl http://host:port/api/alarms
+
+# Only alarms in a non-NORM state (ACTIVE_UNACK, ACTIVE_ACK, CLEAR_UNACK)
+curl http://host:port/api/alarms/active
+
+# Unacknowledged (ACTIVE_UNACK + CLEAR_UNACK)
+curl http://host:port/api/alarms/unacknowledged
+
+# Currently shelved
+curl http://host:port/api/alarms/shelved
+
+# Counts by state and priority
+curl http://host:port/api/alarms/summary
+
+# Detail on one alarm
+curl http://host:port/api/alarms/high_temp
+```
+
+Response shape for the listing endpoints:
+
+```json
+{
+  "count": 2,
+  "alarms": [
+    {
+      "name": "high_temp",
+      "tag": "main_task.boiler_temp_c",
+      "type": "HI",
+      "state": "ACTIVE_UNACK",
+      "priority": 3,
+      "priority_name": "medium",
+      "value": 82.4,
+      "setpoint": 80.0,
+      "last_transition": "2026-04-13T09:14:22Z",
+      "shelved": false,
+      "acked_by": ""
+    },
+    {
+      "name": "hihi_temp",
+      "tag": "main_task.boiler_temp_c",
+      "type": "HI",
+      "state": "NORM",
+      "priority": 1,
+      "priority_name": "critical",
+      "value": 82.4,
+      "setpoint": 95.0,
+      "last_transition": "",
+      "shelved": false,
+      "acked_by": ""
+    }
+  ]
+}
+```
+
+##### Create / delete
+
+```bash
+# Create from JSON — alternative to YAML definitions or ST ALARM_CREATE
+curl -X POST http://host:port/api/alarms \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "compressor_fault",
+    "tag": "main_task.compressor_running",
+    "type": "BOOL",
+    "priority": 2
+  }'
+
+# Delete
+curl -X DELETE http://host:port/api/alarms/compressor_fault
+```
+
+A create with a duplicate name returns `409 Conflict`. `name`, `tag`, and `type` are required; everything else is optional.
+
+##### Acknowledge
+
+```bash
+# Single alarm with an operator note
+curl -X POST http://host:port/api/alarms/high_temp/ack \
+  -H 'Content-Type: application/json' \
+  -d '{"note":"Checked — gauge drift, PM scheduled"}'
+
+# Everything unacked, in one request
+curl -X POST http://host:port/api/alarms/ack-all
+```
+
+The acknowledging user is taken from the auth context — when RBAC is enabled the username comes from the JWT subject. Without auth, the user field is empty. Both the user and the note are written to the indexed `alarm_history` columns.
+
+##### Shelve / unshelve / enable / disable
+
+```bash
+# Shelve for 1 hour
+curl -X POST http://host:port/api/alarms/compressor_vibration/shelve \
+  -H 'Content-Type: application/json' \
+  -d '{"duration_s":3600}'
+
+curl -X POST http://host:port/api/alarms/compressor_vibration/unshelve
+
+# Long-term override
+curl -X POST http://host:port/api/alarms/hihi_temp/disable
+curl -X POST http://host:port/api/alarms/hihi_temp/enable
+```
+
+Omitting `duration_s` on shelve shelves indefinitely (until explicit unshelve).
+
+##### History
+
+```bash
+# Last 100 transitions for one alarm
+curl 'http://host:port/api/alarms/history?name=high_temp&limit=100'
+
+# All alarms, last 24 hours
+curl 'http://host:port/api/alarms/history?start=2026-04-12T00:00:00Z&limit=500'
+```
+
+Query params: `name` (optional, empty = all alarms), `limit` (default 100), `start` and `end` (RFC3339). Response is a `history` array plus a `count`:
+
+```json
+{
+  "count": 3,
+  "history": [
+    {
+      "id": 417,
+      "alarm_name": "high_temp",
+      "timestamp": "2026-04-13T09:14:22Z",
+      "prev_state": "NORM",
+      "new_state": "ACTIVE_UNACK",
+      "value": 82.4,
+      "user": "",
+      "note": ""
+    },
+    {
+      "id": 418,
+      "alarm_name": "high_temp",
+      "timestamp": "2026-04-13T09:15:08Z",
+      "prev_state": "ACTIVE_UNACK",
+      "new_state": "ACTIVE_ACK",
+      "value": 82.6,
+      "user": "alice",
+      "note": "Checked — gauge drift, PM scheduled"
+    },
+    {
+      "id": 419,
+      "alarm_name": "high_temp",
+      "timestamp": "2026-04-13T09:22:41Z",
+      "prev_state": "ACTIVE_ACK",
+      "new_state": "NORM",
+      "value": 79.8,
+      "user": "",
+      "note": ""
+    }
+  ]
+}
+```
+
+#### Event Bus Integration
+
+Every alarm state transition emits to the event bus. Subscribers (webhooks, MQTT, the WebSocket stream, the SQLite events log) pick them up with no alarm-specific code.
+
+| Bus event type | Emitted on | Severity | Source |
+|----------------|------------|----------|--------|
+| `alarm.active` | `NORM` → `ACTIVE_UNACK` or `CLEAR_UNACK` → `ACTIVE_UNACK`, `ACTIVE_ACK` | `warning` | `alarm:<name>:seq=<n>` |
+| `alarm.clear` | `ACTIVE_*` → `CLEAR_UNACK` or `ACTIVE_*` → `NORM` | `info` | `alarm:<name>:seq=<n>` |
+| `alarm.ack` | `ALARM_ACK`, `ALARM_ACK_ALL`, `POST /api/alarms/:name/ack` | `info` | `alarm:<name>` |
+
+The event `data` payload for `alarm.active` and `alarm.clear` contains the alarm name, tag, type, priority, current value, setpoint, and the previous/new state. `alarm.ack` includes the user and note.
+
+Two consequences of piggybacking on the bus:
+
+**All webhook format conversions apply.** Routing an alarm to Slack gets the events-guide Slack format (colored attachment, severity map), PagerDuty gets the `enqueue` format, Teams gets MessageCard. The alarm engine does not own any of those formats.
+
+**Dedup bypass matters.** The bus's `(type, source)` dedup window would otherwise coalesce rapid re-trips. The alarm engine embeds a monotonic `seq=N` in the source precisely so every transition is a distinct key. True double-emits (same sequence) are still caught and suppressed.
+
+Subscribe to every alarm from the command line for testing:
+
+```bash
+# All alarm events via the bus's built-in MQTT broker
+mosquitto_sub -h 127.0.0.1 -p 1883 -t 'goplc/events/alarm.#' -v
+
+# Or the WebSocket stream
+wscat -c 'ws://host:port/api/events/stream'
+```
+
+To route only critical alarms to PagerDuty:
+
+```yaml
+events:
+  enabled: true
+  webhooks:
+    - name: "pagerduty-critical"
+      url: "https://events.pagerduty.com/v2/enqueue"
+      format: "pagerduty"
+      routing_key: "R0UTINGKEY..."
+      event_types: ["alarm.active"]
+      min_severity: "critical"
+```
+
+A priority-1 alarm is emitted at `warning` severity, not `critical`, because severity is a bus-level concept (info/warning/error/critical) and alarm priority is a display-and-routing concept (1-4). To map alarm priority onto bus severity, filter by `data.priority` at the receiver side, or use the `event_types` filter combined with a wildcard and a receiver that inspects the payload.
+
+#### Recipes
+
+##### First-scan alarm bootstrap
+
+Alarms live in an in-memory registry at runtime and a `alarm_definitions` table on disk. Restarting the process reloads declarative definitions from YAML but does not restore ST-created alarms. The idiomatic pattern is a `once` guard at the top of your scan:
+
+```iec
+PROGRAM AlarmBootstrap
+VAR
+    alarms_ready : BOOL := FALSE;
+END_VAR
+
+    IF NOT alarms_ready THEN
+        (* Scalar alarms *)
+        ALARM_CREATE('high_temp',  'main_task.boiler_temp_c', 'HI',
+                     80.0, 1.0, 3, 2000);
+        ALARM_CREATE('hihi_temp',  'main_task.boiler_temp_c', 'HI',
+                     95.0, 1.0, 1, 500);
+        ALARM_CREATE('low_level',  'main_task.tank_level',    'LO',
+                     10.0, 0.5, 2, 0);
+
+        (* Digital alarms *)
+        ALARM_CREATE_BOOL('pump_fault',   'main_task.pump_fault',   1);
+        ALARM_CREATE_BOOL('estop_active', 'main_task.estop_bit',    1);
+
+        (* Band alarm *)
+        ALARM_CREATE_BAND('press_band', 'main_task.header_press',
+                          3.2, 4.8, 0.1, 2);
+
+        alarms_ready := TRUE;
+    END_IF;
+END_PROGRAM
+```
+
+For permanent alarms, prefer YAML declarative definitions in `alarms.definitions` — they reload on config change, they're versioned with the config, and they don't need a bootstrap program.
+
+##### Maintenance shelving from a button
+
+```iec
+PROGRAM MaintenanceMode
+VAR
+    maint_button     : BOOL;         (* HMI pushbutton *)
+    maint_prev       : BOOL;
+    maint_duration_s : DINT := 3600; (* 1 hour default *)
+END_VAR
+
+    (* Rising-edge: shelve a set of alarms for the configured duration *)
+    IF maint_button AND NOT maint_prev THEN
+        ALARM_SHELVE('compressor_vibration', maint_duration_s);
+        ALARM_SHELVE('motor_temp',           maint_duration_s);
+        NOTIFY('ops-slack', 'Maintenance shelving engaged for 1 h');
+    END_IF;
+    maint_prev := maint_button;
+END_PROGRAM
+```
+
+Shelving expiry is automatic — the next eval cycle after `ShelveExpiry` has passed will unshelve and resume evaluating. There's no need to arm a timer.
+
+##### Trip counter + burst log on alarm activation
+
+Use a latched bit to detect the rising edge from `NORM` into any active state, then increment a counter and push a burst of context onto the event bus:
+
+```iec
+PROGRAM HighTempMonitor
+VAR
+    was_active   : BOOL := FALSE;
+    is_active    : BOOL := FALSE;
+    trip_count   : DINT := 0;
+END_VAR
+
+    is_active := ALARM_IS_ACTIVE('high_temp');
+
+    IF is_active AND NOT was_active THEN
+        trip_count := trip_count + 1;
+        EVENT_EMIT_DATA('alarm.context', 'warning',
+            'high_temp tripped — trip 5-minute context below',
+            '{"trip_count":0,"boiler_temp":0,"ambient":0,"burner_state":0}');
+    END_IF;
+    was_active := is_active;
+END_PROGRAM
+```
+
+Pair this with an events-guide burst capture in YAML so the last 5 minutes of telemetry are automatically written to the historian whenever `alarm.active` fires:
+
+```yaml
+historian:
+  enabled: true
+  bursts:
+    - trigger: "alarm.active"
+      filter: "alarm:high_temp:*"
+      tags: "main_task.*"
+      duration_s: 300
+      interval_ms: 200
+```
+
+##### Watchdog-style fault bit
+
+ST's `TON` function block lets you build a "fault if X hasn't happened in N seconds" without touching the alarm engine directly — expose the fault bit as a variable, then point a `BOOL` alarm at it:
+
+```iec
+PROGRAM WatchdogHeartbeat
+VAR
+    heartbeat_in   : BOOL;       (* pulses once per second from the sensor *)
+    heartbeat_prev : BOOL;
+    missed_timer   : TON;
+    sensor_fault   : BOOL;       (* alarm tag *)
+END_VAR
+
+    (* Reset the timer on every heartbeat edge *)
+    missed_timer(IN := NOT heartbeat_in, PT := T#5S);
+    sensor_fault := missed_timer.Q;
+    heartbeat_prev := heartbeat_in;
+END_PROGRAM
+```
+
+```yaml
+alarms:
+  definitions:
+    - name: "sensor_watchdog"
+      tag: "watchdog_heartbeat.sensor_fault"
+      type: BOOL
+      priority: 1
+```
+
+Five seconds with no heartbeat → `sensor_fault` goes `TRUE` → the `BOOL` alarm trips at priority 1 → the bus emits `alarm.active` → PagerDuty or Slack picks it up.
+
+#### Performance Notes
+
+The alarm engine's eval loop is a single goroutine that locks the registry once per tick, iterates every enabled alarm, reads the tag via the scheduler's `GetVariable` (read-locked, deep-copied), evaluates the condition, and writes back the updated instance state under a per-instance mutex. Event emission is non-blocking — the bus's per-subscriber channel buffers absorb bursts.
+
+- **Per-tick cost is O(N)** in the number of enabled alarms. The scheduler's `GetVariable` is the dominant cost; condition checks are a single float compare plus deadband arithmetic.
+- **100 alarms at 100 ms eval interval** costs low single-digit microseconds per tick on a modern Linux x86-64 host. Scaling is linear.
+- **History writes are batched** through the same WAL-mode SQLite path as `pkg/events/store.go`. A burst of transitions in one tick produces one `INSERT` per transition, flushed on the next batch tick.
+- **Shelved alarms are free** — the eval loop skips them before reading the tag.
+- **Disabled alarms are also free** — same skip.
+- **Bus fan-out cost is not in the alarm engine's budget** — it rides the events package's worker goroutines.
+
+If you're running thousands of alarms and seeing scan jitter, the first thing to check is evaluation interval. Raising `evaluation_interval_ms` to 250 or 500 cuts CPU four- or five-fold at the cost of slower trip detection; for temperatures and pressures this is almost always acceptable, for interlock logic it is not.
+
+#### Relationship to Task Faults
+
+GoPLC's existing `GET /api/faults` endpoint reports task watchdog trips and execution errors. These will eventually become a subset of alarms: the alarm engine auto-creates a BOOL alarm for each task's fault flag and the HMI alarm banner becomes the single unified surface. Until then, treat `/api/faults` and `/api/alarms/active` as two independent reporting paths:
+
+- Task faults (watchdog trips, eval errors) → `/api/faults` and `task.fault` bus events.
+- Process alarms (HI/LO/DEV/etc.) → `/api/alarms/*` and `alarm.*` bus events.
+
+Both funnel into the events bus, so a single webhook subscribing to `task.fault` and `alarm.*` catches everything operators need to see.
+
+#### Related
+
+- [`goplc_events_guide.md`](goplc_events_guide.md) — event bus, webhooks, MQTT fan-out, dedup window, rate limits. Alarms inherit all of it.
+- [`goplc_influxdb_guide.md`](goplc_influxdb_guide.md) — stream alarm transitions into a historian for long-term reporting.
+- [`goplc_mqtt_guide.md`](goplc_mqtt_guide.md) — the embedded broker used for `goplc/events/alarm.*` fan-out.
+- [`goplc_api_guide.md`](goplc_api_guide.md) — REST and WebSocket fundamentals for the `/api/alarms/*` endpoints.
+- [`goplc_hal_guide.md`](goplc_hal_guide.md) — GPIO-based digital inputs that typically back BOOL alarms.
+
+### GoPLC Edge Historian
+
+
+The GoPLC edge historian records tag values into a local SQLite database with deadband filtering, time decimation, automatic downsampling, event-triggered burst capture, and multi-destination forwarding to InfluxDB, MQTT per-tag topics, or HTTP webhooks. You can register tags declaratively in YAML, imperatively from ST with `HIST_LOG`, or turn on `log_all: true` to auto-register every runtime variable VTScada-style. Samples flush to disk on a timer so the scan loop never stalls on I/O. Queries, aggregates (min/max/avg), CSV export, and a per-tag stats view are exposed over REST so Grafana, Node-RED, or a scripted report can read straight from the edge node without an upstream historian round trip. Burst mode captures a dense window of samples around an event (watchdog trip, alarm, anything on the events bus) so you have pre- and post-incident context without paying the storage cost for continuous high-rate logging.
+
+#### Architecture
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                        GoPLC Runtime                         │
+│                                                              │
+│  Scan loop ───► variables ───► historian sampler (tick)      │
+│                                   │                          │
+│                                   ▼                          │
+│              ┌─────────────────────────────────────────┐     │
+│              │       pkg/historian.Engine              │     │
+│              │                                         │     │
+│              │   per-tag ring buffer (buffer_size)     │     │
+│              │   deadband filter    interval enforce   │     │
+│              │   decimation tiers   burst capture      │     │
+│              │                                         │     │
+│              │   flush ticker (flush_interval_ms)      │     │
+│              └──────────────┬──────────────────────────┘     │
+│                             │ batched INSERT                 │
+│                             ▼                                │
+│              ┌─────────────────────────────────────────┐     │
+│              │  data/historian.db (SQLite, WAL)        │     │
+│              │  samples (tag_id, ts_ms, value, qual)   │     │
+│              │  tags   (name, deadband, interval, ...) │     │
+│              └──────────────┬──────────────────────────┘     │
+│                             │                                │
+│              ┌──────────────┼──────────────────────────┐     │
+│              │              │                           │    │
+│              ▼              ▼                           ▼    │
+│      REST /api/history   Forwarder goroutines    Burst capt. │
+│      (query/export/      (InfluxDB / MQTT /      (event-     │
+│       tag mgmt/stats)     webhook)                triggered) │
+└──────────────────────────────────────────────────────────────┘
+```
+
+Five things happen inside the engine:
+
+1. **Sampling** — one goroutine walks the registered-tag list every tick, reads each tag's current value from the executor, applies the per-tag interval and deadband, and pushes accepted samples into the tag's in-memory ring buffer.
+2. **Flushing** — a separate ticker fires every `flush_interval_ms` (default 1 s) and batches every buffered sample into a single SQLite transaction via `pkg/sqlitebatch`. The scan loop never waits on disk.
+3. **Decimation** — background retention logic replaces raw samples older than `decimation.1min_after_hours` with 1-minute rollups, and samples older than `decimation.1hour_after_days` with 1-hour rollups. The source-of-truth resolution degrades smoothly over time instead of falling off a cliff when retention expires.
+4. **Burst capture** — an event-triggered worker subscribes to configured bus events and, on trigger, records a high-rate snapshot of a tag set for `duration_s` seconds. Bursts bypass deadband so you always get the full waveform around an incident.
+5. **Forwarding** — optional goroutines replicate every flushed sample to InfluxDB (line protocol), MQTT (per-tag retained messages), or an HTTP webhook (JSON summary). Failures back off with retry; the upstream sink cannot stall the edge loop.
+
+The historian engine is a package-level singleton (`historian.GlobalEngine()`), so Go code, ST builtins, and REST handlers all talk to the same instance.
+
+#### Configuration
+
+Everything lives under the `historian:` block. Every field has a default; the minimum useful config is `enabled: true`.
+
+```yaml
+historian:
+  enabled: true
+  database: "data/historian.db"     # SQLite path (default: data/historian.db)
+  max_size_mb: 500                  # auto-prune when exceeded (default: 500)
+  max_age_days: 90                  # delete data older than (default: 90)
+  flush_interval_ms: 1000           # batch write cadence (default: 1000)
+  buffer_size: 1000                 # in-memory ring per tag (default: 1000)
+
+  # VTScada-style "log every variable" mode — optional
+  log_all: false
+  log_all_interval_ms: 1000          # default interval for auto-registered tags
+  log_all_deadband: 0                # default deadband (0 = log every change)
+
+  decimation:
+    1min_after_hours: 24             # rollup raw samples to 1 min after 24 h
+    1hour_after_days: 7              # rollup 1 min samples to 1 h after 7 d
+
+  # Declarative tags — logged for the life of the runtime
+  tags:
+    - pattern: "main_task.boiler_temp_c"
+      interval_ms: 500
+      deadband: 0.1
+
+    - pattern: "main_task.pressure_*"   # glob match — every pressure variable
+      interval_ms: 1000
+      deadband: 0.5
+
+  # Event-triggered burst captures
+  bursts:
+    - trigger: "task.fault"             # bus event type
+      filter: "task:MainTask"           # bus source (optional)
+      tags: "main_task.*"               # glob of tags to capture
+      duration_s: 300                   # capture 5 minutes after the trigger
+      interval_ms: 100                  # at 100 ms resolution
+
+    - trigger: "alarm.active"
+      filter: "alarm:high_temp:*"
+      tags: "main_task.boiler_*"
+      duration_s: 600
+      interval_ms: 50
+
+  # Upstream forwarding
+  forwarding:
+    enabled: true
+    destinations:
+      - type: influxdb
+        url: "http://10.0.0.144:8086"
+        database: "goplc_plant1"
+        batch_size: 500
+        flush_interval_ms: 5000
+        retry_interval_s: 30
+
+      - type: mqtt
+        url: "tcp://10.0.0.144:1883"
+        topic_prefix: "goplc/plant1/history"
+        qos: 1
+        retained: true
+
+      - type: webhook
+        url: "https://ops.example.com/api/edge-summary"
+        format: "summary"
+        schedule: "@hourly"
+```
+
+A few things to internalize:
+
+**`log_all: true`** auto-registers every variable the executor knows about. Every runtime variable becomes a historian tag with the default interval and deadband. This is the fastest way to light up an entire plant — you don't have to enumerate the tags you care about — but it costs disk space proportional to the variable count. On a ten-thousand-tag project, expect a few gigabytes per day at 1 Hz.
+
+**`tags:` with glob patterns** lets you register groups in one line. `"main_task.pressure_*"` picks up every variable in `main_task` whose name starts with `pressure_`. The engine evaluates the glob once at register time; adding a new variable to the scan after the fact requires a reload.
+
+**`decimation`** is a retention policy, not a query-time aggregation. Old raw samples are physically replaced with rollups, freeing disk space. If you need raw resolution indefinitely, set the decimation fields to zero — the historian will keep raw samples until `max_age_days` expires them.
+
+**`forwarding.destinations`** is a list — you can have an InfluxDB, an MQTT broker, and a webhook all running in parallel. Each destination has its own retry backoff; one slow upstream doesn't block the others. The `format: "summary"` option on a webhook sends periodic aggregates instead of individual samples, useful for HTTP receivers that can't handle the volume.
+
+#### ST Functions
+
+Fifteen builtins cover tag lifecycle, queries, aggregates, burst control, and DB stats. All return a safe zero-equivalent if the historian engine isn't enabled, so guard-free usage from ST is safe.
+
+##### Tag management
+
+```iec
+(* Register a tag for continuous logging *)
+(* HIST_LOG(tag_name, deadband, interval_ms) : BOOL *)
+HIST_LOG('main_task.boiler_temp_c', 0.1, 500);
+
+(* Register with default interval (1000 ms) and no deadband *)
+HIST_LOG('main_task.pump_speed');
+
+(* Stop logging a tag — does not delete history *)
+HIST_STOP('main_task.boiler_temp_c');
+
+(* Manual value injection — for computed values that aren't scoped variables *)
+(* HIST_LOG_VALUE(tag_name, value, quality) : BOOL *)
+HIST_LOG_VALUE('derived.setpoint_error', sp - pv, 0);
+```
+
+`HIST_LOG` registers a tag by name. The name format is the lowercase scoped form — `main_task.boiler_temp_c` matches the variable key the executor maintains internally. `deadband` of `0` logs every value change; a positive value only logs when the new value differs from the last-logged value by more than the deadband (prevents chatter on noisy analogs). `interval_ms` throttles samples — a registered tag records at most once per interval even if it changes more often. Set `interval_ms` to `0` for on-change-only logging.
+
+`HIST_LOG_VALUE` is the escape hatch for synthetic tags — values that are computed in ST but don't exist as scheduler variables. The engine registers the tag on first call (with no deadband, no interval) and captures the value directly. Useful for derived signals like setpoint error, PID output, or a rolling average you compute in ST.
+
+##### Queries and aggregates
+
+```iec
+VAR
+    json_points : STRING;
+    latest      : REAL;
+    minv        : REAL;
+    maxv        : REAL;
+    avgv        : REAL;
+    t_now       : LINT;
+    t_hr_ago    : LINT;
+END_VAR
+
+t_now    := NOW_MS();
+t_hr_ago := t_now - 3600000;
+
+(* Last value for a tag — 0.0 if tag not found *)
+latest := HIST_LAST('main_task.boiler_temp_c');
+
+(* Min/max/avg over a time range (ms epoch) *)
+minv := HIST_MIN('main_task.boiler_temp_c', t_hr_ago, t_now);
+maxv := HIST_MAX('main_task.boiler_temp_c', t_hr_ago, t_now);
+avgv := HIST_AVG('main_task.boiler_temp_c', t_hr_ago, t_now);
+
+(* Raw JSON-array query — max_points clamps the result *)
+(* HIST_QUERY(tag_name, start_ms, end_ms, max_points) : STRING *)
+json_points := HIST_QUERY('main_task.boiler_temp_c', t_hr_ago, t_now, 500);
+```
+
+`HIST_LAST` is the most commonly used — it returns the most recent historian-recorded value, which can be stale by up to one `flush_interval_ms` but is typically fresh. Use it to recover state across a cold boot when RETAIN isn't enabled for a particular variable.
+
+`HIST_MIN` / `HIST_MAX` / `HIST_AVG` compute the aggregate directly against the SQLite store, so you don't have to round-trip a large JSON array just to get a scalar. The time range is milliseconds since Unix epoch — grab `NOW_MS()` and subtract.
+
+`HIST_QUERY` returns a JSON array of `{ts,value,quality}` triplets. Use it when you need the waveform itself — for a custom chart in the HMI, an anomaly detector, or to publish a time-series summary onto the event bus.
+
+##### Burst capture
+
+```iec
+VAR
+    burst_id : STRING;
+END_VAR
+
+(* Start a 5-minute burst at 50 ms resolution for every main_task tag *)
+burst_id := HIST_BURST_START('main_task.*', 300, 50);
+
+(* … later, after something triggers the burst to end early …*)
+HIST_BURST_STOP(burst_id);
+```
+
+`HIST_BURST_START` kicks off a time-bounded high-rate capture for a tag glob. It returns a burst ID you can use to stop it early. Bursts bypass per-tag deadband and interval — you get every value at the configured capture interval regardless of how the tag was originally registered. When `duration_s` elapses, the burst stops automatically.
+
+This is the imperative form. The YAML `historian.bursts` list is the declarative equivalent, driven by bus events — typically preferred so you don't have to write ST code that watches the event stream.
+
+##### DB management
+
+```iec
+VAR
+    n_tags      : DINT;
+    n_samples   : LINT;
+    db_size     : REAL;
+    pruned      : LINT;
+END_VAR
+
+n_tags    := HIST_TAG_COUNT();
+n_samples := HIST_SAMPLE_COUNT('main_task.boiler_temp_c');
+db_size   := HIST_DB_SIZE_MB();
+pruned    := HIST_PRUNE(30);   (* remove samples older than 30 days *)
+HIST_FLUSH();                   (* force an immediate batch write *)
+```
+
+`HIST_PRUNE` accepts a max-age argument; note the current build triggers a generic prune/flush cycle and returns `1` on success rather than the deleted row count (the store's prune method doesn't surface the count yet). Use it to clean up proactively ahead of `max_size_mb` eviction. `HIST_FLUSH` forces the batch writer to commit the current ring buffers to disk — useful right before a planned shutdown or a coordinated snapshot.
+
+#### REST API
+
+Seven endpoints, all under `/api/history/*`. All return JSON unless you request CSV explicitly.
+
+##### Query samples
+
+```bash
+# Last hour of samples for a tag
+NOW=$(date +%s%3N)
+HR=$((NOW - 3600000))
+curl "http://host:port/api/history?tag=main_task.boiler_temp_c&start=$HR&end=$NOW&points=500"
+
+# CSV download — add &format=csv
+curl "http://host:port/api/history?tag=main_task.boiler_temp_c&start=$HR&end=$NOW&format=csv" \
+  -o boiler_temp.csv
+
+# Dedicated export endpoint (always CSV)
+curl "http://host:port/api/history/export?tag=main_task.boiler_temp_c&start=$HR&end=$NOW" \
+  -o boiler_temp_export.csv
+```
+
+The JSON response has `tag`, `points`, `count`, `start_ms`, and `end_ms`:
+
+```json
+{
+  "tag": "main_task.boiler_temp_c",
+  "points": [
+    {"timestamp": 1744551600000, "value": 78.2, "quality": 0},
+    {"timestamp": 1744551601000, "value": 78.3, "quality": 0},
+    {"timestamp": 1744551602000, "value": 78.5, "quality": 0}
+  ],
+  "count": 3,
+  "start_ms": 1744548000000,
+  "end_ms": 1744551600000
+}
+```
+
+`quality` is 0 for good samples. Non-zero codes are reserved for future use (sensor fault, stale, substituted).
+
+Both endpoints hard-cap the result at 1,000 points (`points=` query param) for the JSON form and 100,000 for the CSV export. If you need more, query smaller windows in a loop.
+
+##### Tag management
+
+```bash
+# List all logged tags with per-tag stats
+curl http://host:port/api/history/tags
+
+# Register a new tag
+curl -X POST -H 'Content-Type: application/json' \
+  -d '{"name":"main_task.flow_rate","deadband":0.5,"interval_ms":1000}' \
+  http://host:port/api/history/tags
+
+# Stop logging a tag and remove its data
+curl -X DELETE http://host:port/api/history/tags/main_task.flow_rate
+```
+
+`GET /api/history/tags` returns a list with per-tag sample counts, first/last timestamps, and the configured deadband/interval — useful for a "what am I logging" overview on the HMI.
+
+Deleting a tag via the REST endpoint **does** remove its historical samples. If you want to stop sampling but keep the data, stop the tag from ST via `HIST_STOP` instead; that path unregisters the tag without touching the store.
+
+##### Stats and maintenance
+
+```bash
+# Overall DB size, sample count, oldest/newest timestamps
+curl http://host:port/api/history/stats
+
+# Manual prune (admin-triggered retention cleanup + flush)
+curl -X POST http://host:port/api/history/prune
+```
+
+`GET /api/history/stats` returns:
+
+```json
+{
+  "db_size_mb": 127.4,
+  "sample_count": 9243150,
+  "tag_count": 284,
+  "oldest_ts": 1739052000000,
+  "newest_ts": 1744551600000
+}
+```
+
+`POST /api/history/prune` triggers a flush + retention cycle on demand. The regular scheduled prune runs automatically based on `max_size_mb` and `max_age_days`.
+
+#### Forwarding destinations
+
+The historian has native forwarders for three destination types. Configure any combination under `historian.forwarding.destinations`. Each destination is independent — failure on one doesn't affect the others, and each has its own retry backoff.
+
+##### InfluxDB
+
+```yaml
+- type: influxdb
+  url: "http://10.0.0.144:8086"
+  database: "goplc_plant1"          # InfluxDB v1 database, or v2 bucket name
+  batch_size: 500                    # batch point writes for throughput
+  flush_interval_ms: 5000            # commit the batch every 5 s
+  retry_interval_s: 30               # wait 30 s before retry on failure
+```
+
+Line-protocol writes to `POST /write?db=<database>`. Each flushed historian sample becomes one point with the tag name as the measurement, the value as the `value` field, and the quality code as a tag. Tags with special characters are escaped per Influx line-protocol rules.
+
+The forwarder does **not** pass authentication by default — if your InfluxDB requires auth, put credentials in the URL (`http://user:pass@host:8086`). The forwarder uses stdlib `net/http` with a 10-second timeout; large batches that exceed the timeout are retried on the next interval.
+
+##### MQTT
+
+```yaml
+- type: mqtt
+  url: "tcp://10.0.0.144:1883"
+  topic_prefix: "goplc/plant1/history"
+  qos: 1
+  retained: true
+  batch_size: 100
+  flush_interval_ms: 1000
+```
+
+Each sample is published to `<topic_prefix>/<tag_name>` (dots in the tag name are converted to slashes). The payload is a JSON object `{"ts":...,"value":...,"quality":...}`. With `retained: true`, new subscribers immediately see the last value of every tag — the MQTT equivalent of "current state" without polling.
+
+Point this at GoPLC's own embedded MQTT broker (the one used by the events bus) to get a single unified broker for events and history. Point it at a separate Mosquitto, EMQX, or HiveMQ if you need external subscribers.
+
+##### Webhook
+
+```yaml
+- type: webhook
+  url: "https://ops.example.com/api/edge-summary"
+  format: "summary"
+  schedule: "@hourly"
+```
+
+Hits an HTTP endpoint with a periodic JSON summary of historian activity — tag count, sample count, DB size, flush latency. Intended for dashboards and health probes, not for raw sample delivery. If you need raw samples over HTTP, point an MQTT bridge or a Node-RED function at the MQTT forwarder instead.
+
+#### Burst capture — the two modes
+
+##### Declarative (YAML, event-triggered)
+
+Preferred for reactive capture around known failure modes. Configure a burst under `historian.bursts`:
+
+```yaml
+historian:
+  bursts:
+    - trigger: "task.fault"
+      filter: "task:MainTask"
+      tags: "main_task.*"
+      duration_s: 300
+      interval_ms: 100
+```
+
+When the event bus emits a `task.fault` event whose source matches `task:MainTask`, the burst worker captures every variable in `main_task.*` at 100 ms resolution for 5 minutes. Burst samples bypass per-tag deadband — you get the full waveform regardless of configured filters. The burst start and stop emit `historian.burst_started` and `historian.burst_stopped` events for audit.
+
+##### Imperative (ST, program-triggered)
+
+Useful when the trigger is a condition your ST code detects directly rather than a bus event:
+
+```iec
+PROGRAM AnomalyCatcher
+VAR
+    delta          : REAL;
+    active_burst   : STRING := '';
+    alarm_was_hot  : BOOL := FALSE;
+    alarm_is_hot   : BOOL;
+END_VAR
+
+    alarm_is_hot := ALARM_IS_ACTIVE('high_temp');
+
+    IF alarm_is_hot AND NOT alarm_was_hot THEN
+        (* Rising edge — start a 10-minute burst at 50 ms *)
+        active_burst := HIST_BURST_START('main_task.*', 600, 50);
+    END_IF;
+
+    IF NOT alarm_is_hot AND alarm_was_hot AND active_burst <> '' THEN
+        (* Cleared early — stop the burst so we don't waste disk *)
+        HIST_BURST_STOP(active_burst);
+        active_burst := '';
+    END_IF;
+    alarm_was_hot := alarm_is_hot;
+END_PROGRAM
+```
+
+Prefer the declarative form when you can — it keeps the trigger logic in config and reusable across programs. Use the imperative form for conditions that can't be expressed as a simple event type filter.
+
+#### Recipes
+
+##### Log every variable, light a Grafana dashboard
+
+```yaml
+historian:
+  enabled: true
+  log_all: true
+  log_all_interval_ms: 1000
+  log_all_deadband: 0
+  decimation:
+    1min_after_hours: 24
+    1hour_after_days: 7
+  forwarding:
+    enabled: true
+    destinations:
+      - type: influxdb
+        url: "http://grafana-stack:8086"
+        database: "goplc"
+```
+
+Every variable, 1 Hz, forwarded to InfluxDB. Grafana points at the Influx datasource and you have one-line panels for anything in the project. First deploy cost: 5 minutes.
+
+##### Pre- and post-incident capture for alarm conditions
+
+```yaml
+historian:
+  enabled: true
+  tags:
+    - pattern: "main_task.*"
+      interval_ms: 1000
+      deadband: 0.0
+
+  bursts:
+    - trigger: "alarm.active"
+      filter: "alarm:*"
+      tags: "main_task.*"
+      duration_s: 600
+      interval_ms: 50
+```
+
+Regular 1 Hz logging for trending, plus a 10-minute burst at 50 ms resolution the moment any alarm trips. You end up with a low-cost continuous record for every tag and a high-res snapshot around every incident.
+
+##### Compute a setpoint-error trend from ST
+
+```iec
+PROGRAM ErrorTrending
+VAR
+    sp    : REAL;
+    pv    : REAL;
+    err   : REAL;
+END_VAR
+
+    err := sp - pv;
+    HIST_LOG_VALUE('trend.setpoint_error', err, 0);
+END_PROGRAM
+```
+
+One line per scan writes a synthetic signal into the historian. The derived tag is queryable exactly like any other:
+
+```bash
+curl "http://host:port/api/history?tag=trend.setpoint_error&start=$HR&end=$NOW"
+```
+
+##### Weekly report over webhook
+
+Point a webhook at your reporting system and have it pull an hourly summary:
+
+```yaml
+historian:
+  forwarding:
+    enabled: true
+    destinations:
+      - type: webhook
+        url: "https://reporting.internal/goplc/hourly"
+        format: "summary"
+        schedule: "@hourly"
+```
+
+The webhook gets a JSON summary every hour; a downstream cron job aggregates seven hours into a weekly report, stores it in the reporting system, and emails the plant manager. No ST code required.
+
+##### Cold-boot recovery via `HIST_LAST`
+
+```iec
+PROGRAM StateRecovery
+VAR
+    recovered     : BOOL := FALSE;
+    cached_temp   : REAL;
+    cached_sp     : REAL;
+END_VAR
+
+    IF NOT recovered THEN
+        cached_temp := HIST_LAST('main_task.boiler_temp_c');
+        cached_sp   := HIST_LAST('main_task.boiler_setpoint');
+        recovered := TRUE;
+    END_IF;
+END_PROGRAM
+```
+
+On cold boot, ST reads the last recorded value of tags that aren't on the RETAIN list. Useful for recovering non-critical state without expanding RETAIN (which has its own crash-safety overhead — see the system monitoring guide).
+
+#### Performance notes
+
+- **Flush cost** is O(buffered samples) × one SQLite transaction per `flush_interval_ms`. A 1 s flush interval with 100 tags at 1 Hz is ~100 rows per transaction — microseconds of disk time on WAL-mode SQLite.
+- **Per-sample cost** at registration time is a map lookup + one channel send into the batch writer. Single-digit microseconds.
+- **`log_all: true` overhead** scales linearly with variable count. Ten thousand variables at 1 s interval = ~10 kB/s disk write rate plus proportional RAM for the ring buffers.
+- **Query cost** is O(rows_in_range) with indexed lookups on `(tag_id, timestamp)`. A million-row query for one tag over one day takes 50–200 ms. Aggregates (`HIST_MIN/MAX/AVG`) run as SQL aggregates — same cost as the underlying query.
+- **Decimation cost** is an off-schedule background pass — the engine does not pause sampling while decimating. Expect a few seconds of CPU per gigabyte of raw samples compacted.
+- **Forwarding cost** is the cost of encoding the payload (Influx line protocol, JSON for MQTT/webhook) plus network round trip. Runs on its own goroutine; upstream failures do not back up the sampler.
+- **Max DB size** enforcement is lazy — the engine checks `db_size_mb` on each flush and prunes from the oldest end only when the limit is crossed. Setting `max_size_mb` lower than steady-state churn can cause flapping; leave headroom.
+
+#### Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| `GET /api/history/tags` returns empty list | Historian not enabled, or no tags registered (and `log_all: false`) | Set `enabled: true` and either register tags or turn on `log_all`. |
+| Tag exists but `HIST_QUERY` returns `[]` | Time range is inverted or in the future | Check `start_ms` < `end_ms` and both are Unix milliseconds, not seconds. |
+| `HIST_LAST` returns 0 for a tag that's definitely changing | Tag not registered (use `HIST_LOG` first) or last sample outside the buffered window and disk flush hasn't happened yet | Call `HIST_FLUSH()` or wait one `flush_interval_ms`. |
+| DB grows beyond `max_size_mb` | Prune is asynchronous; sampler writes faster than the pruner deletes | Lower `flush_interval_ms` to trigger prune checks more often, or raise `max_size_mb`. |
+| Samples missing during a burst | Burst `interval_ms` is lower than the engine's internal tick granularity | Minimum practical burst resolution is ~50 ms. Lower values get coalesced. |
+| InfluxDB forwarder silently drops data | Auth required, credentials missing | Put credentials in the URL: `http://user:pass@host:8086`. |
+| MQTT retained messages don't appear for new subscribers | `retained: false` in config | Set `retained: true` and reconnect the subscriber. |
+| Decimation never runs | `1min_after_hours: 0` or `1hour_after_days: 0` disables that tier | Set to positive values to enable rollups. |
+| `log_all: true` misses a new variable | The glob was resolved once at registration; new variables don't back-fill | Reload programs or call `HIST_LOG` explicitly for the new variable. |
+| `HIST_LOG_VALUE` writes return `TRUE` but the value doesn't appear in queries | Known current-build limitation: manual values are staged until the next sampling tick picks them up | Use it for tags that are also registered via `HIST_LOG`, or wait for the direct-inject path to land. |
+
+#### Related
+
+- [`goplc_events_guide.md`](goplc_events_guide.md) — the bus that triggers burst captures.
+- [`goplc_alarms_guide.md`](goplc_alarms_guide.md) — alarms that commonly gate `HIST_BURST_START` calls.
+- [`goplc_influxdb_guide.md`](goplc_influxdb_guide.md) — the ST `INFLUX_*` builtins; the historian InfluxDB forwarder is independent but shares the same protocol.
+- [`goplc_mqtt_guide.md`](goplc_mqtt_guide.md) — the broker used by the MQTT forwarder and the events fan-out.
+- [`goplc_api_guide.md`](goplc_api_guide.md) — REST fundamentals, auth, and CSV responses.
 
 ### GoPLC Clustering & DataLayer Guide
 
@@ -14988,6 +18038,913 @@ Known limits of the current HAL layer:
 ---
 
 The HAL is intentionally boring: declarative config, standard IEC addresses, no new ST vocabulary to learn. That's the whole point. If you can read and write `%IX` and `%QX` you can control a Raspberry Pi from GoPLC today, using exactly the same ST code you'd write for a traditional PLC rack.
+
+### GoPLC Direct GPIO: Imperative Pin Access for Quick Prototyping
+
+
+GoPLC has two completely separate paths for reading and writing hardware pins on a Linux SBC:
+
+1. **The HAL manifest path** (covered in the HAL guide). Declarative: you write a YAML hardware manifest, the HAL layer maps physical pins to standard IEC 61131-3 addresses (`%IX0.0`, `%QX0.0`), and ST code reads and writes those addresses on every scan. This is the right answer for production logic on a known hardware build.
+
+2. **The direct GPIO path** (this guide). Imperative: you call `GPIO_READ(17)` and `GPIO_WRITE(27, TRUE)` directly from ST code. No manifest, no address mapping, no poll loop — just open a pin, read or write it, move on. This is the right answer for prototyping, diagnostics, one-off utility scripts, and anything where you don't want to ship a config file change to blink an LED.
+
+Both paths run through the same `periph.io` hardware abstraction underneath, so you can't have both simultaneously driving the same pin (the direct path auto-excludes any pin the HAL manifest already claims). But they coexist cleanly on different pins of the same board.
+
+#### When to Use It
+
+**Direct GPIO is for:**
+
+- Blinking an LED during first bring-up, before you've written a HAL manifest
+- Running `i2cdetect`-style bus scans from ST or curl to find devices
+- Reading a dry-contact input from an ad-hoc sensor during commissioning
+- Building a one-off utility task (watchdog relay, door latch trigger, test fixture)
+- Letting an operator toggle pins from the IDE's REST console without rewriting a project file
+
+**Direct GPIO is NOT for:**
+
+- Production logic that needs to execute on a deterministic scan (use the HAL path — the direct path is a per-call operation with no scan guarantee)
+- High-speed edge capture (still call for a P2 or Teensy bridge)
+- PWM, pull-resistor control with dynamic switching, or analog — these weren't part of the shipped surface, only digital I/O and I2C scan
+
+**The rule of thumb**: if you find yourself declaring variables and writing stable logic around direct GPIO calls, you should probably move those pins into a HAL manifest. The direct path is imperative by design and stays out of your scan image — that's its strength for prototyping and its weakness for anything production-shaped.
+
+#### What Ships Today
+
+Small surface on purpose — this subsystem is digital I/O plus I2C scan, nothing more.
+
+| Capability | Shipped |
+|---|---|
+| Digital input (read) | ✅ |
+| Digital output (write) | ✅ |
+| Digital output toggle | ✅ |
+| Mode change (input ↔ output) | ✅ |
+| Pin list / platform identification | ✅ |
+| I2C device scan | ✅ |
+| REST control | ✅ (5 endpoints) |
+| HAL conflict rejection | ✅ (pins in HAL manifest are auto-excluded) |
+| PWM | ❌ (use P2 or BeagleBone DCAN) |
+| Pull-up/down at runtime | ❌ (set once in YAML) |
+| SPI | ❌ |
+| ADC / analog | ❌ |
+| I2C read/write (beyond scan) | ❌ (use a HAL device plugin) |
+
+The spec at `docs/spec/DIRECT_GPIO.md` documents the larger roadmap (PWM, SPI, ADC, I2C read/write, named ADC devices). None of that is registered in the live runtime today — this guide covers only the shipped surface.
+
+#### Enable It
+
+Direct GPIO is **off by default**. You turn it on in `config.yaml`:
+
+```yaml
+gpio:
+  enabled: true
+  allowed_pins: [4, 17, 18, 22, 23, 24, 25, 27]   # BCM pin numbers
+  default_pull: "up"                               # "up", "down", or "none"
+```
+
+Three keys and nothing else:
+
+| Key | Type | Purpose |
+|---|---|---|
+| `enabled` | bool | Master switch. Even with `enabled: false` the `/api/system/platform` endpoint still works as a diagnostic. |
+| `allowed_pins` | list of int | BCM pin numbers that ST and REST may touch. Pins already claimed by a HAL device plugin are auto-removed from this list at startup — HAL wins. An empty list disables every pin operation (the `I2C_SCAN` diagnostic still works). |
+| `default_pull` | string | Pull-resistor applied when a pin is configured as input without an explicit override. `"up"` is the safest default for dry-contact switches. |
+
+If a project doesn't mention `gpio:` at all, direct GPIO is disabled, the ST functions all return `FALSE`/empty, and the REST endpoints return `503 Service Unavailable`. This is deliberate — the subsystem should only be live when you opted into it.
+
+#### Permissions
+
+`periph.io` uses `/sys/class/gpio` and `/dev/gpiochipN` on modern kernels. The running process needs to be in the `gpio` group (and `i2c` for `I2C_SCAN`):
+
+```bash
+sudo usermod -aG gpio,i2c goplc
+```
+
+On a typical Raspberry Pi OS install, those groups already exist and the `pi` user is already in them. On minimal distros (Alpine, Arch ARM, Yocto) you may need to `groupadd` them yourself and add a udev rule:
+
+```bash
+echo 'SUBSYSTEM=="gpio", GROUP="gpio", MODE="0660"' \
+     | sudo tee /etc/udev/rules.d/60-gpio.rules
+sudo udevadm control --reload
+```
+
+If GoPLC can't open a pin, the relevant ST function returns `FALSE` and the error is logged with the `hal` tag. The HAL device lifecycle events (`hal.device_error`) fire through the event bus, so webhook subscribers catch permission problems without you having to tail the log.
+
+#### ST Functions
+
+All seven functions verified against the live registry at v1.0.608.
+
+| Function | Purpose |
+|---|---|
+| `GPIO_PLATFORM() : STRING` | Short platform identifier: `"Raspberry Pi 4"`, `"Orange Pi 5"`, `"generic"`, or `"not_available"` |
+| `GPIO_LIST() : STRING` | JSON array of every pin in the effective allowlist with mode and last value |
+| `GPIO_MODE(pin: DINT, mode: STRING) : BOOL` | Reconfigure a pin — `"input"` or `"output"` |
+| `GPIO_READ(pin: DINT) : BOOL` | Read a digital pin. Configures it as input on first use if not already configured. |
+| `GPIO_WRITE(pin: DINT, value: BOOL) : BOOL` | Write a digital pin. Configures it as output on first use. |
+| `GPIO_TOGGLE(pin: DINT) : BOOL` | Flip an output pin and return the new state. Uses an internal shadow register so toggles work even though `/sys/class/gpio` output pins don't read back. |
+| `I2C_SCAN(bus: DINT) : STRING` | Probe every 7-bit address on the given I2C bus and return a JSON array of responders — equivalent to `i2cdetect -r -y <bus>` |
+
+Every function is bounds-checked against `allowed_pins` — a call on an unconfigured pin returns `FALSE` (for the BOOL-returning ones) or an empty JSON object/array (for the STRING-returning ones), and logs an error to the `hal` tag.
+
+##### Walkthrough: blink an LED on BCM17
+
+```iec
+PROGRAM led_blink
+VAR
+    led_pin  : DINT := 17;
+    state    : BOOL;
+    tick     : TON;
+END_VAR
+
+tick(IN := TRUE, PT := T#500ms);
+IF tick.Q THEN
+    tick(IN := FALSE);
+    state := NOT state;
+    GPIO_WRITE(led_pin, state);
+END_IF;
+END_PROGRAM
+```
+
+That's the whole program. On the first `GPIO_WRITE` call, pin 17 gets configured as output automatically. The TON retriggers every 500 ms and flips the state. With `config.yaml` enabling `gpio.enabled: true` and `allowed_pins: [17]`, this program will blink an LED on BCM17 the moment you deploy it — no manifest, no address map, no scan image entry.
+
+##### Walkthrough: read a dry contact on BCM22
+
+```iec
+PROGRAM door_sensor
+VAR
+    sensor_pin : DINT := 22;
+    closed     : BOOL;
+    opened     : BOOL;
+    event_msg  : STRING;
+END_VAR
+
+closed := NOT GPIO_READ(sensor_pin);   (* dry contact pulls to GND when closed *)
+IF closed AND NOT opened THEN
+    opened := TRUE;
+    event_msg := 'door closed';
+    EVENT_EMIT('hal.device_up', 'door', event_msg);
+ELSIF NOT closed AND opened THEN
+    opened := FALSE;
+    event_msg := 'door open';
+    EVENT_EMIT('hal.device_down', 'door', event_msg);
+END_IF;
+END_PROGRAM
+```
+
+Edge-triggered so the event bus only sees state transitions, not a fresh event on every scan. With `default_pull: "up"` in the config, the pin idles high and reads low when the contact closes — no external pull-up needed.
+
+##### Walkthrough: bus scan
+
+```iec
+PROGRAM i2c_discovery
+VAR
+    devices : STRING;
+    started : BOOL;
+END_VAR
+
+IF NOT started THEN
+    devices := I2C_SCAN(1);    (* JSON: ["0x08","0x20","0x48"] *)
+    DEBUG('i2c', CONCAT('bus 1 devices: ', devices));
+    started := TRUE;
+END_IF;
+END_PROGRAM
+```
+
+Runs once, prints the scan result to the debug log, done. Use this during hardware bring-up to confirm that a new I2C device is talking. Bus 1 is the default Raspberry Pi I2C bus (`/dev/i2c-1`); BeagleBone and Orange Pi number their buses differently — check with `ls /dev/i2c-*`.
+
+#### REST API
+
+Five endpoints — same surface available from `curl`, `httpie`, or the IDE's built-in REST console. All require authentication when RBAC is enabled.
+
+##### List every pin and its state
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+     http://localhost:8082/api/gpio
+```
+
+```json
+{
+  "enabled": true,
+  "available": true,
+  "platform": "Raspberry Pi 4",
+  "pins": [
+    {"pin": 17, "mode": "output", "value": true},
+    {"pin": 22, "mode": "input",  "value": false},
+    {"pin": 27, "mode": "output", "value": false}
+  ]
+}
+```
+
+`available` is `true` when the process can actually open GPIO devices (right user, right kernel, right SBC). On a desktop without a GPIO bank it's `false` and the pin list is empty.
+
+##### Read one pin
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+     http://localhost:8082/api/gpio/17
+```
+
+```json
+{"pin": 17, "value": true}
+```
+
+##### Write or reconfigure one pin
+
+```bash
+# Configure as output and write high
+curl -X POST -H "Authorization: Bearer $TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"mode":"output","value":true}' \
+     http://localhost:8082/api/gpio/17
+
+# Just toggle whatever it currently is
+curl -X POST -H "Authorization: Bearer $TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"toggle":true}' \
+     http://localhost:8082/api/gpio/17
+
+# Reconfigure as input, don't write
+curl -X POST -H "Authorization: Bearer $TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"mode":"input"}' \
+     http://localhost:8082/api/gpio/22
+```
+
+The body must include at least one of `mode`, `value`, or `toggle`. Send any combination — `{"mode":"output","value":true}` configures then writes in one call.
+
+##### Platform identification
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+     http://localhost:8082/api/system/platform
+```
+
+```json
+{"platform": "Raspberry Pi 4", "available": true}
+```
+
+This endpoint works even when `gpio.enabled` is `false` — it's a diagnostic probe that tells you what kind of board the runtime is on, independent of whether you've authorized GPIO access.
+
+##### I2C bus scan
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+     http://localhost:8082/api/i2c/scan/1
+```
+
+```json
+{"bus": 1, "count": 3, "addresses": ["0x08", "0x20", "0x48"]}
+```
+
+Scans every 7-bit address on `/dev/i2c-1` and returns the ones that ACK'd. `count` is the number of devices detected. If the bus can't be opened (permission, wrong bus number, driver not loaded) you get a `400` with an error message.
+
+#### Interaction with the HAL Manifest
+
+The one rule: **a pin can only be owned by one path**. If you list pin 17 in a HAL manifest device and also in `gpio.allowed_pins`, the direct path loses — pin 17 is removed from the effective allowlist at startup, and `GPIO_READ(17)` returns `FALSE`. This prevents the HAL poll loop and a direct write from fighting over the same hardware.
+
+A startup log line tells you exactly what was excluded:
+
+```
+[INF] [direct-gpio] effective allowlist: [22 27] (HAL claimed: [17 18 23 24 25])
+[INF] [direct-gpio] platform=Raspberry Pi 4 default_pull=up
+```
+
+If you actually want to move a pin from HAL control to direct control, remove it from the HAL manifest and reload the project — GoPLC doesn't let you hot-swap ownership mid-scan.
+
+#### Events
+
+The direct GPIO subsystem emits events through the same bus as every other driver:
+
+| Event | When |
+|---|---|
+| `hal.device_up` | Platform detected and allowlist applied at startup |
+| `hal.device_down` | Subsystem disabled or pin allowlist emptied |
+| `hal.device_error` | Pin open/read/write failure (permissions, bad pin, pull mismatch) |
+
+Subscribe to `hal.*` in your event subscription config to route GPIO hardware faults into Slack, PagerDuty, or MQTT via the webhook pipeline — same path as Modbus driver faults, CAN bus-off events, and UPS power-loss warnings. See the Events guide for the subscription syntax.
+
+#### Gotchas
+
+**BCM numbering, not physical header pins.** `GPIO_READ(17)` means BCM17 — which is physical pin 11 on a Raspberry Pi 40-pin header. If you pass `11` you get BCM11 (physical pin 23) instead. Keep a BCM-to-physical chart near your desk during bring-up.
+
+**Output read-back uses a shadow register.** `/sys/class/gpio` does not let you read back the state of a pin configured as output. The direct GPIO manager maintains an internal shadow so `GPIO_TOGGLE` works correctly — it flips the shadow and writes the new value. If something outside GoPLC (another process, a physical contention) overrides the pin, the shadow will lie about the current state until your next `GPIO_WRITE`.
+
+**`GPIO_MODE` is not required.** The first `GPIO_READ` or `GPIO_WRITE` on a pin auto-configures it (input for read, output for write). `GPIO_MODE` is only needed when you want to change direction mid-program — which is rare and usually a sign that you should be in the HAL manifest path instead.
+
+**I2C_SCAN touches every address.** A full 7-bit scan probes 112 addresses (0x03–0x77, skipping reserved ranges). On a healthy bus this finishes in under 50 ms. On a bus with a badly-behaved device that latches up on stray probes, it can cause that device to wedge — unplug it before scanning, or scan a narrower range with an I2C tool first if you're worried.
+
+**`default_pull` is set at runtime from config, not ST.** There is no `GPIO_PULL(pin, pull)` function today — if you want pin 22 to have pull-down and pin 23 to have pull-up, you set `default_pull: "up"` globally and handle the exception in hardware. This is a deliberate scope limit; runtime-variable pull will require either a config extension or a new ST function.
+
+**`config.yaml` changes need a reload.** Adding a pin to `allowed_pins` doesn't take effect until you reload the project or restart the runtime. The subsystem's allowlist is computed once at startup from the combination of config and HAL claims.
+
+#### Putting It Together
+
+A minimal Pi 4 config that enables direct GPIO on three pins and nothing else:
+
+```yaml
+gpio:
+  enabled: true
+  allowed_pins: [17, 22, 27]
+  default_pull: "up"
+```
+
+A minimal ST program that exercises all three: blink an output, read an input, pulse a relay when the input closes:
+
+```iec
+PROGRAM pin_demo
+VAR
+    led       : DINT := 17;
+    input_pin : DINT := 22;
+    relay     : DINT := 27;
+    pressed   : BOOL;
+    last_in   : BOOL;
+    tick      : TON;
+    pulse     : TP;
+END_VAR
+
+(* Heartbeat LED — flips every 500 ms *)
+tick(IN := TRUE, PT := T#500ms);
+IF tick.Q THEN
+    tick(IN := FALSE);
+    GPIO_TOGGLE(led);
+END_IF;
+
+(* Pulse the relay when the input transitions low-to-high *)
+pressed := GPIO_READ(input_pin);
+pulse(IN := pressed AND NOT last_in, PT := T#250ms);
+GPIO_WRITE(relay, pulse.Q);
+last_in := pressed;
+END_PROGRAM
+```
+
+Deploy it, go to `http://localhost:8082/ide/`, open the Live Variables panel, and you'll see `pressed` flip in real time as you short pin 22 to ground. The relay on pin 27 fires for exactly 250 ms on each low-to-high transition.
+
+For config-driven pin access at scan speed with deterministic update cadence, see the HAL guide. For hardware-accelerated GPIO and sub-millisecond edge capture, see the P2 or Teensy guides. This guide is the smallest path that gets you from "is my board alive" to "I'm toggling a real pin" in under ten lines of ST.
+
+### GoPLC + Parallax Propeller 1: Hardware Interface Guide
+
+
+GoPLC treats the Parallax Propeller 1 as a schema-driven smart-I/O module: plug a Propeller Project Board or a SimplyTronics Activity Board into a USB port, call `P1_INIT` from your ST program, and thirty-two builtins drive GPIO, SPI, UART, I2C, PWM, servos, encoders, frequency counters, and HC-SR04-style pulse measurement. Firmware is embedded in the GoPLC binary and uploaded automatically over the ROM bootloader on first connect; you do not run any Spin toolchain yourself. The P1 counterpart to the existing P2 guide: same calling pattern (binary protocol + convenience wrappers over a shared `P1_CMD` dispatcher), same health-tracked acyclic mode, fewer pins and fewer cogs but a dramatically smaller form factor and lower power draw for embedded edge jobs.
+
+#### Architecture Overview
+
+Like the P2 guide, the P1 is **not** a compilation target. GoPLC does not generate Spin. Instead, a ~6 KB cyclic-I/O firmware is embedded in the GoPLC binary, uploaded to the P1 over the ROM bootloader at `P1_INIT`, and then driven via a schema-described binary protocol over the USB-serial link.
+
+```
+┌─────────────────────────────────────────────────────┐
+│  GoPLC Runtime (Go, any Linux/macOS/Windows host)   │
+│                                                     │
+│  ┌────────────────────────────────────────────────┐ │
+│  │ ST Program                                     │ │
+│  │                                                │ │
+│  │ P1_INIT('p1', port)                            │ │
+│  │ P1_PIN_MODE('p1', 10, 1)                       │ │
+│  │ P1_PIN_WRITE('p1', 10, 1)                      │ │
+│  │ dist := P1_PULSE_MEASURE('p1', 10, 11, 60000)  │ │
+│  └───────────────────┬────────────────────────────┘ │
+│                      │ binary frames                │
+│                      │ (115200 baud, packed struct) │
+└──────────────────────┼───────────────────────────────┘
+                       │
+                       │  USB Serial (FTDI / CP210x / CH34x)
+                       ▼
+┌─────────────────────────────────────────────────────┐
+│  Parallax Propeller 1 (8 cogs, 32-bit, 80 MHz)      │
+│                                                     │
+│  Embedded firmware (p1_cyclic_io.binary, ~6 KB)     │
+│                                                     │
+│  Cog 0: Frame dispatch                              │
+│  Cog N: UART TX/RX helpers                          │
+│  Cog N: PWM / servo interpolation                   │
+│  Cog N: Quadrature/step encoder                     │
+│                                                     │
+│  32 GPIO pins (P0..P31), 3.3 V, 40 mA sink/source   │
+└─────────────────────────────────────────────────────┘
+```
+
+Two points worth internalizing before you write any P1 code:
+
+1. **The P1 is shared state.** Pin 10 set to output from one ST program stays an output until another call changes it. There is no "end of scan" reset. Treat the P1 like a hardware register bank, not a stateless RPC endpoint.
+2. **The protocol is acyclic.** Each `P1_*` call is a discrete command-response round trip over the USB link. There is no cyclic mode, no telegram watchdog, no deterministic timing guarantee. Commands return in a few hundred microseconds on a quiet link; blocking commands (`P1_FREQ_READ`, `P1_PULSE_MEASURE`, `P1_UART_RECV`) block for their specified duration on purpose.
+
+#### Hardware and wiring
+
+| Board | Vendor | MCU | Notes |
+|-------|--------|-----|-------|
+| Propeller Project Board USB (#32810) | Parallax | P8X32A-Q44 | Full-size breadboard layout, onboard VGA/audio headers. Identify string usually contains "Parallax" or "FTDI". |
+| Activity Board | SimplyTronics | P8X32A-Q44 | Wide ecosystem of edge add-ons. Identify string usually contains "SimplyTronics". |
+| Propeller FLiP | Parallax | P8X32A-Q44 | DIP-style, breadboardable. |
+| Any custom P1 with a USB-serial bridge (FT232, CP2102, CH340) | — | P8X32A | GoPLC drives any board that boots over the standard ROM LFSR + 3BP protocol. |
+
+All P1 pins (P0–P31) are 3.3 V logic. The ROM bootloader lives at the same reset sequence on every board — GoPLC handles the 3BP handshake transparently via the `go-p1` package.
+
+**USB port selection**: combine `SERIAL_FIND` with `P1_INIT` so you never hard-code `/dev/ttyUSB0`. `SERIAL_FIND` searches system USB device descriptors for a substring match on the product or manufacturer string:
+
+```iec
+VAR
+    p1_port : STRING;
+    p1_ok   : BOOL;
+END_VAR
+
+p1_port := SERIAL_FIND('SimplyTronics');  (* or 'Parallax', 'FT232', etc. *)
+IF p1_port <> '' THEN
+    p1_ok := P1_INIT('p1', p1_port);
+END_IF;
+```
+
+This pattern survives a USB port reshuffle on reboot — the device shows up on a different `/dev/ttyUSB*` but the identify string still matches.
+
+#### Connection, Firmware, Health
+
+Three functions own the lifecycle. Every other P1 builtin assumes the device is connected and healthy and returns a zero-equivalent value (`FALSE`, `0`, `''`) if it isn't.
+
+##### `P1_INIT(name, port [, firmware_path]) : BOOL`
+
+```iec
+(* Typical form — use embedded firmware, let GoPLC pick the default *)
+ok := P1_INIT('p1', '/dev/ttyUSB0');
+
+(* With an explicit firmware path override *)
+ok := P1_INIT('p1', '/dev/ttyUSB0', '/opt/custom/p1_cyclic_io.binary');
+```
+
+Returns `TRUE` when the device is connected and the firmware is running. **Safe to call every scan** — if the named device is already open and healthy, `P1_INIT` is a no-op and returns `TRUE` immediately. If the device was previously healthy and has now gone dark (USB unplug, power cycle, firmware crash), `P1_INIT` tears down the old transport and re-opens on the supplied port. You can therefore put a plain `P1_INIT('p1', port)` at the top of every scan and let it self-heal.
+
+The third argument is optional. Omit it and GoPLC extracts the embedded firmware (`p1_cyclic_io.binary`) into the working directory and uses that. Pass a path to override — the only time you would is during firmware development.
+
+On a fresh (uninitialized) board the first `P1_INIT` takes ~1.5 seconds for the 3BP upload. Subsequent re-inits (after a USB replug) take ~200 ms because the host-side state is already warm.
+
+##### `P1_HEALTHY(name) : BOOL`
+
+```iec
+IF NOT P1_HEALTHY('p1') THEN
+    (* Skip this scan — device is unreachable *)
+    RETURN;
+END_IF;
+```
+
+Returns `TRUE` if the device is open and recent command-response exchanges have succeeded. The health flag flips to `FALSE` after N consecutive command failures (the underlying `go-p1` device tracks this), and GoPLC emits a single `protocol.disconnect` bus event on the transition — one event per disconnect, not per scan. When `P1_INIT` subsequently succeeds, GoPLC emits `protocol.connect`.
+
+Use `P1_HEALTHY` at the top of any program that touches the device. Every `P1_*` convenience function already returns `FALSE`/`0`/`''` when the device is unhealthy, but checking once up front with a `RETURN` keeps the scan short and the error handling obvious.
+
+##### `P1_STATUS(name) : STRING` and `P1_CLOSE(name) : BOOL`
+
+```iec
+VAR
+    info : STRING;
+END_VAR
+
+info := P1_STATUS('p1');
+(* {"name":"p1","port":"/dev/ttyUSB0","connected":true,"mode":"acyclic","ping_us":382} *)
+
+(* Teardown — only if you really need to release the USB handle *)
+P1_CLOSE('p1');
+```
+
+`P1_STATUS` pings the device and returns a JSON document with the device name, port, connection state, mode (always `"acyclic"` on P1), and round-trip ping time in microseconds. The ping itself walks the same protocol path as any other command, so the reported time is representative of actual command latency.
+
+You rarely need `P1_CLOSE`. The Go-side context closes all P1 devices automatically at runtime shutdown. Call it only if you need to hand the USB port to another program mid-run.
+
+#### Generic command dispatcher: `P1_CMD`
+
+Every P1 function is a thin wrapper around `P1_CMD`, which is the schema-driven generic dispatcher. Use it directly when a convenience function doesn't exist for a command you need, or when you want a command's raw JSON response:
+
+```iec
+(* Two calling styles, equivalent *)
+
+(* 1. JSON parameter string *)
+resp := P1_CMD('p1', 'pin_write', '{"pin":16,"value":1}');
+
+(* 2. Key-value pairs (GoPLC assembles the JSON) *)
+resp := P1_CMD('p1', 'pin_write', 'pin', 16, 'value', 1);
+
+(* Query the firmware version *)
+ver_json := P1_CMD('p1', 'version');    (* {"fw_version":1,"hw_type":1,"num_pins":32,"num_spi":1} *)
+```
+
+`P1_CMD` returns the full JSON response string. Empty string means the call failed — the device is unhealthy, the command is unknown, the pack/unpack errored, or the firmware returned `CMD_ERROR`. Failures are logged at the `debug` level under the `p1` module; none of them error out the scan.
+
+Available firmware commands (all 27, exposed by the embedded schema):
+
+| Category | Commands |
+|----------|----------|
+| Core | `ping`, `version` |
+| GPIO | `pin_mode`, `pin_read`, `pin_write` |
+| SPI | `spi_setup`, `spi_xfer`, `spi_stop` |
+| UART | `uart_setup`, `uart_tx`, `uart_rx`, `uart_stop` |
+| I2C | `i2c_setup`, `i2c_xfer`, `i2c_stop` |
+| PWM | `pwm_setup`, `pwm_duty`, `pwm_stop` |
+| Servo | `servo_move`, `servo_stop` |
+| Frequency counter | `freq_setup`, `freq_read` |
+| Pulse measure | `pulse_measure` |
+| Encoder | `enc_setup`, `enc_read`, `enc_reset`, `enc_rev` |
+
+Everything else in this guide is a convenience wrapper that calls into one of these.
+
+#### GPIO
+
+The P1 has 32 GPIO pins numbered `P0..P31`. All pins are independently configurable input/output; there is no pin-group I/O register exposed through the binary protocol. For bulk operations, loop over pins in your ST code — the USB-serial round trip dominates latency, not your loop.
+
+##### `P1_PIN_MODE(name, pin, mode) : BOOL`
+
+```iec
+P1_PIN_MODE('p1', 10, 1);   (* P10 = output *)
+P1_PIN_MODE('p1', 11, 0);   (* P11 = input  *)
+```
+
+`mode`: `0` = input, `1` = output. Returns `TRUE` on success.
+
+##### `P1_PIN_READ(name, pin) : DINT`
+
+```iec
+VAR
+    button : DINT;
+END_VAR
+
+button := P1_PIN_READ('p1', 11);
+IF button = 1 THEN
+    button_pressed := TRUE;
+END_IF;
+```
+
+Returns `0` or `1`. A pin that is not configured as input returns whatever the last output state was; configure the pin as an input first.
+
+##### `P1_PIN_WRITE(name, pin, value) : BOOL`
+
+```iec
+P1_PIN_WRITE('p1', 10, 1);  (* Drive P10 high *)
+P1_PIN_WRITE('p1', 10, 0);  (* Drive P10 low  *)
+```
+
+##### `P1_PIN_TOGGLE(name, pin) : BOOL`
+
+```iec
+(* Heartbeat blink *)
+IF blink_timer.Q THEN
+    P1_PIN_TOGGLE('p1', 10);
+    blink_timer(IN := FALSE);
+END_IF;
+blink_timer(IN := TRUE, PT := T#500MS);
+```
+
+Reads the current state and writes the opposite. Two USB round trips per call.
+
+#### PWM and Servos
+
+The P1's CTRA/CTRB counters drive PWM and servo pulse trains. GoPLC's firmware exposes a single PWM channel (using CTRA in DUTY mode) plus a two-channel servo driver.
+
+##### PWM
+
+```iec
+P1_PWM_SETUP('p1', 16);          (* Claim P16 for PWM, starts at 0% duty *)
+P1_PWM_DUTY('p1', 16, 128);      (* 50% duty *)
+P1_PWM_DUTY('p1', 16, 64);       (* 25% duty *)
+P1_PWM_STOP('p1', 16);           (* Release the pin *)
+```
+
+- `P1_PWM_SETUP(name, pin) : BOOL` — Claims the pin. Duty starts at 0.
+- `P1_PWM_DUTY(name, pin, duty_0_255) : BOOL` — Sets the duty cycle. Out-of-range values are clamped (0 → 0, 256+ → 255).
+- `P1_PWM_STOP(name, pin) : BOOL` — Releases the pin back to idle input.
+
+PWM frequency is fixed by the firmware (not runtime-configurable on P1 — the CTRA DUTY mode is implicitly driven by the system clock). If you need a specific frequency, use the Propeller 2 instead, which exposes smart-pin frequency control.
+
+##### Servos
+
+```iec
+(* Two-channel servo — channels 0 and 1 *)
+P1_SERVO_MOVE('p1', 0, 14, 1500);    (* Center *)
+P1_SERVO_MOVE('p1', 0, 14, 1000);    (* Full left   *)
+P1_SERVO_MOVE('p1', 1, 15, 2000);    (* Full right  *)
+P1_SERVO_STOP('p1', 0);
+```
+
+- `P1_SERVO_MOVE(name, ch, pin, us) : BOOL` — `ch` is 0 or 1 (two independent servo slots). `pin` binds the channel to a GPIO. `us` is the servo pulse width in microseconds (typical range 500–2500, center at 1500). Values are clamped to `[0, 2500]`.
+- `P1_SERVO_STOP(name, ch) : BOOL` — Stops the channel and releases the pin.
+
+The servo ISR runs on its own cog inside the firmware, so servo pulse output is stable at jitter-free microsecond resolution regardless of your ST scan rate.
+
+#### SPI, UART, I2C
+
+Standard three-wire peripherals. Each setup claims pins; stopping releases them.
+
+##### SPI
+
+```iec
+(* SPI channel 0 on clk=0, mosi=1, miso=2, cs=3, 1000 kHz, mode 0 *)
+P1_SPI_SETUP('p1', 0, 0, 1, 2, 3, 1000, 0);
+
+(* Transfer: flags=0, data is a hex string *)
+rx_hex := P1_SPI_XFER('p1', 0, 0, '01020304');   (* write 4 bytes, read 4 *)
+
+P1_SPI_STOP('p1', 0);
+```
+
+- `P1_SPI_SETUP(name, ch, clk, mosi, miso, cs, speed_khz, mode) : BOOL` — Eight positional args. `ch` is 0 (only one SPI channel on P1). `mode` is 0–3 (CPOL/CPHA per standard SPI mode table).
+- `P1_SPI_XFER(name, ch, flags, hex_data) : STRING` — `hex_data` is a hex string (two chars per byte, no prefix). Returns a hex string of equal length containing the received bytes. Max transfer is 64 bytes per call (firmware framing limit).
+- `P1_SPI_STOP(name, ch) : BOOL`
+
+##### UART
+
+```iec
+(* UART on tx_pin=20, rx_pin=21, 9600 baud *)
+P1_UART_SETUP('p1', 20, 21, 9600);
+
+(* Send ASCII "HELLO" as hex *)
+count := P1_UART_SEND('p1', '48454c4c4f');
+
+(* Receive up to 64 bytes with a 200 ms timeout *)
+rx := P1_UART_RECV('p1', 64, 200);
+
+P1_UART_STOP('p1');
+```
+
+- `P1_UART_SETUP(name, tx_pin, rx_pin, baud) : BOOL`
+- `P1_UART_SEND(name, hex_data) : DINT` — Returns bytes sent. Data is a hex string. To send ASCII, convert with `STRING_TO_HEX` or build the hex inline.
+- `P1_UART_RECV(name, max_len, timeout_ms) : STRING` — Blocks for up to `timeout_ms`, returns a hex string of received bytes (empty string on timeout with no data).
+- `P1_UART_STOP(name) : BOOL`
+
+The P1 has one hardware UART in this firmware build — you cannot have two independent UARTs active simultaneously. For multi-port serial, use the P2.
+
+##### I2C
+
+```iec
+(* I2C on scl=28, sda=29, 100 kHz *)
+P1_I2C_SETUP('p1', 28, 29, 100);
+
+(* Read register 0x00 from BH1750 at 0x23 *)
+rx := P1_I2C_XFER('p1', 16#23, '00', 2);       (* write 0x00, read 2 bytes *)
+
+P1_I2C_STOP('p1');
+```
+
+- `P1_I2C_SETUP(name, scl_pin, sda_pin, speed_khz) : BOOL`
+- `P1_I2C_XFER(name, addr_7bit, write_hex, read_len) : STRING` — 7-bit address (no R/W bit). `write_hex` is the bytes to write; `read_len` is how many bytes to read after the write. Set `read_len = 0` for write-only; pass `''` as `write_hex` for read-only.
+- `P1_I2C_STOP(name) : BOOL`
+
+#### Frequency counter and pulse measurement
+
+Two specialized functions for timing-sensitive signals.
+
+##### `P1_FREQ_SETUP` / `P1_FREQ_READ`
+
+```iec
+(* Count rising edges on P19 *)
+P1_FREQ_SETUP('p1', 19);
+
+(* Gate for 100 ms, return frequency in Hz *)
+freq_hz := P1_FREQ_READ('p1', 100);
+```
+
+- `P1_FREQ_SETUP(name, pin) : BOOL` — Arms CTRB to count rising edges on the pin.
+- `P1_FREQ_READ(name, gate_ms) : DINT` — **Blocks** for `gate_ms` milliseconds while counting, then returns the tally scaled to Hz. `gate_ms` is clamped to `[1, 1000]`; the default when you pass `< 1` is 100 ms.
+
+Because `P1_FREQ_READ` blocks, it counts against your watchdog budget. A 100 ms gate used every scan on a 50 ms scan task will trip the watchdog. Either gate for less time, call it less often (every Nth scan), or move the call to a dedicated low-rate task.
+
+##### `P1_PULSE_MEASURE`
+
+```iec
+(* HC-SR04 ultrasonic ping on trig=10, echo=11, 60 ms timeout *)
+pulse_us := P1_PULSE_MEASURE('p1', 10, 11, 60000);
+IF pulse_us > 0 THEN
+    distance_mm := pulse_us * 10 / 58;   (* 58 µs per cm round trip *)
+END_IF;
+```
+
+- `P1_PULSE_MEASURE(name, trig_pin, echo_pin, timeout_us) : DINT` — Drives `trig_pin` high for 10 µs, then measures the high-pulse width on `echo_pin` in microseconds. Returns `0` on timeout. `timeout_us` is clamped to `[0, 65535]`; pass `0` to use the default 30 ms.
+
+This is purpose-built for the HC-SR04 family of ultrasonic distance sensors but works for any trigger-and-measure pulse pattern.
+
+#### Quadrature / step-direction encoder
+
+One channel (channel 0), two modes: quadrature x4 or step+direction. The encoder runs on its own cog and is sampled by GoPLC via three status reads.
+
+```iec
+(* Quadrature x4 encoder on A=P0, B=P1, Z=P2 *)
+P1_ENC_SETUP('p1', 0, 0, 0, 1, 2);
+
+(* Read position (signed, wraps at ±2^31) *)
+pos := P1_ENC_READ('p1', 0);
+
+(* Read how many Z-marker revolutions since last reset *)
+revs := P1_ENC_REV_COUNT('p1', 0);
+
+(* Read the position recorded at the most recent Z marker *)
+pos_at_z := P1_ENC_POS_AT_Z('p1', 0);
+
+(* Reset everything to zero *)
+P1_ENC_RESET('p1', 0);
+```
+
+- `P1_ENC_SETUP(name, ch, mode, pin_a, pin_b, pin_z) : BOOL`
+  - `mode: 0` — quadrature x4 (A/B/Z). Pin Z is optional; pass `255` if there is no Z channel.
+  - `mode: 1` — step + direction (A = step, B = direction; Z is ignored).
+- `P1_ENC_READ(name, ch) : DINT` — Signed position accumulator. Wraps modulo `2^32`.
+- `P1_ENC_REV_COUNT(name, ch) : DINT` — Number of times the Z marker has been seen since the last reset.
+- `P1_ENC_POS_AT_Z(name, ch) : DINT` — The `P1_ENC_READ` value latched at the most recent Z marker. Useful for home-seek logic: hit Z, subtract `pos_at_z` from the live position to get a zero-origin offset without a reset transient.
+- `P1_ENC_RESET(name, ch) : BOOL` — Zeros position, latch, and rev count.
+
+#### Event bus integration
+
+P1 command health is tracked via the events bus, just like every other protocol driver. You don't have to do anything to get these events — they fire automatically based on transitions.
+
+| Event type | Fires when | Severity |
+|------------|------------|----------|
+| `protocol.connect` | A failed → healthy transition (first `P1_INIT` success, or a reconnect after a drop) | `info` |
+| `protocol.disconnect` | A healthy → failed transition (N consecutive command errors) | `warning` |
+
+Source field is `p1:<name>`, so a device opened as `P1_INIT('main_p1', ...)` emits `p1:main_p1`. Subscribe from a webhook or MQTT to get notified on plug/unplug without instrumenting every ST call:
+
+```yaml
+events:
+  enabled: true
+  webhooks:
+    - name: "ops-slack"
+      url: "https://hooks.slack.com/services/..."
+      format: "slack"
+      event_types: ["protocol.connect", "protocol.disconnect"]
+      min_severity: "info"
+```
+
+The dedup window (default 1 s) collapses rapid flap — you get one notification per real connect/disconnect, not one per scan.
+
+#### Recipes
+
+##### HC-SR04 distance sensor with alarm
+
+Matches the `p1_ping_alarm.goplc` example project. Measures distance on every scan, logs the value to the historian, and trips a low-distance alarm with a deadband so the reading doesn't chatter:
+
+```iec
+PROGRAM P1_PingAlarm
+VAR
+    p1_port         : STRING;
+    p1_ok           : BOOL;
+    p1_healthy      : BOOL;
+    alarm_created   : BOOL := FALSE;
+
+    pulse_us        : DINT;
+    distance_mm     : DINT;
+END_VAR
+
+    p1_port := SERIAL_FIND('SimplyTronics');
+    IF p1_port <> '' THEN
+        p1_ok := P1_INIT('p1', p1_port);
+    END_IF;
+
+    p1_healthy := P1_HEALTHY('p1');
+    IF NOT p1_healthy THEN
+        RETURN;
+    END_IF;
+
+    P1_PIN_MODE('p1', 10, 1);    (* trig = output *)
+    P1_PIN_MODE('p1', 11, 0);    (* echo = input  *)
+
+    (* One-time alarm bootstrap: trip below 30 mm, clear above 40 mm *)
+    IF NOT alarm_created THEN
+        ALARM_DELETE('distance_low');
+        ALARM_CREATE('distance_low', 'p1_pingalarm.distance_mm', 'LO',
+                     30.0, 10.0, 2, 0);
+        alarm_created := TRUE;
+    END_IF;
+
+    pulse_us := P1_PULSE_MEASURE('p1', 10, 11, 60000);
+    IF pulse_us > 0 AND pulse_us < 50000 THEN
+        distance_mm := pulse_us * 10 / 58;
+        HIST_LOG_VALUE('p1.distance_mm', distance_mm);
+    END_IF;
+END_PROGRAM
+```
+
+##### Heartbeat LED with unplug detection
+
+A blinking LED that halts (stays off) when the P1 is unplugged or otherwise unhealthy. Pair this with a webhook on `protocol.disconnect` to get paged when your edge node goes dark:
+
+```iec
+PROGRAM Heartbeat
+VAR
+    p1_ok      : BOOL;
+    p1_healthy : BOOL;
+    blink      : TON;
+    led_state  : BOOL;
+END_VAR
+
+    p1_ok := P1_INIT('p1', SERIAL_FIND('Parallax'));
+    p1_healthy := P1_HEALTHY('p1');
+
+    IF NOT p1_healthy THEN
+        led_state := FALSE;
+        RETURN;
+    END_IF;
+
+    P1_PIN_MODE('p1', 16, 1);
+
+    blink(IN := NOT blink.Q, PT := T#500MS);
+    IF blink.Q THEN
+        led_state := NOT led_state;
+        P1_PIN_WRITE('p1', 16, BOOL_TO_DINT(led_state));
+    END_IF;
+END_PROGRAM
+```
+
+##### I2C light sensor polling with deadband logging
+
+Read a BH1750 light sensor once per scan, convert the raw lux value, and push it into the historian with a 5 lx deadband so only meaningful changes get logged:
+
+```iec
+PROGRAM LightSensor
+VAR
+    init_done    : BOOL := FALSE;
+    i2c_ok       : BOOL;
+    rx           : STRING;
+    raw          : DINT;
+    lux          : DINT;
+END_VAR
+
+    IF NOT P1_HEALTHY('p1') THEN
+        P1_INIT('p1', SERIAL_FIND('Parallax'));
+        RETURN;
+    END_IF;
+
+    IF NOT init_done THEN
+        i2c_ok := P1_I2C_SETUP('p1', 28, 29, 100);
+        (* BH1750 continuous H-res mode: write 0x10 to power on *)
+        P1_I2C_XFER('p1', 16#23, '10', 0);
+        init_done := TRUE;
+    END_IF;
+
+    (* Read two bytes of raw reading *)
+    rx := P1_I2C_XFER('p1', 16#23, '', 2);
+    raw := HEX_TO_DINT(rx);
+    lux := raw * 10 / 12;
+
+    HIST_LOG_VALUE('p1.lux', lux);
+END_PROGRAM
+```
+
+##### Two-servo pan-tilt from HMI sliders
+
+The event bus gives you one-way HMI-to-ST state via bound variables. Drive two servos directly from slider variables:
+
+```iec
+PROGRAM PanTilt
+VAR
+    pan_us  : DINT := 1500;   (* HMI-bound, 500..2500 *)
+    tilt_us : DINT := 1500;
+END_VAR
+
+    IF NOT P1_HEALTHY('p1') THEN
+        P1_INIT('p1', SERIAL_FIND('Parallax'));
+        RETURN;
+    END_IF;
+
+    P1_SERVO_MOVE('p1', 0, 14, pan_us);
+    P1_SERVO_MOVE('p1', 1, 15, tilt_us);
+END_PROGRAM
+```
+
+#### Performance Notes
+
+- **Per-command cost is ~300–600 µs** round-trip on a modern host over a quiet USB link. GPIO writes, reads, and PWM duty updates all fit this envelope.
+- **`P1_PULSE_MEASURE` blocks for up to `timeout_us`** — schedule it on a dedicated task with a scan time longer than your worst-case timeout, or it will trip the watchdog.
+- **`P1_FREQ_READ` blocks for `gate_ms` milliseconds** — same scheduling caveat. A 100 ms gate on a 50 ms scan task will double the apparent scan time.
+- **`P1_UART_RECV` blocks for up to `timeout_ms`**. Use a short timeout (10–50 ms) or move UART receive onto a slower task.
+- **SPI and I2C transfers are non-blocking** at the ST level but the firmware drives the bus at the configured clock rate, so a 32-byte I2C read at 100 kHz takes ~3 ms of bus time plus USB latency.
+- **Thirty-two GPIO writes per scan** cost ~15 ms of USB round-trip and will starve a 10 ms scan task. Batch by using `P1_SPI_XFER` against an external shift-register chain for high-pin-count fanout, or move to the P2 which exposes wider pin-register operations.
+- **Embedded firmware extracts to the working directory on first `P1_INIT`**. The extracted file is cached — subsequent `P1_INIT` calls do not re-extract. You can safely delete it; GoPLC re-extracts on the next boot.
+
+#### P1 vs P2 — when to use which
+
+| Dimension | P1 | P2 |
+|-----------|----|----|
+| Cogs | 8 | 8 (Rev G), wider pipelines |
+| Clock | 80 MHz | 180–320 MHz |
+| GPIO pins | 32 | 64 smart pins |
+| Built-in peripherals | Basic GPIO, CTRA/CTRB counters | Smart pins with per-pin PWM, ADC, DAC, UART, frequency, quadrature |
+| USB baud | 115200 (bootloader), command link shares | 3 Mbaud |
+| Firmware size | ~6 KB | ~35 KB |
+| Board cost | ~$30 | ~$50 |
+| Typical job | Low pin count, low power, battery edge nodes, one UART or one I2C bus | High-channel-count I/O, multiple simultaneous UARTs, ADC/DAC, eye rendering, motor control |
+
+If you need four encoders, eight PWM channels, two UARTs, and an ADC on one board — the P2 is the right call. If you need a battery-powered outpost polling one sensor, flipping a relay, and sleeping 99% of the time — the P1 wins on power and cost. Both are schema-driven and plug into the same event bus, so your architecture doesn't change as you scale from one to the other.
+
+#### Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| `P1_INIT` returns `FALSE` on first call | USB port name wrong, or device isn't a P1 | Check `SERIAL_FIND` returned a non-empty string. Try `ls /dev/ttyUSB*`. On macOS: `ls /dev/tty.usbserial-*`. |
+| `P1_INIT` returns `TRUE` but `P1_HEALTHY` is `FALSE` shortly after | Firmware upload succeeded but command schema didn't load | Ensure `p1_commands.json` is in the same directory as the firmware binary. The embedded firmware path includes both. |
+| Distance reads of `0` from `P1_PULSE_MEASURE` | Timeout too short, or echo pin isn't a floating 5 V → 3.3 V divided signal | Raise `timeout_us` to 60000. HC-SR04 5 V echo on a 3.3 V pin needs a resistor divider (2×10 kΩ to ground). |
+| Encoder counts missing | Mode wrong, or pin_z not set to 255 when there's no Z | Set `pin_z = 255` for quadrature-without-Z and for step+direction mode. |
+| PWM duty above 128 doesn't get brighter | Clamped to 255 already, or the LED is hitting a current limit | `P1_PWM_DUTY` clamps to `[0, 255]`. An LED saturating at 50% duty is usually a series-resistor / V_f issue. |
+| Commands time out after an hour of uptime | USB bridge hung (common with low-cost CH340 adapters) | `P1_INIT` self-heals: just call it every scan with a fresh `SERIAL_FIND` result. If it still fails, replace the USB cable — most flakes trace to the cable. |
+| Firmware won't upload at all | ROM bootloader sequence rejected | Check the reset circuit on the board. Some custom P1s tie RTS or DTR to the wrong reset line. The Propeller Project Board and SimplyTronics Activity Board work out of the box. |
+
+#### Related
+
+- [`goplc_p2_guide.md`](goplc_p2_guide.md) — the Propeller 2 counterpart, with smart pins, more channels, and TAQOZ interactive mode.
+- [`goplc_hal_guide.md`](goplc_hal_guide.md) — `rpi_gpio`, `pcf8574`, `grove_adc` and other local-host GPIO options when USB serial isn't the right transport.
+- [`goplc_alarms_guide.md`](goplc_alarms_guide.md) — the alarm engine used in recipe 11.1.
+- [`goplc_events_guide.md`](goplc_events_guide.md) — `protocol.connect` / `protocol.disconnect` event emission and webhook fan-out.
+- [`goplc_debug_guide.md`](goplc_debug_guide.md) — enabling the `p1` debug module to see per-command logging during bring-up.
 
 ### GoPLC + Parallax Propeller 2: Hardware Interface Guide
 
@@ -33917,6 +37874,554 @@ END_PROGRAM
 | `SEL_METER_SET_DEMAND(name, kw)` | BOOL | 15-min demand |
 | `SEL_METER_SET_THD(name, thdv, thdi)` | BOOL | Harmonic distortion % |
 
+
+### GoPLC CAN Bus: SocketCAN, CAN FD, J1939, OBD-II, and DBC
+
+
+GoPLC speaks CAN bus natively on Linux. Open a SocketCAN interface from ST, send and receive classic CAN or CAN FD frames, decode J1939 heavy-duty data and OBD-II passenger-car PIDs with one-line function calls, and load manufacturer DBC files to auto-decode proprietary frames. No external daemons, no Python bridge, no bridge board — a raw AF_CAN socket in pure Go talking directly to the kernel CAN stack.
+
+#### Why SocketCAN
+
+GoPLC already had a CAN path: the Teensy CAN bridge (`TEENSY_CAN_*`), which tunnels FlexCAN frames over USB serial. That path is still the right answer when you need hardware-isolated timing, three buses on one board, or you're running GoPLC on a host without a CAN controller. But it has limits:
+
+- USB serial hop adds jitter and a Teensy to the BOM
+- Classic CAN only (no CAN FD)
+- No kernel-level filtering, no `candump`/`cansend` interop
+
+SocketCAN is the right answer when you're running GoPLC on a Linux SBC with a real CAN controller — an MCP2515 HAT on a Pi, a Waveshare dual-CAN, a BeagleBone DCAN, a BPI-R4, a USB-CAN adapter, or the kernel virtual `vcan` module for bench work. You get:
+
+- Direct kernel access via `AF_CAN` raw sockets (same stack `can-utils` uses)
+- CAN FD up to 64-byte payloads and bit-rate switching
+- Kernel-level hardware filters (`CAN_RAW_FILTER`) so unwanted frames never cross the userspace boundary
+- J1939, OBD-II, and DBC layers built on top
+- Coexistence with `candump`, Wireshark, and SocketCAN-aware tools on the same interface
+
+#### Architecture
+
+```
+┌────────────────────────────────────────────────────────────┐
+│                      GoPLC Runtime                         │
+│                                                            │
+│  ST Code                                                   │
+│    ├─ CAN_*       (core frames)                            │
+│    ├─ J1939_*     (heavy-duty vehicle, PGN decoder)        │
+│    ├─ OBD2_*      (passenger car, ISO 15765)               │
+│    └─ DBC_*       (manufacturer database decoder)          │
+│             │                                              │
+│             ▼                                              │
+│   ┌─────────────────────┐                                  │
+│   │    CAN Manager      │  Thread-safe interface registry  │
+│   │  (go-io/drivers/can)│  with per-interface rx buffers   │
+│   └──┬──────┬──────┬────┘                                  │
+│      │      │      │                                       │
+│      ▼      ▼      ▼                                       │
+│   socketcan j1939 dbc                                      │
+│   obd2      frame   parser                                 │
+│      │                                                     │
+└──────┼─────────────────────────────────────────────────────┘
+       │  AF_CAN / SOCK_RAW / CAN_RAW
+       ▼
+┌────────────────────────────────────────────────────────────┐
+│                     Linux Kernel CAN Stack                 │
+│   ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐           │
+│   │  can0  │  │  can1  │  │ vcan0  │  │ slcan0 │           │
+│   │MCP2515 │  │  DCAN  │  │virtual │  │USB-CAN │           │
+│   └────────┘  └────────┘  └────────┘  └────────┘           │
+└────────────────────────────────────────────────────────────┘
+```
+
+Every open interface gets its own raw socket, a background goroutine reading frames into a 256-slot buffer, and atomic TX/RX/error counters. `CAN_RAW_RECV_OWN_MSGS` is enabled on every socket so your own transmissions are echoed back — required for `vcan` loopback testing and useful on real buses as a transmit confirmation.
+
+#### Kernel Setup
+
+SocketCAN is a kernel feature. The interface must exist and be `UP` before you call `CAN_OPEN` — GoPLC does not run `ip link` for you, and it does not set bit rates. Bring the link up once at boot with `systemd-networkd` or an `/etc/network/interfaces.d/can0` stanza, or issue `ip link` commands by hand during development.
+
+##### Bench testing with vcan (no hardware)
+
+```bash
+sudo modprobe vcan
+sudo ip link add dev vcan0 type vcan
+sudo ip link set up vcan0
+```
+
+You now have a virtual CAN interface named `vcan0`. Every frame you transmit is delivered back to every listener on `vcan0`, including yourself. Perfect for unit tests and guide walkthroughs.
+
+##### MCP2515 HAT on a Raspberry Pi
+
+Add to `/boot/firmware/config.txt` (Bookworm) or `/boot/config.txt` (older):
+
+```
+dtparam=spi=on
+dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25
+```
+
+Reboot, then:
+
+```bash
+sudo ip link set can0 up type can bitrate 500000
+ip -s link show can0
+```
+
+##### USB-CAN adapter (gs_usb family)
+
+Plug it in. The `gs_usb` driver is in-tree on modern Linux:
+
+```bash
+sudo ip link set can0 up type can bitrate 500000
+```
+
+##### Persistent bring-up with systemd-networkd
+
+Create `/etc/systemd/network/80-can0.network`:
+
+```
+[Match]
+Name=can0
+
+[CAN]
+BitRate=500000
+RestartSec=100ms
+```
+
+`RestartSec` is important: when the controller enters bus-off (too many errors), systemd-networkd will automatically restart it. Without this, a noisy bus will leave the interface down until you manually reset it.
+
+#### Core CAN: Open, Send, Receive
+
+The smallest useful program: open `vcan0`, send a frame every second, log everything that arrives.
+
+```iec
+PROGRAM can_echo
+VAR
+    opened       : BOOL;
+    counter      : DWORD := 0;
+    pending      : DINT;
+    frame_json   : STRING;
+    tx_ok        : BOOL;
+    tick         : TON;
+END_VAR
+
+IF NOT opened THEN
+    opened := CAN_OPEN('vcan0');
+    IF NOT opened THEN
+        RETURN; (* interface not up — bring it up with `ip link set up vcan0` *)
+    END_IF;
+END_IF;
+
+tick(IN := TRUE, PT := T#1S);
+IF tick.Q THEN
+    tick(IN := FALSE);
+    counter := counter + 1;
+    (* 8-byte payload, first 4 bytes = counter, last 4 bytes = 0xCAFEBABE *)
+    tx_ok := CAN_SEND('vcan0', 16#123, 'DEADBEEFCAFEBABE', 8);
+END_IF;
+
+(* Drain the rx buffer every scan *)
+pending := CAN_RECV_COUNT('vcan0');
+WHILE pending > 0 DO
+    frame_json := CAN_RECV('vcan0');
+    IF LEN(frame_json) > 0 THEN
+        DEBUG('can', CONCAT('rx: ', frame_json));
+    END_IF;
+    pending := pending - 1;
+END_WHILE;
+END_PROGRAM
+```
+
+A few rules that are easy to miss:
+
+- **Data is hex.** `CAN_SEND` takes the payload as an uppercase hex string, two characters per byte, no separators. `'DEADBEEFCAFEBABE'` is 8 bytes. An odd number of hex characters is rejected.
+- **DLC is clamped.** If you pass `dlc=8` but give 4 hex bytes, the driver transmits 4 bytes. You cannot pad a short frame by over-declaring DLC.
+- **Extended IDs use `CAN_SEND_EXT`.** Classic 11-bit IDs use `CAN_SEND`. There is no flag — the function you call chooses the frame format.
+- **`CAN_RECV` returns a JSON string or the empty string.** Always check `LEN(frame_json) > 0` before parsing. `CAN_RECV_COUNT` tells you how many frames are buffered so you can drain the queue in a bounded loop instead of spinning forever.
+- **The buffer is 256 frames per interface.** On a busy bus, drain it every scan or set filters to drop what you don't care about.
+
+##### Kernel filters
+
+`CAN_SET_FILTER` installs a hardware-level accept filter. The kernel drops non-matching frames before they reach the socket, so a tight filter is essentially free. Masks are the standard CAN match: a frame passes when `(frame.id & mask) == (filter.id & mask)`.
+
+```iec
+(* Accept only IDs 0x100 through 0x10F *)
+CAN_SET_FILTER('can0', 16#100, 16#7F0);
+
+(* Accept exactly one ID *)
+CAN_SET_FILTER('can0', 16#123, 16#7FF);
+
+(* Wide open — receive everything *)
+CAN_CLEAR_FILTERS('can0');
+```
+
+Filters are cumulative: each `CAN_SET_FILTER` call adds another accept rule. `CAN_CLEAR_FILTERS` removes all of them and returns the interface to the default "accept everything" state.
+
+#### CAN FD
+
+CAN FD ("Flexible Data Rate") allows payloads up to 64 bytes and an optional higher data-phase bit rate. Use it when you need more bandwidth per frame and your hardware supports it — MCP2515 does not; MCP2518FD does.
+
+```iec
+VAR
+    opened : BOOL;
+    tx_ok  : BOOL;
+END_VAR
+
+opened := CAN_OPEN_FD('can0');
+
+(* 32-byte payload, BRS=TRUE switches to the faster data-phase bit rate *)
+tx_ok := CAN_SEND_FD('can0', 16#200,
+    '00112233445566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF',
+    TRUE);
+```
+
+`CAN_OPEN_FD` will fail if the kernel or controller doesn't support CAN FD. You can still send classic 8-byte frames on an FD-enabled socket with `CAN_SEND`, and received classic frames will still arrive on the rx channel — CAN FD is strictly additive.
+
+The data-phase bit rate is set on the kernel interface when you bring the link up, not from ST:
+
+```bash
+sudo ip link set can0 up type can bitrate 500000 dbitrate 2000000 fd on
+```
+
+#### J1939 (Heavy Duty Vehicles)
+
+J1939 is the SAE standard used on commercial trucks, agricultural equipment, construction machinery, and marine engines. Frames use 29-bit extended IDs encoding a Parameter Group Number (PGN), source address, and priority. GoPLC's J1939 layer caches the last received value for every PGN and exposes both raw access and convenience getters for common signals.
+
+##### Convenience getters
+
+```iec
+VAR
+    rpm          : REAL;
+    speed_kmh    : REAL;
+    coolant_c    : REAL;
+    fuel_lph     : REAL;
+    engine_hours : REAL;
+END_VAR
+
+CAN_OPEN('can0');
+
+rpm          := J1939_ENGINE_RPM('can0');    (* PGN 61444 / EEC1 / SPN 190 *)
+speed_kmh    := J1939_VEHICLE_SPEED('can0'); (* PGN 65265 / CCVS1 / SPN 84 *)
+coolant_c    := J1939_COOLANT_TEMP('can0');  (* PGN 65262 / ET1 / SPN 110 *)
+fuel_lph     := J1939_FUEL_RATE('can0');     (* PGN 65266 / LFE1 / SPN 183 *)
+engine_hours := J1939_ENGINE_HOURS('can0');  (* PGN 65253 / HOURS / SPN 247 *)
+```
+
+Each of these returns the last decoded value for that SPN. If no frame has been received yet, you get `0.0` — there is no "unknown" sentinel, so gate your logic on a freshness flag if you need to distinguish "really zero" from "never heard".
+
+##### Raw PGN access
+
+For any PGN not covered by a convenience getter, use `J1939_READ_PGN`. It returns the raw payload of the last received frame for that PGN as a JSON string, or `""` if nothing has been received.
+
+```iec
+VAR
+    pgn_data : STRING;
+    ok       : BOOL;
+END_VAR
+
+(* PGN 65266 (LFE1) — Fuel Economy *)
+pgn_data := J1939_READ_PGN('can0', 16#FEF2);
+
+(* Send a PGN request (broadcast to source address 255) *)
+ok := J1939_REQUEST_PGN('can0', 16#FEEC, 255);
+
+(* Transmit a custom PGN *)
+ok := J1939_SEND_PGN('can0', 16#FF00, 255, '0102030405060708');
+```
+
+`J1939_SEND_PGN` handles the 29-bit ID assembly and priority bits for you — you give it a PGN, destination address, and hex data, and it transmits the frame with priority 6 (the J1939 default).
+
+#### OBD-II (Passenger Cars)
+
+OBD-II is the diagnostic protocol on every passenger car sold since 1996 (US) or 2001 (EU). It rides on CAN via ISO 15765-4 using 11-bit IDs `0x7DF` (broadcast request) and `0x7E8`–`0x7EF` (ECU responses). GoPLC exposes the standard Mode 01 live data PIDs as convenience functions and a generic `OBD2_READ_PID` for anything else.
+
+```iec
+VAR
+    rpm         : REAL;
+    speed_kmh   : REAL;
+    coolant_c   : REAL;
+    throttle_pc : REAL;
+    fuel_pc     : REAL;
+    maf_gs      : REAL;
+    (* Generic PID access for anything not in the convenience list *)
+    iat_c       : REAL;
+END_VAR
+
+CAN_OPEN('can0');
+
+rpm         := OBD2_RPM('can0');          (* Mode 01, PID 0x0C *)
+speed_kmh   := OBD2_SPEED('can0');        (* Mode 01, PID 0x0D *)
+coolant_c   := OBD2_COOLANT_TEMP('can0'); (* Mode 01, PID 0x05 *)
+throttle_pc := OBD2_THROTTLE('can0');     (* Mode 01, PID 0x11 *)
+fuel_pc     := OBD2_FUEL_LEVEL('can0');   (* Mode 01, PID 0x2F *)
+maf_gs      := OBD2_MAF('can0');          (* Mode 01, PID 0x10 *)
+
+(* Intake air temperature — Mode 01, PID 0x0F, no convenience wrapper *)
+iat_c := OBD2_READ_PID('can0', 16#01, 16#0F);
+```
+
+All values are returned pre-scaled into engineering units per the SAE J1979 formulas — RPM in rev/min, speed in km/h, temperatures in °C, percentages as 0.0 to 100.0, MAF in g/s. `OBD2_READ_PID` returns the raw numeric result; you apply the PID-specific scaling yourself. Check an OBD-II PID reference (e.g. Wikipedia's "OBD-II PIDs") for the formulas.
+
+**Note**: OBD-II on CAN requires the vehicle's ECU to be powered (key on, engine off is enough). Some cars time out the CAN gateway after 30–60 seconds of bus silence — keep polling or the gateway will stop answering until a genuine scan tool pokes it.
+
+#### DBC Files
+
+DBC (Database CAN) files are the Vector Informatik file format for describing CAN messages: IDs, signal names, bit positions, byte order, scaling, offset, and units. Every vehicle manufacturer publishes internal DBCs for their engineering tools; many are public (the OpenDBC project has hundreds). Loading a DBC lets you read named signals instead of parsing raw bytes.
+
+```iec
+VAR
+    loaded     : BOOL;
+    msgs_json  : STRING;
+    latest     : STRING;
+    engine_rpm : REAL;
+    coolant    : REAL;
+END_VAR
+
+CAN_OPEN('can0');
+
+(* Load a DBC file from the FileIO sandbox (data/ directory by default) *)
+loaded := DBC_LOAD('vehicle', 'data/vehicle.dbc');
+
+(* List every message defined in the DBC as a JSON array *)
+msgs_json := DBC_LIST_MESSAGES('vehicle');
+
+(* Decode the most recently received frame against the DBC and
+   return every signal as a JSON object *)
+latest := DBC_DECODE('vehicle', 'can0');
+
+(* Pull one signal value by name — returns the latest decoded value
+   for a signal we've been tracking on this interface *)
+engine_rpm := DBC_GET_SIGNAL('vehicle', 'can0', 'EngineSpeed');
+coolant    := DBC_GET_SIGNAL('vehicle', 'can0', 'CoolantTemp');
+
+(* When done *)
+DBC_UNLOAD('vehicle');
+```
+
+The `name` argument is a local handle — you pick it when you load the DBC and use it to refer to the loaded database in later calls. You can load multiple DBCs (one per bus, for example) as long as the handles are unique.
+
+DBC files are read from the FileIO sandbox. By default the sandbox root is the `data/` directory next to your project file, so `DBC_LOAD('vehicle', 'data/vehicle.dbc')` works if the file is at `data/vehicle.dbc`. Absolute paths outside the sandbox are rejected.
+
+#### ST Function Reference
+
+All 32 functions verified against the live function registry at GoPLC v1.0.606.
+
+##### Core CAN
+
+| Function | Purpose |
+|---|---|
+| `CAN_OPEN(interface: STRING) : BOOL` | Open a SocketCAN interface in classic CAN mode |
+| `CAN_OPEN_FD(interface: STRING) : BOOL` | Open in CAN FD mode (up to 64-byte payloads) |
+| `CAN_CLOSE(interface: STRING) : BOOL` | Close an open interface and release its socket |
+| `CAN_STATUS(interface: STRING) : STRING` | JSON with state, TX/RX counts, error counts |
+| `CAN_LIST() : STRING` | JSON array of every CAN/VCAN interface visible to the kernel |
+| `CAN_SET_FILTER(interface: STRING, id: DWORD, mask: DWORD) : BOOL` | Add a kernel-level accept filter |
+| `CAN_CLEAR_FILTERS(interface: STRING) : BOOL` | Remove all filters (receive everything) |
+| `CAN_SEND(interface: STRING, id: DWORD, data: STRING, dlc: DINT) : BOOL` | Send classic 11-bit frame, hex payload |
+| `CAN_SEND_EXT(interface: STRING, id: DWORD, data: STRING, dlc: DINT) : BOOL` | Send classic 29-bit extended frame |
+| `CAN_SEND_FD(interface: STRING, id: DWORD, data: STRING, brs: BOOL) : BOOL` | Send CAN FD frame, optional bit-rate switch |
+| `CAN_RECV(interface: STRING) : STRING` | Pop one frame off the rx buffer as JSON, or "" |
+| `CAN_RECV_COUNT(interface: STRING) : DINT` | Number of frames buffered, waiting to be popped |
+
+##### J1939
+
+| Function | Purpose |
+|---|---|
+| `J1939_READ_PGN(interface: STRING, pgn: DWORD) : STRING` | Last received payload for this PGN as JSON |
+| `J1939_SEND_PGN(interface: STRING, pgn: DWORD, dest: DINT, data: STRING) : BOOL` | Transmit a PGN, hex data |
+| `J1939_REQUEST_PGN(interface: STRING, pgn: DWORD, dest: DINT) : BOOL` | Request a PGN from another node |
+| `J1939_ENGINE_RPM(interface: STRING) : REAL` | Engine RPM from EEC1 / PGN 61444 |
+| `J1939_VEHICLE_SPEED(interface: STRING) : REAL` | Ground speed from CCVS1 / PGN 65265 |
+| `J1939_COOLANT_TEMP(interface: STRING) : REAL` | Coolant temperature from ET1 / PGN 65262 |
+| `J1939_FUEL_RATE(interface: STRING) : REAL` | Fuel rate from LFE1 / PGN 65266 |
+| `J1939_ENGINE_HOURS(interface: STRING) : REAL` | Total engine hours from HOURS / PGN 65253 |
+
+##### OBD-II
+
+| Function | Purpose |
+|---|---|
+| `OBD2_READ_PID(interface: STRING, mode: DINT, pid: DINT) : REAL` | Generic OBD-II PID read, returns raw numeric value |
+| `OBD2_RPM(interface: STRING) : REAL` | Engine RPM (PID 0x0C) |
+| `OBD2_SPEED(interface: STRING) : REAL` | Vehicle speed in km/h (PID 0x0D) |
+| `OBD2_COOLANT_TEMP(interface: STRING) : REAL` | Coolant temp in °C (PID 0x05) |
+| `OBD2_THROTTLE(interface: STRING) : REAL` | Throttle position 0–100 % (PID 0x11) |
+| `OBD2_FUEL_LEVEL(interface: STRING) : REAL` | Fuel level 0–100 % (PID 0x2F) |
+| `OBD2_MAF(interface: STRING) : REAL` | Mass air flow in g/s (PID 0x10) |
+
+##### DBC
+
+| Function | Purpose |
+|---|---|
+| `DBC_LOAD(name: STRING, file_path: STRING) : BOOL` | Load a DBC file under a handle |
+| `DBC_UNLOAD(name: STRING) : BOOL` | Drop a loaded DBC |
+| `DBC_LIST_MESSAGES(name: STRING) : STRING` | JSON array of every message in the DBC |
+| `DBC_DECODE(name: STRING, interface: STRING) : STRING` | Decode the latest frame on this bus against the DBC |
+| `DBC_GET_SIGNAL(name: STRING, interface: STRING, signal_name: STRING) : REAL` | Latest value of one named signal |
+
+#### REST API
+
+Six endpoints for managing CAN interfaces without touching ST. Useful for one-shot testing from `curl`, or for integrating GoPLC CAN state into Grafana or Node-RED. All endpoints require authentication when RBAC is enabled — obtain a JWT via `POST /api/auth/login` and pass it as `Authorization: Bearer <token>`.
+
+##### List visible and open interfaces
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+     http://localhost:8082/api/can
+```
+
+```json
+{
+  "interfaces": ["can0", "vcan0"],
+  "open": [
+    {"name":"vcan0","fd":false,"tx_frames":42,"rx_frames":42,"tx_errors":0,"rx_errors":0}
+  ]
+}
+```
+
+`interfaces` is every CAN/VCAN device the kernel knows about (open or not). `open` is stats for everything this GoPLC process has actually opened.
+
+##### Per-interface stats
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+     http://localhost:8082/api/can/vcan0
+```
+
+##### Open an interface (optional CAN FD)
+
+```bash
+curl -X POST -H "Authorization: Bearer $TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"fd":false}' \
+     http://localhost:8082/api/can/vcan0/open
+```
+
+An empty body opens in classic CAN mode. `{"fd":true}` enables CAN FD.
+
+##### Close an interface
+
+```bash
+curl -X POST -H "Authorization: Bearer $TOKEN" \
+     http://localhost:8082/api/can/vcan0/close
+```
+
+##### Send a frame
+
+```bash
+curl -X POST -H "Authorization: Bearer $TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"id":291,"data":"DEADBEEF","extended":false}' \
+     http://localhost:8082/api/can/vcan0/send
+```
+
+`id` is the CAN arbitration ID (decimal or JSON hex literal). `data` is an uppercase hex string; spaces are allowed for readability. `extended=true` selects the 29-bit frame format. Response:
+
+```json
+{"sent":true,"id":291,"dlc":4,"fd":false}
+```
+
+##### Read buffered frames
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+     http://localhost:8082/api/can/vcan0/recv
+```
+
+Returns up to 10 buffered frames in a single response. Each frame contains `id`, `data`, `dlc`, `extended`, `fd`, and `timestamp`. The same frames are removed from the buffer — calling `/recv` twice does not return the same frames twice.
+
+#### Hardware Options
+
+| Hardware | Interface | Notes |
+|---|---|---|
+| `vcan` kernel module | Virtual | Free, no hardware, full loopback — perfect for tests |
+| MCP2515 HAT (Raspberry Pi) | SPI → 1x CAN 2.0 | ~$10. Classic CAN only |
+| Waveshare 2-CH CAN HAT | SPI → 2x CAN 2.0, isolated | Dual bus, opto-isolated inputs |
+| MCP2518FD HAT | SPI → 1x CAN FD | ~$25. Actually supports CAN FD |
+| BeagleBone Black DCAN | Native 2x CAN 2.0 | In-SoC CAN controllers, no add-on |
+| Banana Pi BPI-R4 | Native CAN | Built into the router SoC |
+| Gs_usb adapters (CANable, Innomaker USB2CAN) | USB → CAN | ~$20–40. Plug-and-play on modern Linux |
+| Kvaser Leaf | USB → CAN | Commercial-grade, reliable kernel driver |
+| Copperhill Triple CAN Teensy 4.1 | USB serial → 3x CAN (2x classic + 1x FD) | Use the TEENSY_CAN_* path, not SocketCAN |
+
+#### Gotchas
+
+**Interface must be UP before `CAN_OPEN`.** GoPLC does not bring links up; it fails cleanly if the kernel device is `DOWN`. Check with `ip -s link show can0`. On `vcan`, the `modprobe` + `ip link add` + `ip link set up` sequence is all three commands, not just the first two.
+
+**Bus-off recovery is a kernel concern.** When a CAN controller accumulates too many transmit errors it enters bus-off and stops. By default SocketCAN leaves it bus-off until someone brings the link down and back up. `RestartSec=100ms` in a systemd-networkd `.network` file tells the kernel to auto-reset. Without it, a single noisy burst can take your bus out until the next reboot.
+
+**Classic and FD mix on an FD socket.** Opening with `CAN_OPEN_FD` does not stop you from sending classic frames with `CAN_SEND`, and classic frames from other nodes still arrive on the rx channel. FD is purely additive. But the kernel and controller both have to actually support FD — on an MCP2515 you'll get an error the moment you try.
+
+**`CAN_SEND` is synchronous, `CAN_RECV` is non-blocking.** Send blocks briefly while the kernel enqueues the frame (microseconds on a clear bus, milliseconds on a saturated one). Receive returns immediately with the empty string when the buffer is empty — there is no blocking wait. Use `CAN_RECV_COUNT` to avoid tight-looping on an empty bus.
+
+**The rx buffer is 256 frames.** On a 500 kbps bus running at capacity you can receive ~8000 frames per second, which fills a 256-slot buffer in 32 ms. If your scan time is longer than that, add kernel filters to drop uninteresting IDs before they reach the buffer.
+
+**DBC files are sandboxed.** Passing an absolute path like `/etc/vehicle.dbc` to `DBC_LOAD` is rejected. Put the file under `data/` (the FileIO sandbox root) and reference it with a relative path. This is consistent with `FILE_READ` and every other file-touching ST function.
+
+**`CAN_RAW_RECV_OWN_MSGS` is on.** Every frame you send is echoed back to your own rx buffer. This is what makes `vcan` loopback tests work. On a real bus, you see your own transmissions alongside peer traffic — filter them out yourself if you don't want them, typically by comparing the source address (J1939) or by tracking what you just sent.
+
+**Protocol events ride the webhook pipeline.** CAN bus state changes emit `protocol.connect`, `protocol.disconnect`, `protocol.reconnect`, and `protocol.error` events that flow through the same webhook/MQTT/Slack routes as every other driver. Subscribe to `protocol.*` in your event config to get CAN-level alerts for free.
+
+#### Putting It All Together: Truck Dashboard
+
+A complete program that reads J1939 vitals from a heavy-duty truck, writes them into ST variables, and emits a status event when the engine coolant exceeds a threshold. Pair this with the Historian guide to log everything to InfluxDB, or with the HMI builder to render a live dashboard.
+
+```iec
+PROGRAM truck_dashboard
+VAR
+    opened        : BOOL;
+    rpm           : REAL;
+    speed         : REAL;
+    coolant_c     : REAL;
+    fuel_lph      : REAL;
+    hours         : REAL;
+    coolant_high  : BOOL;
+    last_coolant  : BOOL;
+    event_json    : STRING;
+    err           : STRING;
+END_VAR
+
+IF NOT opened THEN
+    opened := CAN_OPEN('can0');
+    IF NOT opened THEN
+        err := CAN_STATUS('can0');
+        RETURN;
+    END_IF;
+END_IF;
+
+rpm       := J1939_ENGINE_RPM('can0');
+speed     := J1939_VEHICLE_SPEED('can0');
+coolant_c := J1939_COOLANT_TEMP('can0');
+fuel_lph  := J1939_FUEL_RATE('can0');
+hours     := J1939_ENGINE_HOURS('can0');
+
+coolant_high := coolant_c > 100.0;
+
+(* Edge-trigger the alert so we don't spam the event bus every scan *)
+IF coolant_high AND NOT last_coolant THEN
+    event_json := CONCAT('{"coolant_c":', REAL_TO_STRING(coolant_c));
+    event_json := CONCAT(event_json, ',"rpm":');
+    event_json := CONCAT(event_json, REAL_TO_STRING(rpm));
+    event_json := CONCAT(event_json, '}');
+    EVENT_EMIT('protocol.error', 'can0', event_json);
+END_IF;
+last_coolant := coolant_high;
+
+END_PROGRAM
+```
+
+Things worth noting in the pattern:
+
+- `CAN_OPEN` is called once, guarded by `opened`. Re-opening an already-open interface is not an error, but there's no reason to.
+- Every J1939 getter returns the last cached value — no blocking, no round-trip to the bus. Your scan time stays flat regardless of bus traffic.
+- The coolant alert is edge-triggered (`coolant_high AND NOT last_coolant`). Without this, you'd emit a `protocol.error` event every scan the coolant is high, which would pin the event bus and fill your webhook logs.
+- `CAN_STATUS` returns a JSON string — stash it into `err` on open failure so you can see it in the Live Variables panel without adding a breakpoint.
+
+#### What's Next
+
+SocketCAN is production-ready today — classic CAN, CAN FD, J1939, OBD-II, and DBC decoding all ride on a single kernel socket per bus. Bolt it onto the existing features:
+
+- **Historian** → archive every J1939 SPN at 1 Hz to InfluxDB with deadband compression
+- **Alarms** → ISA-18.2 state machine on top of `coolant_c > 100.0`, with shelving and auto-ack
+- **Events** → `protocol.*` events fan out to Slack/PagerDuty/MQTT via the webhook pipeline
+- **HMI builder** → live gauges for RPM, speed, coolant, fuel rate
+- **Node-RED** → feed decoded frames into dashboards, rule flows, or cloud backends
+
+For a working end-to-end example, see the Historian and Events guides in this directory.
 
 ### GoPLC InfluxDB Integration Guide
 

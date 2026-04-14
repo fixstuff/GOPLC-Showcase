@@ -11,11 +11,17 @@ docs/guides/washing-machine-controller.md
 
 ## Part II: Platform
 docs/guides/goplc_ide_runtime_guide.md
+docs/guides/goplc_ld_guide.md
 docs/guides/goplc_config_guide.md
 docs/guides/goplc_api_guide.md
 docs/ARCHITECTURE.md
 docs/guides/goplc_ai_guide.md
 docs/guides/goplc_nodered_guide.md
+docs/guides/goplc_auth_guide.md
+docs/guides/goplc_system_guide.md
+docs/guides/goplc_hot_standby_guide.md
+docs/guides/goplc_alarms_guide.md
+docs/guides/goplc_historian_guide.md
 docs/guides/goplc_clustering_guide.md
 docs/guides/goplc_mcp_guide.md
 docs/guides/goplc_mcp_gateway_guide.md
@@ -39,6 +45,8 @@ docs/guides/goplc_oscat_guide.md
 
 ## Part IV: Hardware
 docs/guides/goplc_hal_guide.md
+docs/guides/goplc_direct_gpio_guide.md
+docs/guides/goplc_p1_guide.md
 docs/guides/goplc_p2_guide.md
 docs/guides/goplc_arduino_guide.md
 docs/guides/goplc_teensy_guide.md
@@ -62,6 +70,7 @@ docs/guides/goplc_snmp_guide.md
 docs/guides/goplc_df1_guide.md
 docs/guides/goplc_sparkplug_guide.md
 docs/guides/goplc_sel_guide.md
+docs/guides/goplc_can_guide.md
 docs/guides/goplc_influxdb_guide.md
 docs/guides/goplc_gcode_guide.md
 docs/guides/goplc_analyzer_storeforward_guide.md
