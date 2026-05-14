@@ -12,8 +12,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Go-1.24+-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go 1.24+">
   <img src="https://img.shields.io/badge/IEC_61131--3-Structured_Text-blue?style=for-the-badge" alt="IEC 61131-3">
-  <img src="https://img.shields.io/badge/Protocols-20+-green?style=for-the-badge" alt="20+ Protocols">
-  <img src="https://img.shields.io/badge/Functions-1,900+-orange?style=for-the-badge" alt="1,900+ Functions">
+  <img src="https://img.shields.io/badge/Protocols-25+-green?style=for-the-badge" alt="25+ Protocols">
+  <img src="https://img.shields.io/badge/Functions-2,200+-orange?style=for-the-badge" alt="2,200+ Functions">
 </p>
 
 <p align="center">
@@ -25,6 +25,10 @@
   <a href="#agentic-control-loop">Agentic</a> •
   <a href="#hardware-manifests">Manifests</a> •
   <a href="#protocols">Protocols</a> •
+  <a href="#industrial-control--enhanced-pid--autotune">PID+Autotune</a> •
+  <a href="#video-historian--vision-pipeline">Video&Vision</a> •
+  <a href="#l5x--rockwell-import">L5X</a> •
+  <a href="#foundation-registry-architectural-metadata-for-ai-agents">Foundation</a> •
   <a href="#clustering">Clustering</a> •
   <a href="#redundancy--failover">Redundancy</a> •
   <a href="#authentication">Auth</a> •
@@ -43,12 +47,16 @@
 GOPLC is a **full-featured PLC runtime** written entirely in Go. It executes IEC 61131-3 Structured Text programs with industrial-grade features:
 
 - **Multi-task scheduler** with priorities, watchdogs, and microsecond-precision scan times
-- **20+ protocol drivers** including Modbus, EtherNet/IP, DNP3, BACnet, OPC UA, FINS, S7, IEC 104, Sparkplug B, KNX, M-Bus, SNMP, and ctrlX EtherCAT
+- **25+ protocol drivers** including Modbus, EtherNet/IP, DNP3, BACnet, OPC UA, FINS, S7, IEC 104, Sparkplug B, KNX, M-Bus, SNMP, ZMQ, NATS, MQTT, and ctrlX EtherCAT
 - **ctrlX CORE EtherCAT I/O** — native Data Layer IPC via Bosch SDK: 500 Hz polling, 0.69ms scan, 10x faster than REST
-- **Built-in Web IDE** with Monaco editor, statement-level debugger, and project management
+- **Built-in Web IDE** with Monaco editor, statement-level debugger, project management, and a built-in trend component with auto-scaling and event-marker overlays
 - **Integrated Node-RED** with 7 custom PLC nodes for building HMI dashboards
 - **AI Assistant** supporting Claude, OpenAI, and Ollama for code generation
-- **1,900+ built-in functions** covering math, strings, crypto, HTTP, databases, motion control, and more
+- **AI architecture registry** — every foundational package ships a `.foundation.yaml`, queryable via REST + MCP so agents can answer "where does X live" and "what breaks if I change Y" without grep
+- **2,200+ built-in functions** covering math, strings, crypto, HTTP, databases, motion control, vision, video capture, and more
+- **Enhanced PID + autotune** — Rockwell-style PIDE function block with relay-feedback (Åström-Hägglund) automatic tuning
+- **Video historian + vision pipeline** — camera burst capture indexed in SQLite, plus a pluggable CV backend (ONNX inference, gauge reader, ZXing barcode/QR)
+- **L5X / Rockwell import** — Studio 5000 / RSLogix exports translate to GOPLC ST with visible warnings for anything unsupported
 - **Real-time capable** with memory locking, CPU affinity, and GC tuning
 - **Boss/Minion clustering** scaling to 10,000+ PLC instances
 
@@ -69,11 +77,11 @@ GOPLC is a **full-featured PLC runtime** written entirely in Go. It executes IEC
 | **Scan Times** | From 100μs to hours, configurable per task |
 | **Watchdog Protection** | Per-task watchdogs with fault/halt options |
 | **Hot Reload** | Update individual tasks without stopping the runtime |
-| **Function Blocks** | TON, TOF, TP, RTO, CTU, CTD, CTUD, R_TRIG, F_TRIG, SR, RS, SEMA |
+| **Function Blocks** | TON, TOF, TP, RTO, CTU, CTD, CTUD, R_TRIG, F_TRIG, SR, RS, SEMA, AVERAGE, PID, **PIDE** (Rockwell-style with relay-feedback autotune) |
 | **RETAIN Variables** | Persistent variables across warm/cold restarts |
 | **Project Files** | Single `.goplc` file contains programs, tasks, configs, HMI pages |
 
-### 1,900+ Built-in Functions
+### 2,200+ Built-in Functions
 
 | Category | Count | Highlights |
 |----------|-------|------------|
@@ -523,6 +531,8 @@ GOPLC includes **60,000+ lines** of protocol code for seamless integration with 
 | **M-Bus** | Master | TCP, Serial | 700 | Utility metering - Water, gas, heat, electric |
 | **ctrlX EtherCAT** | DI + DO | REST or Native IPC | 1,200 | Bosch ctrlX CORE - EtherCAT I/O modules |
 | **Phidgets** | Sensors + Actuators | USB/VINT | 800 | Phidgets USB/VINT sensor and actuator modules |
+| **ZMQ PUB/SUB** | Publisher + Subscriber | TCP, IPC, in-process | 1,500 | High-throughput messaging - pure-Go (forked `zmq4` in-tree, no libzmq) |
+| **NATS** | Embedded Broker + Client | TCP | 2,400 | Cloud-native messaging - server bundled in the binary, JetStream streams, KV buckets |
 
 ### Specialty Communication
 
@@ -680,6 +690,9 @@ GOPLC includes **60,000+ lines** of protocol code for seamless integration with 
 |--------|---------|-----------|----------|
 | **DataLayer** | Multi-PLC sync | TCP, Shared Memory | Real-time variable sharing, <1ms latency, prefix filtering |
 | **MQTT** | IoT/Cloud | TCP, TLS | Publish variables, subscribe to commands, QoS 0/1/2 |
+| **MQTT Broker** | Embedded broker | TCP, TLS | `mochi-mqtt` server bundled in the binary, no external broker needed |
+| **NATS** | Cloud-native messaging | TCP | Embedded `nats-server` + client driver, JetStream streams, KV buckets |
+| **ZMQ PUB/SUB** | High-throughput pub/sub | TCP, IPC, in-proc | Pure-Go (forked `zmq4` in-tree, no CGO/libzmq dependency) |
 | **HTTP/REST** | Integration | TCP | 60+ API endpoints, WebSocket streaming, SSE watch |
 | **Store-and-Forward** | Reliability | SQLite | Offline buffering, GZIP compression, AES-256 encryption |
 | **Serial** | Legacy | RS-232/485 | Configurable baud, parity, RTS/CTS flow control |
@@ -767,6 +780,183 @@ curl -X POST http://localhost:8082/api/analyzer/decode \
 | **Data Centers** | SNMP, Modbus, BACnet, Sparkplug B |
 | **Entertainment/AV** | Art-Net, sACN, MIDI, OSC |
 | **Marine/Fleet** | NMEA 0183, GPS, Modbus, MQTT |
+
+---
+
+## Industrial Control — Enhanced PID + Autotune
+
+GOPLC ships a Rockwell-style **PIDE** function block alongside the classic IEC `PID` — same scan-cycle execution, more pins, and built-in **relay-feedback autotuning** based on the Åström-Hägglund 1984 method.
+
+### PIDE Function Block
+
+```iec
+VAR
+    loop : PIDE;
+END_VAR
+
+// Standard run pins
+loop(
+    PV   := process_value,
+    SP   := setpoint,
+    KP   := 1.2,
+    KI   := 0.05,
+    KD   := 0.0,
+    CV_HI := 100.0,
+    CV_LO := 0.0
+);
+output_to_actuator := loop.CV;
+```
+
+**What PIDE adds over plain PID:**
+
+- **Independent / dependent / parallel gain forms** — pick the tuning convention your team already uses
+- **CV high/low limits** with anti-windup integrator clamping
+- **Bumpless manual ↔ auto transition** — manual writes to CV; switching to auto picks up where the operator left off
+- **Output rate limiting** — clamp `dCV/dt` so an aggressive tune can't slam an actuator
+- **Configurable derivative source** — derivative on PV (process) or error
+- **Deadband** — quiet small oscillations without losing setpoint tracking
+
+### Relay-Feedback Autotuning (Åström-Hägglund)
+
+```iec
+// Set the autotune trigger pin and PIDE drives a square-wave step in CV,
+// counts the half-cycles in PV, and recovers the ultimate gain (Ku) and
+// ultimate period (Pu). Ziegler-Nichols rules then suggest KP/KI/KD.
+loop(AT := autotune_request, PV := process_value, SP := setpoint, ...);
+```
+
+- Square-wave relay step in CV induces a controlled oscillation
+- Algorithm measures `Ku` (ultimate gain) and `Pu` (ultimate period) from the PV swing
+- Suggested gains land in `loop.KP_TUNE`, `loop.KI_TUNE`, `loop.KD_TUNE` for one-click commit
+- Verified against FOPDT plant simulations: `TestRelayAutotune_FOPDT` recovers `Ku=11.766`, `Pu=5.8s` from 13 half-cycles
+- Standard textbook method, no proprietary tuning algorithm needed — same physics that powers commercial autotune tools
+
+See the [PIDE Autotune Guide](docs/guides/goplc_pide_autotune_guide.md) for a complete walkthrough.
+
+---
+
+## Video Historian & Vision Pipeline
+
+Two cooperating subsystems that bring camera frames into the PLC scan-cycle worldview.
+
+### Video Historian
+
+Burst capture of camera frames, triggered by ST code or HTTP, indexed in SQLite for time-correlation with events and alarms.
+
+```iec
+// Trigger a 5-second pre/post burst from ST
+VIDEO_CAMERA_BURST('cam_1', 'reject_event', 5000, 5000);
+```
+
+```bash
+# Or via HTTP
+curl -X POST http://localhost:8082/api/video/cameras/cam_1/burst \
+  -d '{"reason":"reject_event","pre_ms":5000,"post_ms":5000}'
+```
+
+- **Pre/post buffering** — frames already in the rolling buffer are saved when a burst is requested, so you see the seconds *leading up to* the event, not just after
+- **SQLite burst index** — metadata (timestamp, reason, camera, frame count, path on disk) queryable like any other history
+- **One-way emission** — videohist publishes events; it never subscribes back. Burst URLs surface as hyperlinks on the matching event entry in the IDE
+- **Retention** — auto-prune by age and by total disk size
+
+### Vision Pipeline
+
+Pluggable CV backend registry. Backends register at process init; the engine pulls frames from a `FrameSource` and publishes detections to the event bus.
+
+| Backend | Capability |
+|---------|------------|
+| **ONNX inference** | Run ONNX classification/detection models (`onnxruntime_go`) — defect detection, object counting, presence/absence |
+| **Gauge reader** | Read analog dial gauges from camera frames — needle angle → engineering value |
+| **ZXing barcode/QR** | Decode 1D and 2D codes in-frame (`gozxing`) — pure-Go, no Python sidecar |
+| **Video historian source** | Re-run inference against historical bursts — same backend, different frame source |
+
+```iec
+// ST-side: read the last detection from the bus
+detect_result : STRING;
+detect_result := VISION_LAST_DETECTION('cam_1', 'defect_detector');
+IF VISION_CONFIDENCE() > 0.85 THEN
+    reject_count := reject_count + 1;
+    VIDEO_CAMERA_BURST('cam_1', 'reject_event', 3000, 3000);
+END_IF
+```
+
+All vision audit records persist to a separate SQLite audit store for 21 CFR Part 11 / IEC 62443 traceability.
+
+---
+
+## L5X / Rockwell Import
+
+Studio 5000 / RSLogix `.L5X` exports translate to GOPLC ST in one API call. Anything that doesn't have an exact equivalent surfaces as a **visible warning**, not a silent gap.
+
+```bash
+curl -X POST http://localhost:8082/api/l5x/import \
+  -F file=@MyProject.L5X
+```
+
+**What gets imported automatically:**
+
+- Routines → POU function blocks (one per Routine)
+- Variable declarations with type-mapping (DINT → DINT, REAL → REAL, BOOL → BOOL, arrays, structures)
+- RLL (Relay Ladder Logic) rungs translated to ST statements
+- Tag aliases and program-scoped vs controller-scoped variable visibility
+
+**Supported RLL instructions** (rung-by-rung translation):
+
+| Category | Instructions |
+|----------|-------------|
+| **Bit** | `XIC`, `XIO`, `OTE`, `OTL`, `OTU`, `ONS` |
+| **Timer/Counter** | `TON`, `TOF`, `RTO`, `CTU`, `CTD`, `CTUD`, `RES` |
+| **Compare** | `EQU`, `NEQ`, `GTR`, `GEQ`, `LES`, `LEQ`, `LIM`, `MEQ` |
+| **Math** | `ADD`, `SUB`, `MUL`, `DIV`, `MOD`, `SQR`, `ABS`, `NEG` |
+| **Move/Logic** | `MOV`, `COP`, `MVM`, `AND`, `OR`, `XOR`, `NOT`, `BTD`, `SWPB` |
+| **Program flow** | `JMP`, `LBL`, `JSR`, `RET`, `SBR` |
+| **File ops** | `FAL`, `FSC`, `BSL`, `BSR`, `FFU`, `FFL`, `LFU`, `LFL` |
+
+**Visible warnings** for anything the converter doesn't recognize — emitted as inline ST comments and tallied in the API response:
+
+```st
+(* UNSUPPORTED RLL: MSG(MyMessageBlock) - manual translation required *)
+```
+
+The import API returns a per-program and per-project warning count so QA can see at a glance how clean the conversion was. Verified on real plant exports: `IAD550_BOP_Complete.L5X` imports with 1 warning (10 JSR calls), `SS1_Raw_Water_EQ.L5X` imports with zero warnings.
+
+---
+
+## Foundation Registry (Architectural Metadata for AI Agents)
+
+Every foundational package in GOPLC ships a `.foundation.yaml` colocated with its source, describing what the package owns, its entry points, its contracts, and which docs to read for deeper context. A central registry (`pkg/foundation`) loads them all, derives the internal dependency graph automatically from `go list`, and validates entry-point symbols/files actually exist at build time.
+
+Four query surfaces — same data, different transports:
+
+```bash
+# CLI
+goplc foundation list
+goplc foundation impact <package>        # blast-radius if you change it
+goplc foundation concerns <keyword>      # which package owns this concern
+goplc foundation search <query>          # ranked cross-field search
+
+# REST
+GET  /api/foundation/packages
+GET  /api/foundation/packages/:name
+GET  /api/foundation/impact/:name
+GET  /api/foundation/concerns/:concern
+GET  /api/foundation/search?q=
+
+# MCP (for AI agents)
+goplc_foundation_packages
+goplc_foundation_package(name="auth")
+goplc_foundation_impact(name="sqlitebatch")
+goplc_foundation_concerns(concern="RBAC")
+goplc_foundation_search(q="WebSocket")
+
+# Per-package deep-dive — colocated with the code
+cat pkg/auth/FOUNDATION.md
+cat pkg/runtime/FOUNDATION.md
+```
+
+Why: an AI agent (Claude, Cursor, anything speaking MCP) asking "where does authentication live?" or "what would break if I touch the SQLite primitive?" gets a structured answer in tokens, not a grep tour through 280,000+ lines of Go. The registry is the cheapest way to keep context minimal as the codebase grows.
+
+A CI gate (`TestFoundationDocInSync`) regenerates the per-package docs and fails the build if any YAML drifts from its rendered Markdown — the catalog stays truthful by force.
 
 ---
 
@@ -1099,9 +1289,9 @@ Pre-built binaries for Windows and Linux — single ~30 MB download, no installe
 
 | Platform | Architecture | Download |
 |----------|-------------|----------|
-| **Windows** | x86_64 | `goplc-v1.0.520-windows.zip` |
-| **Linux** | x86_64 (amd64) | `goplc-v1.0.520-linux-amd64.tar.gz` |
-| **Linux** | ARM64 (aarch64) | `goplc-v1.0.520-linux-arm64.tar.gz` |
+| **Windows** | x86_64 | `goplc-windows.zip` |
+| **Linux** | x86_64 (amd64) | `goplc-linux-amd64.tar.gz` |
+| **Linux** | ARM64 (aarch64) | `goplc-linux-arm64.tar.gz` |
 
 Visit [jmbtechnical.com/goplc/download](https://jmbtechnical.com/goplc/download) to download the latest release.
 
@@ -1119,10 +1309,10 @@ Visit [jmbtechnical.com/goplc/download](https://jmbtechnical.com/goplc/download)
 
 ```bash
 # Linux
-tar xzf goplc-v1.0.520-linux-amd64.tar.gz
+tar xzf goplc-linux-amd64.tar.gz
 cd goplc
 
-# Windows — unzip goplc-v1.0.520-windows.zip
+# Windows — unzip goplc-windows.zip
 ```
 
 ### 2. Run
