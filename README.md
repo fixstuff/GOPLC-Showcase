@@ -29,6 +29,12 @@
   <a href="#video-historian--vision-pipeline">Video&Vision</a> •
   <a href="#l5x--rockwell-import">L5X</a> •
   <a href="#foundation-registry-architectural-metadata-for-ai-agents">Foundation</a> •
+  <a href="#events-event-spine--webhooks">Events</a> •
+  <a href="#alarms">Alarms</a> •
+  <a href="#audit--compliance">Audit</a> •
+  <a href="#snapshots-edit-history--revert">Snapshots</a> •
+  <a href="#embedded-messaging-brokers">Brokers</a> •
+  <a href="#trend-component">Trends</a> •
   <a href="#clustering">Clustering</a> •
   <a href="#redundancy--failover">Redundancy</a> •
   <a href="#authentication">Auth</a> •
@@ -181,6 +187,61 @@ CoDeSys-style live variable debugging — monitor and modify PLC variables in re
 <td align="center"><img src="assets/screenshots/esp32-hmi.png" width="200"><br><b>ESP32 HMI</b><br>Hardware status display</td>
 </tr>
 </table>
+
+---
+
+## Trend Component
+
+`<goplc-trend>` is GOPLC's reusable web component for live and historical data visualization. One renderer drives every trend surface — the dedicated `/hmi/trend-fullscreen.html`, the per-page mini-trends, and any user-authored HMI panel. No charting library; direct canvas rendering for full control over BOOL data, multi-axis layout, and event overlays.
+
+### Declarative usage
+
+```html
+<goplc-trend
+  tags="pou.eye_x,pou.blinking,pou.motor_rpm"
+  zoom="1m"
+  retention="1800"
+  height="360"
+  title="Process trend"
+  scales='{"pou.motor_rpm":{"min":0,"max":3000,"unit":"RPM"}}'
+  events-kinds="alarm.*,operator.action"
+  events-severity-min="warning"
+  persist="my-trend-prefs">
+</goplc-trend>
+```
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| **Auto-scale per pen** | Each pen gets its own Y-axis range so tags with wildly different magnitudes (0..100 and -50,000..70,000) both fill the chart |
+| **BOOL pulse ticks** | Boolean tags rendered as discrete pulse markers, not line segments — readable digital signals |
+| **Hydrate on connect** | One-shot `GET /api/history` backfills the in-memory ring buffer so a fresh trend isn't empty for the first `retention` seconds |
+| **Live / pause anchor** | One-click toggle between live (chart follows now) and paused (chart anchored at a fixed timestamp) |
+| **Scrollbar** | Draggable scrollbar scrubs through the full retention buffer when paused |
+| **Wheel zoom** | Mouse wheel zooms the time window in/out around the cursor position |
+| **Hover cursor + click-to-pin** | Hover shows per-pen values at the cursor; click pins them with a cyan dashed line for stable inspection |
+| **Event-marker band** | Alarms and operator events overlay as colored ticks in a 12px top band; color encodes severity (info/warning/error). Adjacent events collapse into "+N" clusters when zoomed out |
+| **Drag-to-resize** | A 4px handle on the bottom edge lets the user grow/shrink the canvas height interactively |
+| **Variable picker** | `+` button opens a search-filterable list sourced from `/api/variables/meta` — type to filter, checkboxes toggle pens |
+| **Legend pen actions** | Click toggles visibility; `×` removes the pen entirely. Pen color cycles through 12 colorblind-distinguishable values |
+| **CSV export** | `Export` button serializes the visible window across all current pens as wide-format CSV (ISO8601 UTC timestamps, one column per tag) |
+| **Engineering range pragmas** | When a tag declaration carries a documented range hint, the trend auto-scales to those engineering limits |
+| **localStorage persistence** | `persist="<key>"` makes user customizations (pens, hidden tags, height, scales) survive a page reload |
+| **Fullscreen page** | `web/hmi/trend-fullscreen.html` mounts the same component edge-to-edge, deep-linkable with attributes encoded in the URL |
+
+### Data sources
+
+- **Live samples** — `/api/variables/bulk` polled every `poll` ms (default 500ms); appends to a per-tag ring buffer sized by `retention`
+- **Hydrate** — one-shot `GET /api/history?tag=...` to backfill from the edge historian when the trend first mounts
+- **Events overlay** — `/api/events` polled (or WebSocket stream when `events-stream="true"`) when `events-kinds` is non-empty
+- **Variable metadata** — `/api/variables/meta` cached once, drives BOOL vs analog rendering and the picker's search index
+
+### Why this design
+
+- **One component, every surface.** Before consolidation each page rendered its own trend; that produced inconsistent UX and quietly lost features when pages got rewritten. Now there is one renderer; features land once and show up everywhere.
+- **No charting library.** Direct `CanvasRenderingContext2D`. Cuts ~80kB of dependency, gives exact control over BOOL rendering, event bands, frame-stable label formatting, and the multi-axis layout.
+- **Polling + hydrate, not push.** Variable updates flow via cheap polling against `/api/variables/bulk`. The pub/sub hub is reserved for individual variable subscriptions in editor tabs; a busy trend page would otherwise dominate hub fanout.
 
 ---
 
@@ -957,6 +1018,224 @@ cat pkg/runtime/FOUNDATION.md
 Why: an AI agent (Claude, Cursor, anything speaking MCP) asking "where does authentication live?" or "what would break if I touch the SQLite primitive?" gets a structured answer in tokens, not a grep tour through 280,000+ lines of Go. The registry is the cheapest way to keep context minimal as the codebase grows.
 
 A CI gate (`TestFoundationDocInSync`) regenerates the per-package docs and fails the build if any YAML drifts from its rendered Markdown — the catalog stays truthful by force.
+
+---
+
+## Events, Event Spine & Webhooks
+
+GOPLC's event subsystem is the trunk every notification, alarm transition, audit entry, and trend marker hangs off of. State changes inside the runtime publish to one in-process bus; subscribers fan that out to SQLite, MQTT republishers, webhook delivery, audit logs, and the unified event spine.
+
+### Event Bus
+
+`pkg/events` is the in-process pub/sub bus that every subsystem publishes to:
+
+- **Per-event schema** — `type`, `severity`, `source`, `message`, structured `data` payload, timestamp
+- **Dedup window** — duplicate events within a configurable interval collapse into one (configurable per-source)
+- **SQLite event store** — events persist via the shared `pkg/sqlitebatch` primitive, retention by age
+- **MQTT republisher** — events fan out to an external MQTT broker with topic mapping
+- **Webhook delivery manager** — HTTP webhooks with retry, exponential backoff, dead-letter queue
+- **Threshold monitor** — system thresholds (CPU, memory, disk, scan-time overruns) become events automatically
+
+```bash
+# Subscribe to events live
+curl -N http://localhost:8082/api/events/stream
+
+# Post a custom event from anywhere
+curl -X POST http://localhost:8082/api/events \
+  -d '{"type":"operator.action","severity":"info","source":"hmi","message":"Reset pressed","data":{"user":"jbel"}}'
+
+# Add a webhook delivery target
+curl -X POST http://localhost:8082/api/webhooks \
+  -d '{"url":"https://hooks.slack.com/...","filter":{"severity":"error"}}'
+```
+
+### Unified Event Spine
+
+`pkg/eventspine` is the phase-2 successor to the legacy `/events` API — a normalized event surface with **correlation IDs**, **translation bridges**, **historian hooks**, and **retention policy** built in. Currently coexists with the legacy `/events` handlers at `/spine/events`; phase 3 of the design plan retires the legacy path and migrates everything under spine semantics.
+
+| Capability | What it does |
+|------------|--------------|
+| **Normalized schema** | One event shape across every source; legacy events translate into it on the way in |
+| **Correlation IDs** | A single user action (button press → command → response → alarm) carries one correlation ID end-to-end |
+| **Debug bridge** | Selected `debug.Debug()` log lines surface as spine events for ops dashboards |
+| **Historian hook** | Spine events tagged for history become trend markers automatically — `<goplc-trend>` picks them up via `events-kinds` |
+| **Retention policy** | Per-kind retention rules; high-volume diagnostic events expire faster than safety-critical ones |
+
+```bash
+# Spine endpoints (coexist with /events)
+GET  /api/spine/events            # paginated list with filters
+GET  /api/spine/events/stream     # WebSocket stream
+GET  /api/spine/events/:id        # single event by id
+POST /api/spine/events            # publish a spine event
+```
+
+### Why two layers (for now)
+
+The legacy `/events` API has shipping integrations (MQTT bridges, customer webhooks, Node-RED flows) that we don't break mid-deploy. The spine ships alongside, gathers usage, then phase 3 retires the legacy path with a clean migration path. See `docs/design/UNIFIED_EVENT_SPINE.md` for the design rationale and timeline.
+
+---
+
+## Alarms
+
+`pkg/alarms` is GOPLC's industrial alarm engine — threshold rule evaluation, state machine transitions, SQLite history, and integration with the event bus so HMI panels and trend overlays see alarms uniformly.
+
+### State Machine
+
+```
+NORMAL ───────► ACTIVE ─── operator ack ──► ACKNOWLEDGED
+   ▲              │                              │
+   │              └────── condition cleared ─────┘
+   └──── return-to-normal (after clear + ack) ◄──┘
+```
+
+Every transition publishes an event on the bus AND persists to the alarm history database. Trend overlays surface active and recent transitions as colored markers.
+
+### Features
+
+- **Threshold rule engine** — hi/hihi/lo/lolo with deadbands, rate-of-change limits, deviation alarms
+- **Severity tiers** — info, warning, error, critical — driving HMI color and notification priority
+- **Area / priority metadata** — group by plant area, sort by priority, filter by tag
+- **Active-alarm registry** — `/api/alarms/active` returns the live list; `/api/alarms/ack` acknowledges
+- **History database** — full transition log via `pkg/sqlitebatch` with retention
+- **Global helpers for ST builtins** — `ALARM_RAISE`, `ALARM_CLEAR`, `ALARM_ACK` available from ST code
+- **Bus integration** — every transition emits an event so webhooks, MQTT, audit log, and trends all see it without per-subsystem wiring
+
+---
+
+## Audit & Compliance
+
+`pkg/audit` subscribes to the event bus and persists state-changing actions into a separate, append-only SQLite audit log with compliance metadata.
+
+### Compliance Targets
+
+| Standard | Coverage |
+|----------|----------|
+| **21 CFR Part 11** | Electronic records / electronic signatures for pharma & life sciences |
+| **IEC 62443** | Industrial cybersecurity audit trail |
+| **NERC CIP** | Critical Infrastructure Protection logging for power utilities |
+
+### What's Captured
+
+- **Username + source IP** for every action
+- **Action type** — `runtime.start`, `runtime.stop`, `program.upload`, `task.reload`, `variable.write`, `auth.login`, `auth.logout`, `license.activate`, `config.change`
+- **Resource** — the program/task/variable/file affected
+- **Result** — success/failure with error detail
+- **Append-only** — rows are never modified or deleted, only inserted
+
+The audit logger is intentionally a **bus subscriber only** — it observes events; it never publishes back. That asymmetry keeps the audit log free of self-referential noise and means the audit subsystem can't accidentally trigger or amplify the events it's supposed to record.
+
+---
+
+## Snapshots, Edit History & Revert
+
+Two cooperating subsystems make GOPLC's "I broke something, undo" story work at both the project level and the task/scan level.
+
+### Snapshot Store (`pkg/snapshots`)
+
+Periodic and on-demand snapshots of the full runtime state — variable values, task states, configuration, retain data. Backs the "revert to N hours ago" feature and the post-mortem workflow when something goes sideways.
+
+- **SQLite index** of every snapshot with timestamp, source (auto/manual/pre-deploy), and node ID
+- **Per-node directory layout** so a boss aggregates snapshots from every minion
+- **Atomic snapshot capture** taken from one coherent runtime moment
+- **Configurable retention** — keep N most recent per node, archive older to disk
+- **Restore API** — `POST /api/snapshots/:id/restore` rewinds the runtime to a captured state
+
+### Edit Flow (`pkg/editflow`)
+
+Tracks every POU edit as a staged-change log with diff, commit, and revert. Backs the IDE's "what changed since last download" view and the one-click revert button.
+
+- **Staging area** for un-downloaded edits — see exactly what's pending before deploying
+- **Per-POU diff** between staged and last-committed source
+- **Commit** moves staged → history with timestamp and author
+- **Revert** restores any POU from the history table to either staging or active
+- **Retention** — configurable history depth, auto-prune oldest
+
+### Recovery on Boot
+
+If the runtime previously crashed, `cmd/goplc/recover.go` is a separate subcommand (`goplc recover <project> <panic-save>`) that replays the panic-save snapshot back into a healthy runtime. The "panic save" path is part of `pkg/shutdown` — even an abnormal exit attempts to write a recoverable snapshot before the process terminates.
+
+---
+
+## Watchdog & UPS-Driven Shutdown
+
+Two independent supervision surfaces protect runtime liveness and safe shutdown.
+
+### Hardware Watchdog (`pkg/watchdog`)
+
+- Opens `/dev/watchdog` (Linux) and kicks it on a configurable schedule
+- If kicks stop arriving, the kernel resets the box — protecting against any-cause hangs (deadlock, OOM, runaway goroutine)
+- Build-tagged stub on non-Linux so the binary still compiles and runs (without RT guarantees)
+
+### systemd Notifier
+
+- Emits `READY=1`, `WATCHDOG=1`, and `STATUS=...` on the systemd notify socket
+- `systemctl status goplc` shows live runtime status without polling
+- `journalctl -u goplc` correlates systemd-level state with runtime-level state
+
+### UPS-Driven Graceful Shutdown (`pkg/power`)
+
+- Polls a configured UPS via Network UPS Tools (NUT) for line-loss and battery-low conditions
+- Triggers graceful shutdown via `pkg/shutdown` when thresholds are hit — preserving RETAIN state
+- Configurable battery threshold (default: 20%) prevents abrupt power-cut data loss
+
+### Shutdown Orchestration (`pkg/shutdown`)
+
+- **Persister registry** — every subsystem with mutable state registers a save-on-shutdown hook at init time
+- **Ordered flush** — persisters run in registration order (never in parallel), so dependencies save before dependents
+- **Panic save** — even an abnormal exit writes a recoverable snapshot before the process terminates
+- **Signal coordination** — SIGINT, SIGTERM, and the API `/api/runtime/shutdown` endpoint all funnel through the same orderly sequence
+
+---
+
+## Embedded Messaging Brokers
+
+GOPLC bundles three messaging transports inside the runtime binary — zero external broker process to deploy, monitor, secure, or fail independently of the PLC.
+
+### MQTT Broker
+
+- **`mochi-mqtt/server/v2`** embedded inline — full MQTT 3.1.1 / 5.0 broker
+- Use cases: local MQTT bridge between GOPLC and devices (ESP32 remotes, Sparkplug B nodes, IoT sensors) that need MQTT but shouldn't depend on a separate broker for liveness
+- Configurable TLS, auth, persistence, retained messages
+- Coexists with the MQTT *client* used by the standard MQTT publisher — both speak the same wire format
+
+### NATS
+
+- **`nats-io/nats-server/v2`** embedded inline plus the **`nats.go`** client
+- **JetStream** streams with at-least-once delivery and consumer groups
+- **KV buckets** for distributed key-value semantics
+- Use cases: inter-PLC messaging in cluster mode, microservice-style fanout, durable event streams
+- ST-side `NATS_*` builtins expose pub/sub, JetStream, and KV directly from PLC code
+
+### ZMQ PUB/SUB
+
+- **Pure-Go ZMQ** via the in-tree forked `zmq4-fork/` — no libzmq, no CGO
+- Transports: TCP, IPC (Unix domain sockets), in-process
+- Use cases: high-throughput pub/sub patterns inside a single machine or between processes on the same host
+- Forked in-tree so a vendor change in the upstream library can't break a shipping deployment
+
+```yaml
+# All three can run side-by-side in one config
+mqtt_broker:
+  enabled: true
+  port: 1883
+  tls:
+    enabled: true
+    cert: certs/broker.crt
+    key: certs/broker.key
+
+nats:
+  enabled: true
+  port: 4222
+  jetstream:
+    enabled: true
+    store_dir: data/jetstream
+
+zmq:
+  enabled: true
+  endpoints:
+    - "tcp://*:5555"
+    - "ipc:///tmp/goplc.ipc"
+```
 
 ---
 
