@@ -979,7 +979,7 @@ curl -X POST http://localhost:8082/api/l5x/import \
 (* UNSUPPORTED RLL: MSG(MyMessageBlock) - manual translation required *)
 ```
 
-The import API returns a per-program and per-project warning count so QA can see at a glance how clean the conversion was. Verified on real plant exports: `IAD550_BOP_Complete.L5X` imports with 1 warning (10 JSR calls), `SS1_Raw_Water_EQ.L5X` imports with zero warnings.
+The import API returns a per-program and per-project warning count so QA can see at a glance how clean the conversion was. Verified on real customer L5X exports — balance-of-plant control programs and water-treatment routines have both round-tripped with single-digit warning counts.
 
 ---
 

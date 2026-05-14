@@ -150,7 +150,7 @@ These features have no screenshot at all and the README sections will read flat 
 - **Navigate to:** L5X import API endpoint, or trigger via the wizard
 - **Show:** Import result panel showing per-program warning counts, with at least one `(* UNSUPPORTED RLL: ... *)` warning visible in the converted ST output below — proves the visible-warning feature is real, not a marketing claim
 - **Frame:** 1400 px wide
-- **Prep:** Use `IAD550_BOP_Complete.L5X` (the verified-clean test export) so the result looks healthy
+- **Prep:** Use a known-clean test L5X (any real plant export that's been redacted, or one of the synthetic test fixtures) so the result looks healthy. **Crop or redact the project name before publishing — never expose customer plant identifiers in the screenshot.**
 
 ### 2.11 `embedded-brokers.png` (optional)
 - **Section:** **Embedded Messaging Brokers**
