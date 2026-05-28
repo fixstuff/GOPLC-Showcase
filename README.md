@@ -17,6 +17,9 @@
 </p>
 
 <!-- docs-gen:begin facts (auto-updated from /api/capabilities — do not edit between these markers) -->
+> **Live build facts** — auto-updated from `/api/capabilities`. _GOPLC 1.0.959, 2026-05-28._
+>
+> **2248** built-in functions · **12** standard function blocks.
 <!-- docs-gen:end -->
 
 <p align="center">
