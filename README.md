@@ -16,6 +16,9 @@
   <img src="https://img.shields.io/badge/Functions-2,200+-orange?style=for-the-badge" alt="2,200+ Functions">
 </p>
 
+<!-- docs-gen:begin facts (auto-updated from /api/capabilities — do not edit between these markers) -->
+<!-- docs-gen:end -->
+
 <p align="center">
   <a href="#features">Features</a> •
   <a href="#web-ide">Web IDE</a> •
